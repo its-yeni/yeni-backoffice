@@ -1,0 +1,31 @@
+.product-page.commerce-page, .category-page.commerce-page, .option-picker-page.commerce-page { min-height: calc(100vh - var(--topbar-height)); padding: 22px var(--content-gutter) 36px; background: var(--page-canvas); color: var(--text-primary); }
+.product-data-table tr.flow-target-row { background: #fff8ed; box-shadow: inset 3px 0 0 var(--primary); }
+.product-page .page-header, .category-page .page-header, .option-picker-page .page-header { min-height: 0; }
+.product-page .switch, .category-page .switch { position: relative; display: inline-flex; width: 38px; height: 22px; }
+.product-page .switch input, .category-page .switch input { position: absolute; opacity: 0; }
+.product-page .switch span, .category-page .switch span { width: 100%; height: 100%; border-radius: 999px; background: #dfe3e8; }
+.product-page .switch span::after, .category-page .switch span::after { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(16,24,40,.18); content: ""; transition: transform 120ms ease; }
+.product-page .switch input:checked + span, .category-page .switch input:checked + span { background: var(--primary); }
+.product-page .switch input:checked + span::after, .category-page .switch input:checked + span::after { transform: translateX(16px); }
+/* 1번째 열은 행 번호(.row-index) — 상품명 열은 2번째다. */
+.product-data-table th.row-index { width: 1%; }
+.product-data-table th:nth-child(2) { width: 34%; }
+@media (max-width: 760px) { .product-page.commerce-page, .category-page.commerce-page, .option-picker-page.commerce-page { padding: 18px var(--content-gutter) 28px; } }
+
+@media (min-width: 769px) and (max-height: 950px) {
+    .product-page.commerce-page, .category-page.commerce-page,
+    .option-picker-page.commerce-page { padding: 14px var(--content-gutter) 18px !important; }
+    .product-page .page-header, .category-page .page-header,
+    .option-picker-page .page-header { margin-bottom: 10px; }
+    .product-page .filter-bar, .category-page .filter-bar,
+    .option-picker-page .filter-bar { margin-bottom: 8px; }
+    .product-data-table th, .category-data-table th,
+    .option-product-table th { height: 34px !important; padding-block: 0 !important; }
+    .product-data-table td, .category-data-table td,
+    .option-product-table td { height: 43px !important; padding-block: 4px !important; }
+    .product-data-table .table-product-thumb,
+    .option-product-table .table-product-thumb { width: 34px !important; height: 34px !important; flex-basis: 34px !important; }
+    .product-data-table .table-product-cell { gap: 9px; }
+    .product-data-table .table-product-cell strong { font-size: 12px; line-height: 1.2; }
+    .product-data-table .table-secondary { margin-top: 1px; line-height: 1.2; }
+}

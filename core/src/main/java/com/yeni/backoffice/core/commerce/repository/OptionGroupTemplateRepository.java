@@ -1,0 +1,1 @@
+package com.yeni.backoffice.core.commerce.repository;import com.yeni.backoffice.core.commerce.entity.OptionGroupTemplate;import org.springframework.data.jpa.repository.JpaRepository;import java.util.*;public interface OptionGroupTemplateRepository extends JpaRepository<OptionGroupTemplate,Long>{List<OptionGroupTemplate> findAllByOrderBySortOrderAscIdAsc();}

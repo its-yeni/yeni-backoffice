@@ -1,0 +1,1 @@
+package com.yeni.backoffice.core.commerce.repository;import com.yeni.backoffice.core.commerce.entity.ProductOptionGroup;import org.springframework.data.jpa.repository.JpaRepository;import java.util.*;public interface ProductOptionGroupRepository extends JpaRepository<ProductOptionGroup,Long>{List<ProductOptionGroup> findByProductIdOrderBySortOrderAscIdAsc(Long productId);}

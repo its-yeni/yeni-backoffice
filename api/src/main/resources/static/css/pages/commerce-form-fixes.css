@@ -1,0 +1,23 @@
+.field-label { display: inline-flex; width: max-content; align-items: center; gap: 3px; white-space: nowrap; }
+.field-label em { display: inline; line-height: 1; }
+.inventory-setting { display: flex; align-items: center; justify-content: space-between; margin: 16px 24px 0; padding: 14px; border: 1px solid var(--border-default); border-radius: var(--radius-container); }
+.inventory-setting strong, .inventory-setting small { display: block; }
+.inventory-setting small { margin-top: 4px; color: var(--text-secondary); }
+.inventory-setting + .form-section { padding-top: 14px; }
+#stock-field.is-hidden { display: none; }
+.product-modal .modal-card { display: flex; overflow: hidden; flex-direction: column; border-radius: var(--radius-overlay); }
+.product-modal .modal-title-row { flex: 0 0 auto; padding: 18px 24px 14px; }
+.product-modal .modal-title-row h2 { font-size: 20px; }
+.product-modal #product-form { overflow: auto; }
+.product-modal .exposure-row { padding: 14px 24px; }
+.product-modal .form-section { gap: 14px; padding: 16px 24px 0; }
+.product-modal .form-section label { gap: 6px; font-size: 13px; }
+.product-modal .form-section input, .product-modal .form-section select { height: var(--control-height); padding: 0 11px; border-radius: var(--radius-control); font-size: 13px; }
+.product-modal .modal-message { margin: 10px 24px 0; }
+.product-modal .modal-actions { position: sticky; z-index: 2; bottom: 0; gap: 8px; margin-top: 14px; padding: 12px 24px; background: #fff; }
+.product-modal .modal-actions button { min-width: 88px; height: var(--control-height); border-radius: var(--radius-control); font-size: 13px; }
+@media (max-width: 620px) {
+    .inventory-setting { margin-right: 16px; margin-left: 16px; }
+    .product-modal .form-section { padding-right: 16px; padding-left: 16px; }
+    .product-modal .modal-title-row, .product-modal .modal-actions { padding-right: 16px; padding-left: 16px; }
+}

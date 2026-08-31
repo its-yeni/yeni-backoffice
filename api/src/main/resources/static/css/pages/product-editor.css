@@ -1,0 +1,196 @@
+.product-editor{width:min(960px,calc(100vw - 40px));max-height:min(820px,calc(100vh - 32px));display:flex;flex-direction:column;overflow:hidden}
+.product-editor .modal-title-row{flex:0 0 auto;padding:22px 26px 18px;border-bottom:1px solid #e7ebf1;background:#fff}
+.product-editor .modal-title-row h2{margin:0;font-size:24px;line-height:1.25;letter-spacing:-.025em}
+.product-editor .modal-title-row p{margin:5px 0 0;color:#778296;font-size:13px}
+.product-editor .icon-close{font-size:27px;font-weight:300;color:#778296}
+.product-editor form{min-height:0;display:flex;flex:1;flex-direction:column}
+.product-editor-body{min-height:0;overflow-y:auto;padding:22px 26px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px 26px;background:#fff}
+.product-media-column{min-width:0}
+.product-fields-column{display:grid;gap:18px;align-content:start}
+.product-editor .section-heading{display:flex;align-items:baseline;gap:9px;margin-bottom:12px}
+.product-editor .section-heading strong{font-size:15px;color:#172033}
+.product-editor .section-heading span{font-size:12px;color:#8a95a8}
+.product-editor .image-upload-box{width:100%;height:186px;border:1px dashed #cbd4e2;border-radius:10px;background:#f8fafc;overflow:hidden;box-shadow:none}
+.product-editor .image-upload-box:hover{border-color:var(--primary);background:var(--primary-soft)}
+.product-editor #image-preview{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:#6e7b90}
+.product-editor #image-preview b{font-size:31px;font-weight:300;line-height:1;color:#7890b6}
+.product-editor #image-preview strong{font-size:13px}
+.product-editor #image-preview small{font-size:11px;color:#9aa4b5}
+.product-editor #image-preview img{width:100%;height:100%;object-fit:cover}
+.field-help{margin:8px 0 0;font-size:11px;line-height:1.55;color:#8a95a8}
+.editor-section{min-width:0}
+.editor-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.editor-field-grid .field-wide{grid-column:1/-1}
+.product-editor label{min-width:0}
+.product-editor .field-label{display:flex;align-items:center;gap:3px;margin-bottom:6px;font-size:12px;font-weight:650;color:#344056}
+.product-editor .field-label em{color:#e34d59;font-style:normal}
+.product-editor input:not([type=checkbox]),.product-editor select{width:100%;height:42px;border:1px solid #d8dee8;border-radius:7px;padding:0 12px;background:#fff;font-size:13px;color:#172033}
+.product-editor input:focus,.product-editor select:focus{border-color:var(--primary);outline:3px solid rgba(177,83,46,.1)}
+.product-editor input[readonly]{color:#66748a;background:#f5f7fa}
+.code-policy{display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(230px,1.2fr);align-items:end;gap:12px;margin-top:13px;padding-top:13px;border-top:1px solid #edf0f4}
+.code-policy p{margin:0;color:#8a95a8;font-size:11px}
+.manual-code-toggle{height:34px;display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;color:#566177;cursor:pointer}
+.manual-code-toggle input{accent-color:var(--primary)}
+.inventory-section{padding-top:16px;border-top:1px solid #e7ebf1}
+.compact-settings{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) minmax(150px,.9fr) minmax(110px,.65fr);gap:10px;align-items:end}
+.setting-item{height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid #e1e6ee;border-radius:8px}
+.setting-item strong{display:block;font-size:12px;color:#2f3a4e}
+.setting-item small{display:block;margin-top:2px;font-size:10px;color:#8a95a8;white-space:nowrap}
+.product-editor .switch{flex:0 0 auto}
+.product-editor .is-hidden{display:none}
+.option-template-section{grid-column:1/-1;padding-top:18px;border-top:1px solid #e1e6ee}
+.option-heading{justify-content:space-between}
+.option-heading>div{display:flex;align-items:baseline;gap:9px}
+.text-link{font-size:12px;font-weight:650;color:var(--primary);text-decoration:none}
+.current-option-groups{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-1px 0 10px;padding:10px 12px;border:1px solid #e1e6ee;border-radius:7px;background:#fff;color:#59667b;font-size:12px}
+.current-option-groups strong{color:#263248;margin-right:4px}.current-option-groups span{padding-left:9px;border-left:1px solid #dfe4eb}
+.option-workflow-summary{display:grid;grid-template-columns:140px 170px 1fr;align-items:center;gap:14px;margin-bottom:10px;padding:10px 12px;border:1px solid #e1e6ee;border-radius:8px;background:#f8f9fb}
+.option-workflow-summary div{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:14px;border-right:1px solid #dde3eb}.option-workflow-summary span{font-size:11px;color:#7d899b}.option-workflow-summary strong{font-size:12px;color:#222d3f}.option-workflow-summary p{margin:0;font-size:11px;line-height:1.5;color:#667389}
+.option-template-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.option-template-item{position:relative;display:flex;align-items:flex-start;gap:9px;min-height:62px;padding:11px;border:1px solid #dfe5ee;border-radius:8px;cursor:pointer;background:#fff}
+.option-template-item:hover{border-color:rgba(177,83,46,.4)}
+.option-template-item:has(input:checked){border-color:var(--primary);background:var(--primary-soft);box-shadow:0 0 0 1px var(--primary) inset}
+.option-template-item input{appearance:none;width:15px;height:15px;flex:0 0 15px;margin:1px 0 0;border:1px solid #b7c0ce;border-radius:3px;background:#fff;opacity:1}
+.option-template-item input:checked{border-color:var(--primary);background:var(--primary)}
+.option-template-item input:checked::after{content:"✓";display:grid;place-items:center;height:100%;color:#fff;font-size:10px;font-weight:800;line-height:1}
+.option-template-item strong{display:block;font-size:12px;color:#202b3d}
+.option-template-item small{display:block;margin-top:4px;font-size:11px;color:#818da1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.option-template-item em{margin-left:auto;padding:2px 5px;border-radius:4px;background:var(--primary-soft);color:var(--primary-hover);font-size:10px;font-style:normal;white-space:nowrap}
+.option-template-state{margin-left:auto;font-size:11px;font-weight:650;color:#8a95a8}
+.option-template-item.is-applied{border-color:rgba(177,83,46,.7);background:var(--primary-soft);box-shadow:0 0 0 1px rgba(177,83,46,.16) inset;cursor:default}.option-template-item.is-applied .option-template-state{color:var(--primary-hover);font-weight:750}
+.variant-stock-guide{min-height:58px;display:grid;grid-template-columns:minmax(0,1fr);align-content:center;gap:2px;padding:8px 11px;border:1px solid #e1e6ee;border-radius:8px;background:#f8f9fb}.variant-stock-guide strong{font-size:11px;white-space:nowrap}.variant-stock-guide small{font-size:10px;line-height:1.35;color:#8a95a8}.variant-stock-guide a{margin-top:2px;color:var(--primary);font-size:10px;font-weight:700;text-decoration:none}
+.option-loading,.option-empty{grid-column:1/-1;margin:0;padding:18px;text-align:center;color:#8a95a8;font-size:12px;border:1px dashed #dfe5ee;border-radius:8px}
+.product-editor .modal-message{flex:0 0 auto;margin:0;padding:0 26px;color:#d14450;font-size:12px;background:#fff}
+.product-editor .modal-actions{position:static;flex:0 0 auto;padding:14px 26px;border-top:1px solid #e1e6ee;background:#fff}
+.product-editor .modal-actions button{height:42px;min-width:92px;border-radius:7px}
+@media(max-width:760px){.product-editor{width:calc(100vw - 20px)}.product-editor-body{grid-template-columns:1fr;padding:18px}.product-media-column{display:grid;grid-template-columns:120px 1fr;gap:12px}.product-media-column .section-heading{grid-column:1/-1}.product-editor .image-upload-box{height:110px}.option-template-section{grid-column:auto}.compact-settings,.editor-field-grid{grid-template-columns:1fr 1fr}.setting-item{height:54px}.code-policy{grid-template-columns:1fr auto}.code-policy>input{grid-column:1/-1}.option-template-list{grid-template-columns:1fr}.option-workflow-summary{grid-template-columns:1fr 1fr}.option-workflow-summary p{grid-column:1/-1}.option-workflow-summary div:nth-child(2){border-right:0}}
+@media(max-height:760px) and (min-width:761px){.product-editor-body{padding-top:16px;padding-bottom:16px}.product-editor .image-upload-box{height:150px}.product-fields-column{gap:13px}.inventory-section,.option-template-section{padding-top:12px}.option-template-item{min-height:55px;padding:9px}}
+
+/* Product editor follows the shared brown commerce theme. */
+.product-page,.product-editor{--product-blue:var(--primary)}
+.product-editor #image-preview b{color:var(--primary)}
+.product-editor .switch input:checked+span{background:var(--primary)}
+.product-editor .modal-submit{background:var(--primary);color:#fff}
+.product-editor .modal-submit:hover:not(:disabled){background:var(--primary-hover)}
+.product-editor .modal-submit:disabled{background:#d8dadd;color:#8b9098}
+
+/* ── 컴팩트 토글 (모달은 .product-page 밖이라 별도 지정) ─────────────────────── */
+.product-editor .switch{position:relative;display:inline-flex;flex:0 0 auto;width:34px;height:20px}
+.product-editor .switch input{position:absolute;opacity:0}
+.product-editor .switch span{width:100%;height:100%;border-radius:999px;background:#dfe3e8;transition:.15s}
+.product-editor .switch span::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.2);transition:transform .15s ease}
+.product-editor .switch input:checked+span{background:var(--primary)}
+.product-editor .switch input:checked+span::after{transform:translateX(14px)}
+
+/* 전체 여백 축소 */
+.product-editor .modal-title-row{padding:16px 24px 14px}
+.product-editor .modal-title-row h2{font-size:19px}
+.product-editor-body{padding:18px 24px;gap:16px 22px}
+.product-editor .section-heading{margin-bottom:9px}
+.product-editor .section-heading strong{font-size:13.5px}
+.product-editor .setting-item{height:50px;padding:7px 10px}
+.product-editor .setting-item small{font-size:9.5px}
+.product-editor .inventory-section{padding-top:13px}
+.product-editor .option-template-section{padding-top:14px}
+.product-editor .option-workflow-summary{padding:8px 11px;margin-bottom:8px}
+.product-editor .field-help{margin-top:6px}
+.product-editor .modal-actions{padding:14px 24px 18px}
+.product-editor .modal-actions button{height:42px;min-width:96px;font-size:14px;border-radius:8px}
+
+/* ── 옵션값 인라인 편집 패널 ────────────────────────────────────────────────── */
+#option-detail-toggle{border:0;background:transparent;cursor:pointer}
+.option-detail-panel{margin-top:10px;padding:12px;border:1px solid var(--primary);border-radius:8px;background:var(--primary-soft)}
+.option-detail-panel .odp-empty{margin:0;padding:6px;color:var(--text-secondary);font-size:12px}
+.odp-group{margin-bottom:10px;padding:10px;border:1px solid var(--border-default);border-radius:7px;background:#fff}
+.odp-group:last-of-type{margin-bottom:8px}
+.odp-group-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.odp-group-head strong{font-size:12.5px;color:#202b3d}
+.odp-group-head span{font-size:11px;color:#8a95a8}
+.odp-row{display:grid;grid-template-columns:1fr 130px 44px;gap:8px;align-items:center;padding:3px 0}
+.odp-row-head{padding:0 0 4px;color:#8a95a8;font-size:10.5px}
+.odp-row-head span:nth-child(2),.odp-row-head span:nth-child(3){text-align:right}
+.odp-row.odp-saved{background:#ecfdf3;border-radius:5px;transition:background .3s}
+.odp-row.odp-error input{border-color:var(--danger)}
+.odp-row input.odp-name{height:32px;font-size:12px}
+.odp-price{position:relative}
+.odp-price input{width:100%;height:32px;padding-right:26px;text-align:right;font-size:12px}
+.odp-price span{position:absolute;right:9px;top:8px;color:#8a95a8;font-size:11px}
+.odp-row .switch{justify-self:end}
+.odp-add-value{width:100%;height:32px;margin-top:6px;font-size:12px;font-weight:600}
+.odp-full-link{display:inline-block;margin-top:2px;font-size:11.5px}
+
+/* 옵션 조합별 재고 (SKU) */
+.odp-var-block{margin-top:10px;padding:10px;border:1px solid var(--border-default);border-radius:7px;background:#fff}
+.odp-var-block>.btn{margin-top:6px}
+.odp-var-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 96px 64px 44px 40px;gap:8px;align-items:center;padding:4px 0}
+.odp-var-head{padding:0 0 4px;color:#8a95a8;font-size:10.5px}
+.odp-var-head span:not(:first-child){text-align:right}
+.odp-var-row.odp-saved{background:#ecfdf3;border-radius:5px;transition:background .3s}
+.odp-var-row.odp-error input{border-color:var(--danger)}
+.odp-var-row input.odp-var-barcode{height:32px;font-size:11px}
+.odp-var-name{min-width:0}
+.odp-var-name strong{display:block;font-size:12px;color:#202b3d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.odp-var-name small{display:block;font-size:10px;color:#8a95a8}
+.odp-var-row input.odp-var-stock{height:32px;text-align:right;font-size:12px}
+.odp-var-ro{text-align:right;font-size:12px;color:#66748a;font-variant-numeric:tabular-nums}
+.odp-var-row .switch{justify-self:end}
+.odp-var-note{margin:8px 0 0;font-size:10.5px;line-height:1.5;color:#8a95a8}
+
+/* 옵션 그룹 헤더: 순서 이동 + 그룹 설정 인라인 */
+.odp-group-head{justify-content:space-between}
+.odp-group-order{display:inline-flex;gap:3px}
+.odp-mini{width:22px;height:22px;padding:0;border:1px solid var(--border-default);border-radius:5px;background:#fff;color:#66748a;font-size:10px;line-height:1;cursor:pointer}
+.odp-mini:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.odp-mini:disabled{opacity:.35;cursor:default}
+.odp-group-settings{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 10px;padding:8px 0;border-bottom:1px dashed var(--border-default)}
+.odp-group-settings>label{display:flex;align-items:center;gap:7px;font-size:11px;color:#66748a}
+.odp-group-settings>label>span{white-space:nowrap;font-weight:600}
+.odp-group-settings select{height:28px;padding:0 8px;font-size:12px}
+.odp-g-range{display:inline-flex;align-items:center;gap:4px}
+.odp-g-range input{width:44px;height:28px;padding:0 6px;text-align:center;font-size:12px}
+.odp-group.odp-error{border-color:var(--danger)}
+
+/* 그룹 직접 추가 */
+.odp-add-group{margin:8px 0 4px;border:1px dashed var(--border-strong);border-radius:7px;background:#fff}
+.odp-add-group>summary{padding:8px 12px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;list-style:none}
+.odp-add-group>summary::-webkit-details-marker{display:none}
+.odp-add-group[open]>summary{border-bottom:1px solid var(--border-default)}
+.odp-add-group-form{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px}
+.odp-add-group-form>input{flex:1 1 130px;height:32px;font-size:12px}
+.odp-add-group-form>select{height:32px;font-size:12px}
+.odp-add-group-form .odp-ng-req{display:flex;align-items:center;gap:5px;font-size:11.5px;color:#66748a;white-space:nowrap}
+.odp-add-group-form .btn{height:32px}
+
+/* 추가 상품(애드온) */
+.odp-addon{margin:8px 0 4px;border:1px dashed var(--border-strong);border-radius:7px;background:#fff}
+.odp-addon>summary{padding:8px 12px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;list-style:none}
+.odp-addon>summary::-webkit-details-marker{display:none}
+.odp-addon[open]>summary{border-bottom:1px solid var(--border-default)}
+.odp-addon-body{padding:10px 12px}
+.odp-addon-note{margin:0 0 8px;font-size:10.5px;color:#8a95a8;line-height:1.5}
+.odp-addon-group{margin-bottom:8px;padding:8px;border:1px solid var(--border-default);border-radius:6px}
+.odp-addon-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.odp-addon-head strong{font-size:12px}.odp-addon-head span{font-size:10.5px;color:#8a95a8}
+.odp-addon-item{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11.5px}
+.odp-addon-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.odp-addon-item b{font-variant-numeric:tabular-nums}
+.odp-addon-item small{color:#8a95a8}
+.odp-addon-connect{display:flex;gap:6px;margin-top:6px}
+.odp-addon-connect select{flex:1;min-width:0;height:30px;font-size:11.5px}
+.odp-addon-connect input{width:52px;height:30px;text-align:center;font-size:11.5px}
+.odp-addon-connect .btn{height:30px}
+.odp-addon-newform{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-default)}
+.odp-addon-newform>input{flex:1 1 150px;height:32px;font-size:12px}
+.odp-addon-newform label{display:flex;align-items:center;gap:5px;font-size:11px;color:#66748a;white-space:nowrap}
+.odp-addon-newform label input{width:44px;height:30px;text-align:center;font-size:12px}
+.odp-addon-newform .btn{height:32px}
+
+/* 옵션 패널 안내문 + SKU 빈 상태 */
+.odp-guide{margin:0 0 10px;padding:8px 11px;border-radius:6px;background:#fff;border:1px solid var(--border-default);
+  color:#59667b;font-size:11px;line-height:1.6}
+.odp-guide b{color:var(--primary-hover)}
+.odp-var-block .odp-group-head{justify-content:space-between}
+.odp-var-block .odp-group-head .btn-sm{height:30px;padding:0 12px;font-size:12px}
+.odp-var-empty{margin:8px 0 0;padding:10px;border:1px dashed var(--border-default);border-radius:6px;
+  background:#f8f9fb;color:#66748a;font-size:11.5px;line-height:1.6}
+.odp-var-empty b{color:#202b3d}

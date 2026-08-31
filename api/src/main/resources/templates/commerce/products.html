@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>상품 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-products.css"><link rel="stylesheet" href="/css/pages/commerce-image.css"><link rel="stylesheet" href="/css/pages/commerce-form-fixes.css"><link rel="stylesheet" href="/css/pages/product-option-link.css"><link rel="stylesheet" href="/css/pages/product-preview.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/commerce-system.css"><link rel="stylesheet" href="/css/pages/product-editor.css">
+</head>
+<body>
+<div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="product-page commerce-page cmc-page">
+  <header class="page-header"><div><h3>상품 관리</h3><p>판매 상품을 등록하고 판매 상태와 재고를 관리합니다.</p></div><div class="page-header-actions"><button class="btn btn-light" id="open-catalog-preview" type="button">고객 화면 미리보기</button><button class="btn btn-primary" id="open-product-modal" type="button">상품 추가</button></div></header>
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="product-keyword" type="search" placeholder="상품명 또는 상품코드 검색"></label>
+    <select id="category-filter"><option value="">카테고리 전체</option></select>
+    <select id="status-filter"><option value="">판매 상태 전체</option><option value="ON_SALE">판매중</option><option value="SOLD_OUT">품절</option><option value="STOPPED">판매중지</option></select>
+    <div class="cmc-toolbar-actions"><button class="btn btn-text" id="product-filter-reset" type="button">초기화</button><button class="btn btn-primary" id="product-search-btn" type="button">조회</button></div>
+  </div>
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">📦</span><div><span>전체 상품</span><strong id="kpi-total">0<em>개</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-ok">🏷</span><div><span>판매 중</span><strong id="kpi-onsale">0<em>개</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-muted">⊘</span><div><span>품절</span><strong id="kpi-soldout">0<em>개</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">👁</span><div><span>고객 노출</span><strong id="kpi-exposed">0<em>개</em></strong></div></div>
+  </div>
+  <div class="cmc-list"><div class="data-table-wrap"><table class="data-table product-data-table"><thead><tr><th class="row-index">#</th><th>상품</th><th>카테고리</th><th class="amount">판매가</th><th class="number">재고</th><th>품절</th><th>고객 노출</th><th>최근 수정</th><th class="actions">관리</th></tr></thead><tbody id="product-rows"></tbody></table><div class="data-table-empty" id="empty-products" hidden><strong>조건에 맞는 상품이 없습니다.</strong><p>검색 조건을 변경하거나 새 상품을 등록해 주세요.</p></div></div></div>
+  <div class="cmc-list-footer"><span class="cmc-total">총 <b id="product-total">0</b>개</span><div id="product-pagination"></div></div>
+</section></main></div>
+
+<div class="product-modal" id="product-modal" aria-hidden="true">
+  <div class="modal-dim" data-close-modal></div>
+  <section class="modal-card product-editor" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+    <header class="modal-title-row"><div><h2 id="product-modal-title">상품 추가</h2></div><button class="icon-close" type="button" data-close-modal aria-label="닫기">×</button></header>
+    <form id="product-form"><input type="hidden" id="product-id"><input type="hidden" id="image-url">
+      <div class="product-editor-body">
+        <aside class="product-media-column">
+          <div class="section-heading"><strong>대표 이미지</strong></div>
+          <button type="button" id="image-upload-box" class="image-upload-box"><span id="image-preview"><b>+</b><strong>이미지 등록</strong><small>JPG·PNG·WEBP·GIF / 5MB</small></span></button><input id="image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+        </aside>
+
+        <div class="product-fields-column">
+          <section class="editor-section">
+            <div class="section-heading"><strong>기본 정보</strong></div>
+            <div class="editor-field-grid">
+              <label class="field-wide"><span class="field-label">상품명 <em>*</em></span><input id="product-name" required placeholder="예: Yeni 시그니처 티셔츠"></label>
+              <label><span class="field-label">카테고리 <em>*</em></span><select id="category" required></select></label>
+              <label><span class="field-label">기본 판매가 <em>*</em></span><div class="price-input"><input id="sale-price" type="number" min="1" required value="0"><span>원</span></div></label>
+            </div>
+            <div class="code-policy">
+              <div><span class="field-label">상품 코드</span><p id="code-policy-help">저장 시 자동 발번</p></div>
+              <label class="manual-code-toggle"><input id="manual-product-code" type="checkbox"><span>직접 입력</span></label>
+              <input id="product-code" readonly placeholder="PRD-YYYYMMDD-XXXXXX">
+            </div>
+          </section>
+
+          <section class="editor-section inventory-section">
+            <div class="section-heading"><strong>판매·재고</strong></div>
+            <div class="compact-settings">
+              <div class="setting-item"><div><strong>고객 노출</strong><small>고객 화면 표시</small></div><label class="switch"><input id="channel-exposure" type="checkbox" checked><span></span></label></div>
+              <div class="setting-item"><div><strong>재고 사용</strong><small>승인 시 차감</small></div><label class="switch"><input id="inventory-managed" type="checkbox" checked><span></span></label></div>
+              <label id="stock-field"><span class="field-label">기본 SKU 재고 <em>*</em></span><input id="stock-quantity" type="number" min="0" required value="0"></label>
+              <div id="variant-stock-guide" class="variant-stock-guide is-hidden"><strong>옵션별 재고</strong><small>아래에서 SKU별 입력</small><a id="variant-stock-link" href="#">재고 설정</a></div>
+              <label><span class="field-label">판매 상태 <em>*</em></span><select id="sale-status"><option value="ON_SALE">판매중</option><option value="SOLD_OUT">품절</option><option value="STOPPED">판매중지</option></select></label>
+            </div>
+          </section>
+        </div>
+
+        <section class="editor-section option-template-section">
+          <div class="section-heading option-heading"><div><strong>옵션 구성</strong></div><button type="button" id="option-detail-toggle" class="text-link" hidden>옵션·조합 편집 ▾</button></div>
+          <div class="option-workflow-summary" id="option-workflow-summary"><div><span>연결된 옵션</span><strong id="linked-option-count">0개</strong></div><div><span>예상 판매 SKU</span><strong id="estimated-sku-count">기본 SKU 1개</strong></div><p id="option-inventory-copy">옵션 없음 = 기본 SKU 1개</p></div>
+          <div id="option-template-list" class="option-template-list"><p class="option-loading">불러오는 중…</p></div>
+          <p class="field-help" id="option-section-note">체크한 템플릿이 이 상품 옵션으로 복사됩니다. 저장 후 "옵션·조합 편집"을 열면 그룹 설정·옵션값·조합별 재고를 여기서 다 편집합니다.</p>
+          <div id="option-detail-panel" class="option-detail-panel" hidden></div>
+        </section>
+      </div>
+      <p class="modal-message" id="modal-message"></p>
+      <footer class="modal-actions"><button class="modal-cancel" type="button" data-close-modal>취소</button><button class="modal-submit" type="submit">등록</button></footer>
+    </form>
+  </section>
+</div>
+<div id="product-preview-panel"></div>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/product-preview.js"></script><script src="/js/pages/commerce-products.js"></script>
+</body></html>

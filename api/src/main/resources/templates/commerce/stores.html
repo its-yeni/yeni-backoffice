@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>매장 관리 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/commerce-stores.css"><link rel="stylesheet" href="/css/pages/commerce-stores-v2.css"><link rel="stylesheet" href="/css/pages/commerce-stores-system.css"><link rel="stylesheet" href="/css/pages/commerce-system.css"></head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content store-page cmc-page">
+<header class="page-header"><div><h3>매장 관리</h3><p>브랜드별 판매 채널과 운영 매장을 관리합니다.</p></div><button class="btn btn-primary" id="new-store">매장 추가</button></header>
+<div class="cmc-toolbar">
+  <label class="cmc-search"><input id="store-keyword" type="search" placeholder="매장명 또는 매장코드 검색"></label>
+  <select id="store-type-filter"><option value="">업종 전체</option><option value="FOOD_SERVICE">외식업</option><option value="ONLINE_RETAIL">일반 쇼핑몰</option></select>
+  <select id="store-status-filter"><option value="">운영 상태 전체</option><option value="true">운영 중</option><option value="false">운영 중지</option></select>
+  <div class="cmc-toolbar-actions"><button class="btn btn-text" id="store-filter-reset" type="button">초기화</button><button class="btn btn-primary" id="store-search-btn" type="button">조회</button></div>
+</div>
+<div class="cmc-kpis">
+  <div class="cmc-kpi"><span class="cmc-kpi-ico">🏬</span><div><span>전체 매장</span><strong id="kpi-store-total">0<em>개</em></strong></div></div>
+  <div class="cmc-kpi"><span class="cmc-kpi-ico is-ok">●</span><div><span>운영 중</span><strong id="kpi-store-active">0<em>개</em></strong></div></div>
+  <div class="cmc-kpi"><span class="cmc-kpi-ico">🖥</span><div><span>온라인몰</span><strong id="kpi-store-online">0<em>개</em></strong></div></div>
+  <div class="cmc-kpi"><span class="cmc-kpi-ico is-muted">🏪</span><div><span>오프라인 매장</span><strong id="kpi-store-offline">0<em>개</em></strong></div></div>
+</div>
+<div class="cmc-list"><div class="data-table-wrap store-table-wrap"><table class="data-table store-data-table"><thead><tr><th>매장명</th><th>매장코드</th><th>업종</th><th>브랜드</th><th>운영 상태</th><th>최근 수정</th><th class="actions">관리</th></tr></thead><tbody id="store-list"></tbody></table><div class="data-table-empty" id="store-empty" hidden><strong>조건에 맞는 매장이 없습니다.</strong><p>검색 조건을 변경하거나 새 매장을 추가해 주세요.</p></div></div></div>
+<div class="cmc-list-footer"><span class="cmc-total">총 <b id="store-total">0</b>개</span><div id="store-pagination"></div></div>
+</section></main></div><div class="store-editor-backdrop" id="store-editor-backdrop" hidden></div>
+<form class="store-editor" id="store-form" hidden><input type="hidden" id="store-id"><header><div><h2 id="store-form-title">매장 추가</h2><p>브랜드를 선택하고 실제 운영 매장 정보를 입력합니다.</p></div><button type="button" class="editor-close" id="close-store-form" aria-label="닫기">×</button></header><div class="store-fields"><label>브랜드<select id="store-brand" required></select></label><label>매장 코드<input id="store-code" required maxlength="40" placeholder="예: YENI-FOOD-02"></label><label>매장명<input id="store-name" required maxlength="100"></label><label class="wide">설명<textarea id="store-description" required maxlength="200"></textarea></label><label class="store-active"><input id="store-active" type="checkbox" checked> 운영 중</label></div><footer><span id="store-message"></span><button type="button" class="btn btn-light" id="cancel-store-form">취소</button><button class="btn btn-primary">저장</button></footer></form>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/commerce-stores.js"></script></body></html>
