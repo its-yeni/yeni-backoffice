@@ -48,3 +48,13 @@ data/
 
 # logs
 *.log
+
+# node / e2e runtime
+node_modules/
+
+# local tooling / scratch
+.claude/
+.gradle-user/
+.gradle-local/
+scratchpad/
+landing-*.png

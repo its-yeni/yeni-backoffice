@@ -1,5 +1,7 @@
 .git
 .gradle
+.gradle-user
+.gradle-local
 **/build
 data
 logs

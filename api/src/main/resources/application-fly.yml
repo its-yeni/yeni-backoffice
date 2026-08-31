@@ -19,10 +19,14 @@ spring:
       ddl-auto: update
     open-in-view: false
     show-sql: false
+    defer-datasource-initialization: true
 
   sql:
     init:
-      mode: never
+      mode: always
+      data-locations: classpath:db/data-fly.sql
+      encoding: UTF-8
+      continue-on-error: false
 
 logging:
   level:
