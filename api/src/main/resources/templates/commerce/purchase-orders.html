@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>발주 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content product-page commerce-page">
+  <header class="page-header"><div><h3>발주 관리</h3><p>공급처에 발주를 넣고 예정일 관리 · 입고 검수(부분입고 포함)까지 진행합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/inventory/replenishment">발주 제안</a><a class="btn btn-light" href="/admin/commerce/inventory">재고 현황</a><button class="btn btn-primary" id="po-new" type="button">발주서 작성</button></div></header>
+
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><div><span>작성 중</span><strong id="kpi-draft">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>발주 완료</span><strong id="kpi-ordered">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>부분 입고</span><strong id="kpi-partial">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>예정일 초과</span><strong id="kpi-overdue">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>미입고 발주금액</span><strong id="kpi-open-amount">0원</strong></div></div>
+  </div>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="po-keyword" type="search" placeholder="발주번호 · 공급처 · 매장 검색"></label>
+    <select id="po-status-filter"><option value="">상태 전체</option><option value="DRAFT">작성 중</option><option value="ORDERED">발주 완료</option><option value="PARTIALLY_RECEIVED">부분 입고</option><option value="RECEIVED">입고 완료</option><option value="CANCELED">취소</option></select>
+    <div class="cmc-toolbar-actions"><button class="btn btn-text" id="po-filter-reset" type="button">초기화</button></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table po-table"><thead><tr>
+      <th class="row-index">#</th><th data-sort="poNo">발주번호</th><th data-sort="supplierName">공급처</th><th data-sort="storeName">입고 매장</th>
+      <th data-sort="expectedArrivalDate">예정일</th><th>진행률</th><th class="number" data-sort="totalAmount">발주금액</th><th data-sort="status">상태</th>
+    </tr></thead><tbody id="po-rows"></tbody></table>
+    <div class="data-table-empty" id="po-empty" hidden><strong>등록된 발주가 없습니다.</strong><p>발주서를 작성하면 발주→입고 흐름을 추적할 수 있습니다.</p></div>
+    <div id="po-pagination"></div>
+  </div>
+</section></main></div>
+
+<dialog id="po-create-dialog"><form method="dialog" class="modal-form modal-wide">
+  <header><h2>발주서 작성</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <div class="modal-grid-2">
+    <label>공급처 <span class="req">*</span><select id="po-supplier"></select></label>
+    <label>입고 매장 <span class="req">*</span><select id="po-store"></select></label>
+    <label>입고 예정일<input id="po-eta" type="date"></label>
+    <label>메모<input id="po-memo" placeholder="예: 겨울 시즌 재입고"></label>
+  </div>
+  <div class="po-line-add">
+    <select id="po-line-variant"></select>
+    <input id="po-line-qty" type="number" min="1" value="10" placeholder="수량">
+    <input id="po-line-cost" type="number" min="0" value="0" placeholder="단가">
+    <button type="button" class="btn btn-light" id="po-line-add-btn">품목 추가</button>
+  </div>
+  <table class="data-table po-line-table"><thead><tr><th>상품 / SKU</th><th class="number">수량</th><th class="number">단가</th><th class="number">금액</th><th></th></tr></thead><tbody id="po-lines"></tbody></table>
+  <p class="po-line-empty" id="po-lines-empty">품목을 추가해 주세요.</p>
+  <footer><button class="btn btn-light" value="cancel">취소</button><button class="btn btn-primary" id="po-create-save" type="button">발주서 저장(DRAFT)</button></footer>
+</form></dialog>
+
+<dialog id="po-detail-dialog"><form method="dialog" class="modal-form modal-wide">
+  <header><h2 id="po-detail-title">발주 상세</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <div id="po-detail-body"></div>
+  <footer id="po-detail-actions"></footer>
+</form></dialog>
+
+<dialog id="po-receive-dialog"><form method="dialog" class="modal-form modal-wide">
+  <header><h2>입고 처리</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <p class="po-receive-hint">이번에 실제로 입고된 수량을 입력하세요. LOT 번호는 입고 시 자동 발번됩니다.</p>
+  <table class="data-table po-receive-table"><thead><tr><th>상품 / SKU</th><th class="number">발주</th><th class="number">기입고</th><th>이번 입고</th><th>제조일</th><th>유통기한</th></tr></thead><tbody id="po-receive-rows"></tbody></table>
+  <footer><button class="btn btn-light" value="cancel">취소</button><button class="btn btn-primary" id="po-receive-save" type="button">입고 반영</button></footer>
+</form></dialog>
+
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/purchase-orders.js"></script>
+</body></html>

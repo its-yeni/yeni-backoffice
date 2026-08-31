@@ -1,0 +1,1 @@
+ALTER TABLE product ADD COLUMN inventory_managed BIT NOT NULL DEFAULT 1;

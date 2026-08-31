@@ -1,0 +1,185 @@
+/* ── 커머스(상품 관리 그룹) 공통 디자인 시스템 ──────────────────────────────
+   주문/매장/상품/카테고리/옵션 화면이 같은 필터 카드·KPI 스트립·표·푸터를 쓰도록. */
+
+.cmc-page { min-height: calc(100vh - var(--topbar-height)); padding: 24px var(--content-gutter) 40px;
+  background: var(--page-canvas); color: var(--text-primary); }
+.cmc-page > .page-header { min-height: 0; margin-bottom: 18px; }
+.cmc-page > .page-header h1 { font-size: 24px; letter-spacing: -.02em; }
+.cmc-page > .page-header p { margin-top: 4px; color: var(--text-secondary); font-size: 13px; }
+
+/* 필터 카드 */
+.cmc-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 10px;  border-radius: var(--radius-container); background: var(--bg-surface); }
+.cmc-toolbar .cmc-search { position: relative; flex: 1; min-width: 240px; }
+.cmc-toolbar .cmc-search input { width: 100%; height: 40px; padding: 0 38px 0 12px; }
+.cmc-toolbar .cmc-search::after { content: ""; position: absolute; right: 14px; top: 13px; width: 13px; height: 13px;
+  border: 1.6px solid var(--text-muted); border-radius: 50%; pointer-events: none; }
+.cmc-toolbar .cmc-search::before { content: ""; position: absolute; right: 11px; top: 25px; width: 6px;
+  border-top: 1.6px solid var(--text-muted); transform: rotate(45deg); pointer-events: none; }
+.cmc-toolbar select { height: 40px; min-width: 150px; }
+.cmc-toolbar .cmc-toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.cmc-toolbar .cmc-toolbar-actions .btn { height: 40px; }
+.cmc-toolbar input[type="text"]:not(.cmc-search input), .cmc-toolbar input:not([type]) { height: 40px; }
+
+/* KPI 스트립 — 컴팩트, 아이콘 없이, 옅은 배경 */
+.cmc-kpis { display: flex; align-items: stretch; margin: 0 0 10px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-container);
+  background: var(--bg-subtle); overflow: hidden; }
+.cmc-kpi { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; padding: 7px 16px; }
+.cmc-kpi + .cmc-kpi { border-left: 1px solid var(--border-default); }
+.cmc-kpi-ico { display: none; }
+.cmc-kpi > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cmc-kpi span { color: var(--text-secondary); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.cmc-kpi strong { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.cmc-kpi strong em { margin-left: 2px; font-size: 11px; font-weight: 500; font-style: normal; color: var(--text-secondary); }
+@media (max-width: 1000px) { .cmc-kpis { flex-wrap: wrap; } .cmc-kpi { flex-basis: 50%; }
+  .cmc-kpi:nth-child(3) { border-left: 0; } .cmc-kpi:nth-child(n+3) { border-top: 1px solid var(--border-default); } }
+
+/* 표 카드 */
+.cmc-list { border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-surface); overflow: hidden; }
+.cmc-list > .data-table-wrap { border: 0; }
+.cmc-list .data-table thead th { background: #f7f8fa; border-bottom: 1px solid var(--border-default); }
+.cmc-list .data-table tbody td { border-bottom: 1px solid #eef0f3; }
+.cmc-list .data-table tbody tr:last-child td { border-bottom: 0; }
+
+/* 리스트 푸터 */
+.cmc-list-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  min-height: 52px; margin-top: 4px; padding: 8px 4px; color: var(--text-secondary); font-size: 13px; }
+.cmc-list-footer .cmc-total b { color: var(--text-primary); }
+.cmc-list-footer > div:last-child { display: flex; align-items: center; gap: 12px; }
+/* AdminPagination 이 하단 고정 바에 "총 N개 / 페이지당 / 페이지" 를 모두 표시하므로
+   인라인 라벨(별도 "총 N개")은 중복이라 숨긴다. 페이지네이션 div 는 그대로 살린다. */
+.cmc-list-footer { display: contents; }
+.cmc-list-footer .cmc-total { display: none; }
+
+/* 하단 고정 페이지네이션(.pagination-footer)이 있는 화면에서, 표를 .cmc-list 로 감싼 목록
+   (상품·카테고리·옵션·매장)은 표 래퍼가 남은 높이 안에서 스크롤되게 한다.
+   components.css 의 표준 규칙은 .data-table-wrap 이 섹션의 직계 자식일 때만 적용되므로,
+   한 단계 더 들어간 .cmc-list > .data-table-wrap 을 여기서 별도로 잡아 준다. */
+.main > section:has(.pagination-footer) > .cmc-list {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+}
+.main > section:has(.pagination-footer) > .cmc-list > .data-table-wrap {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+}
+
+@media (max-width: 760px) {
+  .cmc-page { padding: 18px var(--content-gutter) 28px; }
+  .cmc-toolbar .cmc-toolbar-actions { margin-left: 0; width: 100%; }
+}
+
+/* ── 재고·물류 목록 화면 변형 ────────────────────────────────────────────────
+   하단 고정 페이지네이션(.pagination-footer) 레이아웃을 쓰는 목록 화면에서
+   KPI 스트립·필터 카드를 상품 관리 그룹과 동일하게 맞춘다. */
+.main > section:has(.pagination-footer) > .cmc-kpis,
+.main > section:has(.pagination-footer) > .cmc-toolbar { flex: 0 0 auto; }
+.cmc-toolbar .filter-checkbox,
+.cmc-toolbar .inventory-group-toggle { display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.cmc-toolbar .inventory-group-toggle input,
+.cmc-toolbar .filter-checkbox input { width: 15px; height: 15px; accent-color: var(--primary); }
+/* 이력/현황처럼 KPI 값에 단위가 텍스트로 붙는 경우에도 정렬이 흐트러지지 않게 */
+.cmc-kpi strong { display: inline-flex; align-items: baseline; }
+
+/* ── 재고 이동: 이동 전표 생성 드로어 ────────────────────────────────────────
+   native <dialog> 를 우측 슬라이드 패널로 스타일링. showModal()/close() 그대로 사용. */
+#transfer-dialog { position: fixed; inset: 0 0 0 auto; z-index: 91; width: min(440px, 100vw); max-width: none;
+  height: 100vh; max-height: none; margin: 0; padding: 0; border: 0;
+  background: var(--bg-surface); box-shadow: -16px 0 40px rgba(15, 23, 42, .14); overflow: visible; }
+#transfer-dialog::backdrop { background: rgba(15, 23, 42, .28); }
+#transfer-dialog .modal-form { display: flex; flex-direction: column; height: 100%; margin: 0; }
+#transfer-dialog header { display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 24px; border-bottom: 1px solid var(--border-default); }
+#transfer-dialog header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+#transfer-dialog header button { border: 0; background: transparent; color: var(--text-secondary);
+  font-size: 22px; line-height: 1; cursor: pointer; }
+#transfer-dialog .modal-form > label { display: grid; gap: 7px; margin: 0; padding: 0 24px;
+  color: var(--text-primary); font-size: 13px; font-weight: 600; }
+#transfer-dialog .modal-form > label:first-of-type { padding-top: 22px; }
+#transfer-dialog .modal-form > label + label { margin-top: 16px; }
+#transfer-dialog .modal-form > label > * { margin-top: 0; }
+#transfer-dialog .modal-form .req { color: var(--danger); }
+#transfer-dialog select, #transfer-dialog input { width: 100%; height: 40px; padding: 0 12px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-control);
+  background: #fff; color: var(--text-primary); font: inherit; box-sizing: border-box; font-weight: 400; }
+#transfer-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto;
+  padding: 16px 24px; border-top: 1px solid var(--border-default); }
+@media (max-width: 480px) { #transfer-dialog { width: 100vw; } }
+
+/* ── 공급처 / 발주 / 재고 실사: 공통 드로어 (재고 이동 드로어와 동일 스타일) ── */
+#supplier-dialog, #po-create-dialog, #po-detail-dialog, #po-receive-dialog,
+#sc-start-dialog, #sc-detail-dialog {
+  position: fixed; inset: 0 0 0 auto; z-index: 91; width: min(460px, 100vw); max-width: none;
+  height: 100vh; max-height: none; margin: 0; padding: 0; border: 0;
+  background: var(--bg-surface); box-shadow: -16px 0 40px rgba(15, 23, 42, .14); overflow: visible;
+}
+#po-create-dialog, #po-detail-dialog, #po-receive-dialog, #sc-detail-dialog { width: min(720px, 100vw); }
+#supplier-dialog::backdrop, #po-create-dialog::backdrop, #po-detail-dialog::backdrop,
+#po-receive-dialog::backdrop, #sc-start-dialog::backdrop, #sc-detail-dialog::backdrop { background: rgba(15, 23, 42, .28); }
+#supplier-dialog .modal-form, #po-create-dialog .modal-form, #po-detail-dialog .modal-form,
+#po-receive-dialog .modal-form, #sc-start-dialog .modal-form, #sc-detail-dialog .modal-form {
+  display: flex; flex-direction: column; height: 100%; margin: 0; overflow: hidden;
+}
+#supplier-dialog header, #po-create-dialog header, #po-detail-dialog header,
+#po-receive-dialog header, #sc-start-dialog header, #sc-detail-dialog header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--border-default); flex: 0 0 auto;
+}
+#supplier-dialog header h2, #po-create-dialog header h2, #po-detail-dialog header h2,
+#po-receive-dialog header h2, #sc-start-dialog header h2, #sc-detail-dialog header h2 { margin: 0; font-size: 17px; font-weight: 700; }
+#supplier-dialog header button, #po-create-dialog header button, #po-detail-dialog header button,
+#po-receive-dialog header button, #sc-start-dialog header button, #sc-detail-dialog header button {
+  border: 0; background: transparent; color: var(--text-secondary); font-size: 22px; line-height: 1; cursor: pointer;
+}
+#supplier-dialog .modal-form > label, #sc-start-dialog .modal-form > label {
+  display: grid; gap: 7px; margin: 0; padding: 0 24px; color: var(--text-primary); font-size: 13px; font-weight: 600;
+}
+#supplier-dialog .modal-form > label:first-of-type, #sc-start-dialog .modal-form > label:first-of-type { padding-top: 20px; }
+#supplier-dialog .modal-form > label + label, #sc-start-dialog .modal-form > label + label { margin-top: 14px; }
+#supplier-dialog .modal-form .req, #sc-start-dialog .modal-form .req,
+#po-create-dialog .req, #po-receive-dialog .req { color: var(--danger); }
+#supplier-dialog select, #supplier-dialog input, #supplier-dialog textarea,
+#sc-start-dialog select, #sc-start-dialog input,
+#po-create-dialog .modal-grid-2 select, #po-create-dialog .modal-grid-2 input {
+  width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control); background: #fff; color: var(--text-primary); font: inherit; box-sizing: border-box; font-weight: 400;
+}
+#supplier-dialog footer, #po-create-dialog footer, #po-detail-dialog footer,
+#po-receive-dialog footer, #sc-start-dialog footer, #sc-detail-dialog footer {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: auto;
+  padding: 14px 24px; border-top: 1px solid var(--border-default); flex: 0 0 auto;
+}
+#po-create-dialog .modal-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 18px 24px 8px; }
+#po-create-dialog .modal-grid-2 label { display: grid; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+#po-create-dialog .po-line-add { display: flex; gap: 8px; padding: 8px 24px 12px; align-items: center; }
+#po-create-dialog .po-line-add select { flex: 1; min-width: 0; }
+#po-create-dialog .po-line-add input { width: 84px; }
+#po-create-dialog .po-line-add select, #po-create-dialog .po-line-add input {
+  min-height: 34px; padding: 4px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); font: inherit;
+}
+#po-create-dialog .po-line-table, #po-detail-dialog table, #po-receive-dialog table,
+#sc-detail-dialog .sc-line-table { margin: 0 24px; width: calc(100% - 48px); }
+#po-create-dialog .po-line-table, #po-detail-dialog #po-detail-body, #po-receive-dialog .po-receive-table,
+#sc-detail-dialog .sc-line-table { overflow-y: auto; flex: 1 1 auto; }
+#po-detail-dialog #po-detail-body { padding: 16px 24px; }
+.po-line-empty, .po-receive-hint, .sc-detail-hint { margin: 8px 24px; font-size: 12px; color: var(--text-muted); }
+.po-detail-meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 24px; margin-bottom: 16px; }
+.po-detail-meta > div { display: flex; flex-direction: column; gap: 2px; }
+.po-detail-meta span { font-size: 11.5px; color: var(--text-muted); }
+.po-detail-meta strong { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+#po-receive-dialog input[type="number"] { width: 68px; }
+#po-receive-dialog input[type="date"], #sc-detail-dialog input[type="number"] {
+  padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); font: inherit;
+}
+
+/* 목록 공통 소품 */
+.po-progress { display: block; width: 90px; height: 6px; border-radius: 3px; background: var(--bg-subtle); overflow: hidden; }
+.po-progress > span { display: block; height: 100%; background: var(--primary); }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: var(--bg-subtle); }
+.data-table td.neg, .data-table td .neg { color: var(--danger); }
+@media (max-width: 760px) {
+  #po-create-dialog, #po-detail-dialog, #po-receive-dialog, #sc-detail-dialog,
+  #supplier-dialog, #sc-start-dialog { width: 100vw; }
+  #po-create-dialog .modal-grid-2, .po-detail-meta { grid-template-columns: 1fr; }
+}

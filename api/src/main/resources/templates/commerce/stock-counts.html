@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>재고 실사 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content product-page commerce-page">
+  <header class="page-header"><div><h3>재고 실사</h3><p>매장 재고를 실사해 시스템 수량과의 차이를 조정 전기합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/inventory">재고 현황</a><a class="btn btn-light" href="/admin/commerce/inventory/transactions">입출고 내역</a><button class="btn btn-primary" id="sc-new" type="button">실사 시작</button></div></header>
+
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><div><span>진행 중</span><strong id="kpi-progress">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>반영 완료</span><strong id="kpi-completed">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>최근 조정 차이</span><strong id="kpi-diff">0</strong></div></div>
+  </div>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="sc-keyword" type="search" placeholder="실사번호 · 매장 검색"></label>
+    <select id="sc-status-filter"><option value="">상태 전체</option><option value="IN_PROGRESS">진행 중</option><option value="COMPLETED">반영 완료</option><option value="CANCELED">취소</option></select>
+    <div class="cmc-toolbar-actions"><button class="btn btn-text" id="sc-filter-reset" type="button">초기화</button></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table sc-table"><thead><tr>
+      <th class="row-index">#</th><th data-sort="countNo">실사번호</th><th data-sort="storeName">매장</th><th class="number">라인</th><th class="number">카운트</th>
+      <th class="number">차이건</th><th class="number">순차이</th><th data-sort="status">상태</th><th data-sort="createdAt">시작일</th>
+    </tr></thead><tbody id="sc-rows"></tbody></table>
+    <div class="data-table-empty" id="sc-empty" hidden><strong>등록된 실사가 없습니다.</strong><p>실사를 시작하면 시스템 재고와 실사 수량을 대조할 수 있습니다.</p></div>
+    <div id="sc-pagination"></div>
+  </div>
+</section></main></div>
+
+<dialog id="sc-start-dialog"><form method="dialog" class="modal-form">
+  <header><h2>실사 시작</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <label>실사 매장 <span class="req">*</span><select id="sc-store"></select></label>
+  <label>실사 범위<select id="sc-scope"><option value="ALL">전체 SKU</option><option value="LOW_STOCK">안전재고 이하만</option></select></label>
+  <label>메모<input id="sc-memo" placeholder="예: 월말 정기 실사"></label>
+  <footer><button class="btn btn-light" value="cancel">취소</button><button class="btn btn-primary" id="sc-start-save" type="button">실사 시작</button></footer>
+</form></dialog>
+
+<dialog id="sc-detail-dialog"><form method="dialog" class="modal-form modal-wide">
+  <header><h2 id="sc-detail-title">실사 상세</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <p class="sc-detail-hint" id="sc-detail-hint"></p>
+  <table class="data-table sc-line-table"><thead><tr><th>상품 / SKU</th><th>카테고리</th><th class="number">시스템</th><th>실사 수량</th><th class="number">차이</th></tr></thead><tbody id="sc-lines"></tbody></table>
+  <footer id="sc-detail-actions"></footer>
+</form></dialog>
+
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/stock-counts.js"></script>
+</body></html>

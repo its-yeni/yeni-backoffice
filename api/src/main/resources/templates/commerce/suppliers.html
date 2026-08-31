@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>공급처 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content product-page commerce-page">
+  <header class="page-header"><div><h3>공급처 관리</h3><p>발주를 넣는 거래처와 리드타임(발주→입고 소요일)을 관리합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/purchase-orders">발주 관리</a><button class="btn btn-primary" id="supplier-new" type="button">공급처 등록</button></div></header>
+
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><div><span>전체 공급처</span><strong id="kpi-total">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>사용 중</span><strong id="kpi-active">0</strong></div></div>
+    <div class="cmc-kpi"><div><span>평균 리드타임</span><strong id="kpi-lead">0<em>일</em></strong></div></div>
+  </div>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="supplier-keyword" type="search" placeholder="공급처명 · 코드 · 담당자 검색"></label>
+    <select id="supplier-active-filter"><option value="">사용 여부 전체</option><option value="Y">사용 중</option><option value="N">미사용</option></select>
+    <div class="cmc-toolbar-actions"><button class="btn btn-text" id="supplier-filter-reset" type="button">초기화</button></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table supplier-table"><thead><tr>
+      <th class="row-index">#</th><th data-sort="supplierCode">코드</th><th data-sort="name">공급처명</th><th data-sort="managerName">담당자</th><th>연락처</th>
+      <th class="number" data-sort="leadTimeDays">리드타임</th><th data-sort="active">상태</th><th class="actions">관리</th>
+    </tr></thead><tbody id="supplier-rows"></tbody></table>
+    <div class="data-table-empty" id="supplier-empty" hidden><strong>등록된 공급처가 없습니다.</strong><p>공급처를 등록하면 발주서에서 선택할 수 있습니다.</p></div>
+    <div id="supplier-pagination"></div>
+  </div>
+</section></main></div>
+<dialog id="supplier-dialog"><form method="dialog" class="modal-form">
+  <header><h2 id="supplier-dialog-title">공급처 등록</h2><button value="cancel" aria-label="닫기">×</button></header>
+  <label>공급처 코드 <small>(비우면 자동 발번)</small><input id="supplier-code" placeholder="예: SUP-001"></label>
+  <label>공급처명 <span class="req">*</span><input id="supplier-name" placeholder="예: 대한섬유 OEM"></label>
+  <label>담당자<input id="supplier-manager" placeholder="예: 김담당"></label>
+  <label>연락처<input id="supplier-contact" placeholder="예: 02-1234-5678"></label>
+  <label>리드타임(일) <span class="req">*</span><input id="supplier-lead" type="number" min="1" value="14"></label>
+  <label>메모<textarea id="supplier-memo" rows="2"></textarea></label>
+  <footer><button class="btn btn-light" value="cancel">취소</button><button class="btn btn-primary" id="supplier-save" type="button">저장</button></footer>
+</form></dialog>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/suppliers.js"></script>
+</body></html>
