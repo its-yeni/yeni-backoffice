@@ -4,6 +4,7 @@ import com.yeni.backoffice.core.common.exception.BusinessException;
 import com.yeni.backoffice.core.common.exception.ConflictException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.common.exception.ValidationBusinessException;
+import com.yeni.backoffice.core.commerce.service.CommerceOrderPaymentStateService;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapter;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapterResolver;
 import com.yeni.backoffice.core.payment.config.InicisStdPayProperties;
@@ -64,6 +65,7 @@ public class PaymentApproveService {
     private final PaymentNotificationService notificationService;
     private final PaymentRecoveryService recoveryService;
     private final PaymentAuditHelper auditHelper;
+    private final CommerceOrderPaymentStateService orderStateService;
 
     public PaymentApproveService(
             InicisStdPayProperties inicisProperties,
@@ -76,7 +78,8 @@ public class PaymentApproveService {
             SalesLedgerService salesLedgerService,
             PaymentNotificationService notificationService,
             PaymentRecoveryService recoveryService,
-            PaymentAuditHelper auditHelper) {
+            PaymentAuditHelper auditHelper,
+            CommerceOrderPaymentStateService orderStateService) {
         this.inicisProperties = inicisProperties;
         this.signatureService = signatureService;
         this.adapterResolver = adapterResolver;
@@ -88,19 +91,23 @@ public class PaymentApproveService {
         this.notificationService = notificationService;
         this.recoveryService = recoveryService;
         this.auditHelper = auditHelper;
+        this.orderStateService = orderStateService;
     }
 
     @Transactional
     public PaymentApproveResponse approvePayment(PaymentApproveRequest request) {
         validateApproveRequest(request);
         String idempotencyKey = defaultText(request.idempotencyKey(), "APPROVE-" + request.orderNo());
+        orderStateService.validateApproval(request.orderNo(), request.amount());
 
         PaymentTransaction existingPayment = paymentRepository.findByApprovalRequestKey(idempotencyKey)
                 .or(() -> paymentRepository.findByOrderNo(request.orderNo()))
                 .orElse(null);
         if (existingPayment != null) {
+            orderStateService.markApproved(existingPayment.getOrderNo(), existingPayment.getId(), existingPayment.getTid(), "기존 결제 승인 결과를 반환했습니다.");
             return toApproveResponse(existingPayment, existingPayment.getPgProvider(), "IDEMPOTENT_REPLAY", "Existing approve result returned.");
         }
+
 
         PgProvider provider = gatewayRouter.route(
                 request.pgProvider(),
@@ -118,17 +125,22 @@ public class PaymentApproveService {
                 idempotencyKey,
                 defaultText(request.channelType(), "WEB"),
                 defaultText(request.storeCode(), "PORTFOLIO"),
-                defaultText(request.paymentMethod(), PaymentDefaults.PAYMENT_METHOD_CARD)
+                defaultText(request.paymentMethod(), PaymentDefaults.PAYMENT_METHOD_CARD),
+                request.storeId(),
+                request.productName()
         );
 
         long startedAt = System.currentTimeMillis();
-        var apiLog = auditHelper.savePgLog(null, request.orderNo(), provider, PaymentEventType.APPROVE,
-                PgApiType.APPROVE, idempotencyKey, command.toString(), LogResultStatus.REQUESTED, "PGB approve requested");
         PaymentApproveResult result = gateway.approve(command);
-        apiLog.complete(result.toString(), result.success() ? LogResultStatus.SUCCESS : LogResultStatus.FAILED, result.resultMessage(), result.tid());
+        // 최종 성공/실패가 이미 결정된 상태로 독립 트랜잭션에 기록한다 — 아래에서 실패를 이유로
+        // 예외를 던져도(트랜잭션 롤백) 이 로그는 남아야 운영자가 원인을 추적할 수 있다.
+        auditHelper.recordPgApiLog(null, request.orderNo(), provider, PaymentEventType.APPROVE,
+                PgApiType.APPROVE, idempotencyKey, command.toString(), result.toString(),
+                result.success() ? LogResultStatus.SUCCESS : LogResultStatus.FAILED, result.resultMessage(), result.tid());
 
         if (result.unknown()) {
             PaymentTransaction payment = saveUnknownPayment(command, result);
+            orderStateService.markUnknown(payment.getOrderNo(), payment.getId(), payment.getTid(), result.resultMessage());
             recoveryService.createRecoveryTask(payment.getId(), null, payment.getOrderNo(), payment.getTid(), idempotencyKey,
                     RecoveryType.APPROVE_UNKNOWN_CHECK, "APPROVE_UNKNOWN-" + payment.getOrderNo(), result.resultMessage());
             auditHelper.saveAudit("PAYMENT", "UNKNOWN", request.orderNo(), "PGB approve result is unknown. retry-query is required.");
@@ -136,13 +148,16 @@ public class PaymentApproveService {
         }
         if (!result.success()) {
             auditHelper.saveAudit("PAYMENT", "APPROVE_FAILED", request.orderNo(), result.resultMessage());
+            orderStateService.markFailedAndRestore(request.orderNo(), result.resultMessage());
             throw new BusinessException(ErrorCode.PAYMENT_APPROVE_FAILED, "결제 승인에 실패했습니다: " + result.resultMessage());
         }
 
         PaymentTransaction payment = PaymentTransaction.builder()
+                .storeId(command.storeId())
                 .mid(command.mid())
                 .pgProvider(provider)
                 .orderNo(command.orderNo())
+                .productName(command.productName())
                 .tid(result.tid())
                 .approvalRequestKey(idempotencyKey)
                 .approvedAmount(command.amount())
@@ -153,9 +168,15 @@ public class PaymentApproveService {
                 .build();
         try {
             paymentRepository.save(payment);
+            // 시나리오 데모 전용 훅: orderNo에 NETCANCEL 마커가 있으면 "PG 승인은 성공했지만
+            // 이후 내부 처리가 실패"하는 상황을 의도적으로 재현해 아래 catch의 망취소/복구 흐름을 탄다.
+            if (command.orderNo() != null && command.orderNo().toUpperCase().contains("NETCANCEL")) {
+                throw new IllegalStateException("[시나리오] 승인 후 내부 처리 실패(망취소) 상황을 시뮬레이션합니다.");
+            }
             SalesTransaction sales = salesLedgerService.createSales(payment, SaleType.SALE, payment.getId(), payment.getApprovedAmount(), result.approvedAt());
             notificationService.createExternalSendRequest(sales, "SALE-" + payment.getOrderNo());
             notificationService.createAlimtalkQueue(payment, sales, "SALE-" + payment.getOrderNo(), "APPROVE");
+            orderStateService.markApproved(payment.getOrderNo(), payment.getId(), payment.getTid(), result.resultMessage());
             auditHelper.saveAudit("PAYMENT", "APPROVED", payment.getOrderNo(), "PGB approve completed through " + provider);
             return toApproveResponse(payment, provider, result.resultCode(), result.resultMessage() + " (" + (System.currentTimeMillis() - startedAt) + "ms)");
         } catch (RuntimeException internalFailure) {
@@ -272,6 +293,7 @@ public class PaymentApproveService {
             PaymentTransaction payment = PaymentTransaction.builder()
                     .mid(session.getMid())
                     .orderNo(session.getOrderNo())
+                    .productName(session.getProductName())
                     .tid(approvalResult.tid())
                     .approvalRequestKey("STD_PAY-" + session.getOrderNo())
                     .approvedAmount(session.getAmount())
@@ -308,9 +330,11 @@ public class PaymentApproveService {
 
     private PaymentTransaction saveUnknownPayment(PaymentApproveCommand command, PaymentApproveResult result) {
         PaymentTransaction payment = PaymentTransaction.builder()
+                .storeId(command.storeId())
                 .mid(command.mid())
                 .pgProvider(command.pgProvider())
                 .orderNo(command.orderNo())
+                .productName(command.productName())
                 .tid(result.tid() == null ? "UNKNOWN-" + UUID.randomUUID() : result.tid())
                 .approvalRequestKey(command.idempotencyKey())
                 .approvedAmount(command.amount())

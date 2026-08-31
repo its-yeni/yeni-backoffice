@@ -3,6 +3,7 @@ package com.yeni.backoffice.core.payment.repository;
 import com.yeni.backoffice.core.payment.entity.PaymentRecoveryTask;
 import com.yeni.backoffice.core.payment.enums.RecoveryStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +20,11 @@ public interface PaymentRecoveryTaskRepository extends JpaRepository<PaymentReco
     List<PaymentRecoveryTask> findByPaymentIdOrderByIdAsc(Long paymentId);
 
     List<PaymentRecoveryTask> findByCancelIdOrderByIdAsc(Long cancelId);
+
+    List<PaymentRecoveryTask> findByStatusInAndCreatedAtAfterOrderByLastTriedAtDesc(
+            Collection<RecoveryStatus> statuses, LocalDateTime after, Pageable pageable);
+
+    long countByStatusInAndCreatedAtAfter(Collection<RecoveryStatus> statuses, LocalDateTime after);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

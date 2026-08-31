@@ -19,6 +19,7 @@ import com.yeni.backoffice.core.payment.gateway.result.PaymentQueryResult;
 import com.yeni.backoffice.core.payment.repository.PaymentRecoveryTaskRepository;
 import com.yeni.backoffice.core.payment.repository.PaymentTransactionRepository;
 import com.yeni.backoffice.core.payment.repository.PgApiLogRepository;
+import com.yeni.backoffice.core.payment.repository.SalesTransactionRepository;
 import com.yeni.backoffice.core.payment.support.PaymentAuditHelper;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class PaymentQueryService {
     private final PaymentNotificationService notificationService;
     private final PaymentRecoveryService recoveryService;
     private final PaymentAuditHelper auditHelper;
+    private final SalesTransactionRepository salesTransactionRepository;
 
     public PaymentQueryService(
             PaymentGatewayRegistry gatewayRegistry,
@@ -47,7 +49,8 @@ public class PaymentQueryService {
             SalesLedgerService salesLedgerService,
             PaymentNotificationService notificationService,
             PaymentRecoveryService recoveryService,
-            PaymentAuditHelper auditHelper) {
+            PaymentAuditHelper auditHelper,
+            SalesTransactionRepository salesTransactionRepository) {
         this.gatewayRegistry = gatewayRegistry;
         this.paymentRepository = paymentRepository;
         this.recoveryTaskRepository = recoveryTaskRepository;
@@ -56,6 +59,7 @@ public class PaymentQueryService {
         this.notificationService = notificationService;
         this.recoveryService = recoveryService;
         this.auditHelper = auditHelper;
+        this.salesTransactionRepository = salesTransactionRepository;
     }
 
     @Transactional
@@ -93,9 +97,34 @@ public class PaymentQueryService {
 
     @Transactional(readOnly = true)
     public List<PaymentResponse> getPayments() {
+        return getPayments(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPayments(Long storeId) {
+        return getPayments(storeId, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPayments(Long storeId, boolean includeUnassigned) {
         return paymentRepository.findAll(Sort.by(Sort.Direction.DESC, "approvedAt")).stream()
+                .filter(payment -> storeId == null || storeId.equals(payment.getStoreId()) || includeUnassigned && payment.getStoreId() == null)
                 .map(PaymentResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PaymentResponse assignStore(Long paymentId, Long storeId) {
+        PaymentTransaction payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND));
+        List<SalesTransaction> sales = salesTransactionRepository.findByPaymentIdOrderByIdAsc(paymentId);
+        if (sales.stream().anyMatch(item -> Boolean.TRUE.equals(item.getSettlementIncludedYn()))) {
+            throw new IllegalStateException("정산에 포함된 거래는 매장을 변경할 수 없습니다.");
+        }
+        payment.assignStore(storeId);
+        sales.forEach(item -> item.assignStore(storeId));
+        auditHelper.saveAudit("PAYMENT", "STORE_ASSIGNED", payment.getOrderNo(), "storeId=" + storeId);
+        return PaymentResponse.from(payment);
     }
 
     @Transactional(readOnly = true)

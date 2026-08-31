@@ -40,6 +40,8 @@ public class PaymentTransaction extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long storeId;
+
     @Column(nullable = false, length = 40)
     private String mid;
 
@@ -50,6 +52,9 @@ public class PaymentTransaction extends BaseTimeEntity {
 
     @Column(nullable = false, length = 80)
     private String orderNo;
+
+    @Column(length = 200)
+    private String productName;
 
     @Column(nullable = false, length = 120)
     private String tid;
@@ -101,4 +106,6 @@ public class PaymentTransaction extends BaseTimeEntity {
     public boolean isCancelCompleted() {
         return PaymentStatus.CANCELED.equals(paymentStatus);
     }
+
+    public void assignStore(Long storeId) { this.storeId = storeId; }
 }

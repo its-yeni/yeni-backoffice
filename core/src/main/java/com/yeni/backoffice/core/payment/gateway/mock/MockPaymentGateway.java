@@ -24,10 +24,18 @@ public class MockPaymentGateway implements PaymentGateway {
 
     @Override
     public PaymentApproveResult approve(PaymentApproveCommand command) {
-        if (command.orderNo().toUpperCase().contains("UNKNOWN")) {
+        String orderNo = command.orderNo().toUpperCase();
+        if (orderNo.contains("UNKNOWN")) {
             return new PaymentApproveResult(provider(), false, PaymentStatus.APPROVE_UNKNOWN, null, "U000", "Mock approve result unknown.", null, true);
         }
-        if (command.orderNo().toUpperCase().contains("FAIL")) {
+        // 시나리오 데모 전용 마커. 실제 PG 응답코드 체계를 흉내낸 것일 뿐 진짜 PG와는 무관하다.
+        if (orderNo.contains("METHODERR")) {
+            return new PaymentApproveResult(provider(), false, PaymentStatus.APPROVE_FAILED, null, "9996", "지원하지 않는 결제수단입니다.", null, false);
+        }
+        if (orderNo.contains("CARDLIMIT")) {
+            return new PaymentApproveResult(provider(), false, PaymentStatus.APPROVE_FAILED, null, "9995", "카드 한도를 초과했습니다.", null, false);
+        }
+        if (orderNo.contains("FAIL")) {
             return new PaymentApproveResult(provider(), false, PaymentStatus.APPROVE_FAILED, null, "9999", "Mock approve failure.", null, false);
         }
         String tid = "MOCK-" + UUID.nameUUIDFromBytes((command.orderNo() + command.idempotencyKey()).getBytes());

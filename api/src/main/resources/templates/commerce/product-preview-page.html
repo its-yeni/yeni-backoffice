@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>구매·결제 시뮬레이션 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/purchase-simulation.css"><link rel="stylesheet" href="/css/pages/purchase-simulation-polish.css"></head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="purchase-simulation">
+<header class="simulation-heading"><div><h3>구매·결제 시뮬레이션</h3><p>Mock PG를 통해 주문부터 결제까지의 전체 흐름을 검증할 수 있습니다.</p></div><div class="device-switch" role="group" aria-label="판매 채널"><button class="active" data-device="web">WEB (쇼핑몰)</button><button data-device="pos">POS (매장)</button></div></header>
+<div class="simulation-layout">
+  <section class="simulation-stage">
+    <div class="device-frame desktop" id="device-frame">
+      <div class="store-shell">
+        <header class="store-topbar">
+          <strong class="store-logo">Yeni <span>Select</span></strong>
+          <div class="store-search"><input type="search" id="store-search-input" placeholder="상품명, 키워드 검색"><button type="button" aria-label="검색"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></div>
+          <div class="store-icons">
+            <span class="store-icon-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><small>로그인</small></span>
+            <span class="store-icon-item"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><small>장바구니</small></span>
+          </div>
+        </header>
+        <nav class="store-catbar" id="store-categories"></nav>
+        <main><div class="store-heading"><div><h2>상품</h2></div><p>상품을 선택해 주문을 시작하세요.</p></div><div class="store-grid" id="store-products"></div><p class="store-empty" id="store-empty" hidden>판매 중인 상품이 없습니다.</p></main>
+      </div>
+      <div class="pos-shell" id="pos-shell" hidden>
+        <div class="pos-placeholder"><strong>POS(매장) 결제 시뮬레이션은 준비 중입니다.</strong><p>현재는 WEB(쇼핑몰) 채널에서 Mock PG 승인·실패·복구 흐름만 재현할 수 있습니다.</p></div>
+      </div>
+    </div>
+  </section>
+  <aside class="simulation-console">
+    <header><span>PORTFOLIO TEST</span><h2>거래 시뮬레이션</h2><p>이 설정은 고객 화면에 노출되지 않습니다.</p></header>
+
+    <section class="console-steps">
+      <ol class="simulation-steps">
+        <li class="active"><b>1</b><span>상품 선택</span></li>
+        <li><b>2</b><span>주문 확인</span></li>
+        <li><b>3</b><span>Mock 결제</span></li>
+        <li><b>4</b><span>운영 추적</span></li>
+      </ol>
+    </section>
+
+    <section class="console-scenario">
+      <h3>시나리오 선택</h3>
+      <select id="simulation-scenario"><option value="NORMAL">정상 승인</option><option value="RESULT_UNKNOWN">결과 불명</option><option value="PAYMENT_METHOD_ERROR">결제수단 오류</option><option value="CARD_LIMIT_EXCEEDED">카드 한도 초과</option><option value="DUPLICATE_REQUEST">중복 요청</option><option value="INTERNAL_FAIL">승인 후 내부 처리 실패</option></select>
+      <button type="button" class="console-run-btn" id="run-scenario">시나리오 실행</button>
+      <p class="console-help">실제 외부 PG 호출 없이 승인·장애·복구 흐름을 재현합니다. 화면의 결제 수단(신용카드 등)은 실제 승인 결과에 영향을 주지 않고, 여기서 고른 시나리오가 결과를 결정합니다.</p>
+    </section>
+
+    <section class="console-log">
+      <h3>실행 로그 <small>지금 뭘 하고 있는지</small></h3>
+      <ul class="run-log" id="run-log"><li class="log-empty">상품을 선택하면 여기에 진행 상황이 표시됩니다.</li></ul>
+    </section>
+
+    <section class="console-summary">
+      <h3>시나리오 요약</h3>
+      <dl>
+        <div><dt>채널</dt><dd id="summary-channel">WEB(쇼핑몰)</dd></div>
+        <div><dt>선택 상품</dt><dd id="summary-product">선택 전</dd></div>
+        <div><dt>옵션</dt><dd id="summary-options">-</dd></div>
+        <div><dt>수량</dt><dd id="summary-qty">-</dd></div>
+        <div><dt>결제 수단</dt><dd id="summary-pay">-</dd></div>
+        <div class="summary-total"><dt>최종 결제 금액</dt><dd id="summary-total">-</dd></div>
+      </dl>
+    </section>
+
+    <section class="console-points">
+      <h3>이 테스트의 구현 포인트</h3>
+      <ul class="impl-points">
+        <li><svg viewBox="0 0 24 24"><path d="M9 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M14.5 9.5 21 3M17 5.5l3 3M12.5 13.5 6 20"/></svg><div><strong>멱등성 처리</strong><small>Idempotency-Key + Unique Constraint로 중복 결제 요청 차단</small></div></li>
+        <li><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg><div><strong>트랜잭션 처리</strong><small>주문/결제/정산 처리 일관성 보장</small></div></li>
+        <li><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><div><strong>상태 일관성</strong><small>승인 후 응답 유실/복구 시 거래 조회 및 복구</small></div></li>
+        <li><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><div><strong>재처리 지원</strong><small>실패 건 재시도 기반 처리</small></div></li>
+        <li><svg viewBox="0 0 24 24"><path d="M4 19V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14l-4-2-4 2-4-2-4 2Z"/><path d="M8 8h8M8 12h8"/></svg><div><strong>추적 로그</strong><small>주문번호/결제ID/TID 기반 End-to-End 추적</small></div></li>
+      </ul>
+    </section>
+  </aside>
+</div>
+</section></main></div><script src="/js/common.js"></script><script src="/js/pages/product-preview-page.js"></script></body></html>

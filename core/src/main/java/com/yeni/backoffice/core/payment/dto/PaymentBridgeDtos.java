@@ -39,8 +39,10 @@ public final class PaymentBridgeDtos {
             @Schema(description = "매장/사이트 코드. 향후 PG 라우팅 확장 지점입니다.", example = "PORTFOLIO")
             String storeCode,
             @Schema(description = "결제수단", example = "CARD")
-            String paymentMethod
+            String paymentMethod,
+            Long storeId
     ) {
+        public PaymentApproveRequest(PgProvider pgProvider,String orderNo,BigDecimal amount,String currency,String buyerName,String productName,String idempotencyKey,String channelType,String storeCode,String paymentMethod){this(pgProvider,orderNo,amount,currency,buyerName,productName,idempotencyKey,channelType,storeCode,paymentMethod,null);}
     }
 
     @Schema(description = "PGB 공통 결제 승인 응답")

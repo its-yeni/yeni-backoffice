@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -73,8 +74,15 @@ public class PaymentBridgeRestController {
 
     @GetMapping("/payments")
     @Operation(summary = "결제 목록 조회", description = "PGB에서 처리한 결제 거래 목록을 조회합니다.")
-    public ResponseEntity<List<PaymentResponse>> payments() {
-        return ResponseEntity.ok(queryService.getPayments());
+    public ResponseEntity<List<PaymentResponse>> payments(
+            @RequestParam(required = false) Long storeId,
+            @RequestParam(defaultValue = "false") boolean includeUnassigned) {
+        return ResponseEntity.ok(queryService.getPayments(storeId, includeUnassigned));
+    }
+
+    @PostMapping("/payments/{paymentId}/store/{storeId}")
+    public ResponseEntity<PaymentResponse> assignStore(@PathVariable Long paymentId, @PathVariable Long storeId) {
+        return ResponseEntity.ok(queryService.assignStore(paymentId, storeId));
     }
 
     @GetMapping("/payments/{paymentId}")

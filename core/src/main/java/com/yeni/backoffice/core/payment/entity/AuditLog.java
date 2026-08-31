@@ -39,6 +39,23 @@ public class AuditLog extends BaseTimeEntity {
     @Lob
     private String description;
 
+    @Column(length = 60)
+    @Builder.Default
+    private String actor = "SYSTEM";
+
+    @Column(length = 30)
+    @Builder.Default
+    private String resultStatus = "SUCCESS";
+
+    @Column(length = 80)
+    private String requestId;
+
+    @Lob
+    private String beforeValue;
+
+    @Lob
+    private String afterValue;
+
     @Column(nullable = false)
     private LocalDateTime loggedAt;
 }

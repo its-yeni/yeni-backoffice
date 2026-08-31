@@ -5,6 +5,7 @@ import com.yeni.backoffice.core.common.exception.ConflictException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.common.exception.NotFoundException;
 import com.yeni.backoffice.core.common.exception.ValidationBusinessException;
+import com.yeni.backoffice.core.commerce.service.CommerceOrderPaymentStateService;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapter;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapterResolver;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentBridgeCancelRequest;
@@ -53,6 +54,7 @@ public class PaymentCancelService {
     private final PaymentNotificationService notificationService;
     private final PaymentRecoveryService recoveryService;
     private final PaymentAuditHelper auditHelper;
+    private final CommerceOrderPaymentStateService orderStateService;
 
     public PaymentCancelService(
             PaymentGatewayAdapterResolver adapterResolver,
@@ -63,7 +65,8 @@ public class PaymentCancelService {
             SalesLedgerService salesLedgerService,
             PaymentNotificationService notificationService,
             PaymentRecoveryService recoveryService,
-            PaymentAuditHelper auditHelper) {
+            PaymentAuditHelper auditHelper,
+            CommerceOrderPaymentStateService orderStateService) {
         this.adapterResolver = adapterResolver;
         this.gatewayRegistry = gatewayRegistry;
         this.paymentRepository = paymentRepository;
@@ -73,6 +76,7 @@ public class PaymentCancelService {
         this.notificationService = notificationService;
         this.recoveryService = recoveryService;
         this.auditHelper = auditHelper;
+        this.orderStateService = orderStateService;
     }
 
     @Transactional
@@ -84,6 +88,7 @@ public class PaymentCancelService {
         String idempotencyKey = request.idempotencyKey().trim();
         PaymentCancel existingCancel = cancelRepository.findByCancelRequestKey(idempotencyKey).orElse(null);
         if (existingCancel != null) {
+            orderStateService.syncCancellation(payment.getOrderNo(), payment.getCanceledAmount());
             return new PaymentBridgeCancelResponse(
                     existingCancel.getId(), payment.getId(), payment.getPgProvider(), payment.getTid(),
                     existingCancel.getCancelAmount(), existingCancel.getCancelType().name(),
@@ -136,6 +141,7 @@ public class PaymentCancelService {
         SalesTransaction sales = salesLedgerService.createSales(payment, SaleType.CANCEL, cancel.getId(), request.cancelAmount().negate(), cancel.getCanceledAt());
         notificationService.createExternalSendRequest(sales, "CANCEL-" + idempotencyKey);
         notificationService.createAlimtalkQueue(payment, sales, "CANCEL-" + idempotencyKey, "CANCEL");
+        orderStateService.syncCancellation(payment.getOrderNo(), payment.getCanceledAmount());
         auditHelper.saveAudit("PAYMENT", "CANCELED", payment.getOrderNo(), "PGB cancel completed through " + provider);
 
         return new PaymentBridgeCancelResponse(cancel.getId(), payment.getId(), provider, payment.getTid(), cancel.getCancelAmount(),
@@ -150,6 +156,7 @@ public class PaymentCancelService {
 
         PaymentCancel existingCancel = cancelRepository.findByCancelRequestKey(request.cancelRequestKey()).orElse(null);
         if (existingCancel != null) {
+            orderStateService.syncCancellation(payment.getOrderNo(), payment.getCanceledAmount());
             return new PaymentCancelResponse(existingCancel.getId(), payment.getId(), payment.getTid(),
                     existingCancel.getCancelAmount(), existingCancel.getCancelType().name(), payment.getPaymentStatus().name());
         }
@@ -181,6 +188,7 @@ public class PaymentCancelService {
         SalesTransaction sales = salesLedgerService.createSales(payment, SaleType.CANCEL, cancel.getId(), request.cancelAmount().negate(), cancel.getCanceledAt());
         notificationService.createExternalSendRequest(sales, "CANCEL-" + request.cancelRequestKey());
         notificationService.createAlimtalkQueue(payment, sales, "CANCEL-" + request.cancelRequestKey(), "CANCEL");
+        orderStateService.syncCancellation(payment.getOrderNo(), payment.getCanceledAmount());
         cancelLog.complete(result.toString(), LogResultStatus.SUCCESS, result.resultMessage());
         auditHelper.saveAudit("PAYMENT", "CANCELED", payment.getOrderNo(), "PG 취소 완료 후 취소 매출 및 외부 전송 요청을 생성했습니다.");
 

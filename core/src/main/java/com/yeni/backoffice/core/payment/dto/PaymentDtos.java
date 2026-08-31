@@ -9,6 +9,7 @@ import com.yeni.backoffice.core.payment.entity.PgFeePolicy;
 import com.yeni.backoffice.core.payment.entity.SalesTransaction;
 import com.yeni.backoffice.core.payment.entity.SettlementDetail;
 import com.yeni.backoffice.core.payment.entity.SettlementFeeDetail;
+import com.yeni.backoffice.core.payment.entity.SettlementLog;
 import com.yeni.backoffice.core.payment.entity.SettlementStatement;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -114,24 +115,28 @@ public final class PaymentDtos {
             @Schema(description = "결제 거래 ID") Long id,
             @Schema(description = "PG 가맹점 ID") String mid,
             @Schema(description = "주문번호") String orderNo,
+            @Schema(description = "대표 상품명") String productName,
             @Schema(description = "PG 거래번호") String tid,
             @Schema(description = "승인 금액") BigDecimal approvedAmount,
             @Schema(description = "누적 취소 금액") BigDecimal canceledAmount,
             @Schema(description = "통화 코드") String currency,
             @Schema(description = "결제 상태") String paymentStatus,
-            @Schema(description = "승인 시각") LocalDateTime approvedAt
+            @Schema(description = "승인 시각") LocalDateTime approvedAt,
+            Long storeId
     ) {
         public static PaymentResponse from(PaymentTransaction payment) {
             return new PaymentResponse(
                     payment.getId(),
                     payment.getMid(),
                     payment.getOrderNo(),
+                    payment.getProductName(),
                     payment.getTid(),
                     payment.getApprovedAmount(),
                     payment.getCanceledAmount(),
                     payment.getCurrency(),
                     payment.getPaymentStatus().name(),
-                    payment.getApprovedAt()
+                    payment.getApprovedAt(),
+                    payment.getStoreId()
             );
         }
     }
@@ -226,7 +231,10 @@ public final class PaymentDtos {
             String pgCode,
             String paymentMethod,
             Long sellerId,
-            Long orderItemId
+            Long orderItemId,
+            Long storeId,
+            Boolean confirmedYn,
+            LocalDateTime confirmedAt
     ) {
         public static SalesResponse from(SalesTransaction sales) {
             return new SalesResponse(
@@ -251,7 +259,10 @@ public final class PaymentDtos {
                     sales.getPgCode(),
                     sales.getPaymentMethod(),
                     sales.getSellerId(),
-                    sales.getOrderItemId()
+                    sales.getOrderItemId(),
+                    sales.getStoreId(),
+                    sales.getConfirmedYn(),
+                    sales.getConfirmedAt()
             );
         }
     }
@@ -266,7 +277,9 @@ public final class PaymentDtos {
             long settledCount,
             long paidCount,
             long carriedOverCount,
-            long excludedCount
+            long excludedCount,
+            long confirmedCount,
+            long unconfirmedCount
     ) {
     }
 
@@ -488,8 +501,12 @@ public final class PaymentDtos {
     @Schema(description = "정산 배치 실행 요청")
     public record SettlementBatchRunRequest(
             @Schema(description = "정산 대상 영업일")
-            LocalDate targetDate
+            LocalDate targetDate,
+            Long storeId
     ) {
+        public SettlementBatchRunRequest(LocalDate targetDate) {
+            this(targetDate, null);
+        }
     }
 
     @Schema(description = "정산 명세 조회 응답")
@@ -504,8 +521,25 @@ public final class PaymentDtos {
             BigDecimal netAmount,
             String settlementStatus,
             BigDecimal saleAmount,
-            BigDecimal cancelAmount
+            BigDecimal cancelAmount,
+            Long storeId,
+            BigDecimal adjustmentAmount,
+            BigDecimal holdAmount,
+            LocalDate scheduledPayoutDate,
+            LocalDateTime paidAt,
+            String payoutReference,
+            String payoutAccountMasked
     ) {
+        public SettlementStatementResponse(
+                Long id, LocalDate settlementDate, String pgCompany, String mid,
+                BigDecimal grossAmount, BigDecimal feeAmount, BigDecimal vatAmount,
+                BigDecimal netAmount, String settlementStatus,
+                BigDecimal saleAmount, BigDecimal cancelAmount) {
+            this(id, settlementDate, pgCompany, mid, grossAmount, feeAmount, vatAmount,
+                    netAmount, settlementStatus, saleAmount, cancelAmount, null,
+                    BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null);
+        }
+
         public static SettlementStatementResponse from(SettlementStatement statement) {
             return from(statement, List.of());
         }
@@ -532,7 +566,14 @@ public final class PaymentDtos {
                     statement.getNetAmount(),
                     statement.getSettlementStatus().name(),
                     saleAmount,
-                    cancelAmount
+                    cancelAmount,
+                    statement.getStoreId(),
+                    statement.getAdjustmentAmount(),
+                    statement.getHoldAmount(),
+                    statement.getScheduledPayoutDate(),
+                    statement.getPaidAt(),
+                    statement.getPayoutReference(),
+                    statement.getPayoutAccountMasked()
             );
         }
     }
@@ -579,10 +620,61 @@ public final class PaymentDtos {
         }
     }
 
+    public record SettlementReconciliationResponse(
+            BigDecimal ledgerGrossAmount,
+            BigDecimal statementGrossAmount,
+            BigDecimal grossDifference,
+            BigDecimal policyFeeAmount,
+            BigDecimal statementFeeAmount,
+            BigDecimal feeDifference,
+            BigDecimal policyVatAmount,
+            BigDecimal statementVatAmount,
+            BigDecimal vatDifference,
+            BigDecimal calculatedNetAmount,
+            BigDecimal statementNetAmount,
+            BigDecimal netDifference,
+            int transactionCount,
+            boolean ledgerMatched,
+            boolean feeMatched,
+            boolean netMatched,
+            boolean confirmable,
+            List<String> blockingReasons
+    ) {
+    }
+
+    public record SettlementAdjustmentRequest(
+            BigDecimal adjustmentAmount,
+            BigDecimal holdAmount,
+            LocalDate scheduledPayoutDate,
+            String reason
+    ) {
+    }
+
+    public record SettlementPayRequest(
+            String payoutReference,
+            String payoutAccountMasked
+    ) {
+    }
+
+    public record SettlementLogResponse(
+            Long id,
+            String actionType,
+            String resultStatus,
+            String message,
+            LocalDateTime loggedAt
+    ) {
+        public static SettlementLogResponse from(SettlementLog log) {
+            return new SettlementLogResponse(log.getId(), log.getActionType(), log.getResultStatus(), log.getMessage(), log.getLoggedAt());
+        }
+    }
+
     public record SettlementDetailPageResponse(
             SettlementStatementResponse statement,
             List<SettlementDetailResponse> details,
-            List<SettlementFeeDetailResponse> feeDetails
+            List<SettlementFeeDetailResponse> feeDetails,
+            SettlementReconciliationResponse reconciliation,
+            List<SettlementLogResponse> logs,
+            List<com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.SettlementCategoryRow> categoryBreakdown
     ) {
     }
 

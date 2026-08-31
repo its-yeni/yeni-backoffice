@@ -1,136 +1,94 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>주문 관리 - Yeni Backoffice</title>
-
-    <link rel="stylesheet" th:href="@{/css/common.css}" />
-    <link rel="stylesheet" th:href="@{/css/layout.css}" />
-    <link rel="stylesheet" th:href="@{/css/components.css}" />
-    <link rel="stylesheet" th:href="@{/vendor/tabulator/tabulator.min.css}" />
-    <link rel="stylesheet" th:href="@{/css/pages/payment-operations.css}" />
-    <link rel="stylesheet" th:href="@{/css/scroll-top.css}" />
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>주문 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}"><link rel="stylesheet" th:href="@{/css/layout.css}">
+  <link rel="stylesheet" th:href="@{/css/components.css}">
+  <link rel="stylesheet" th:href="@{/css/commerce-admin.css}"><link rel="stylesheet" th:href="@{/css/pages/payment-operations.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/commerce-list-system.css}"><link rel="stylesheet" th:href="@{/css/pages/commerce-orders.css}">
 </head>
-<body>
-<div class="layout">
-    <div th:replace="~{fragments/sidebar}"></div>
-    <main class="main">
-        <div th:replace="~{fragments/topbar :: header}"></div>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main">
+  <div th:replace="~{fragments/topbar :: header}"></div>
+  <section class="content commerce-page">
+    <header class="page-header"><div><h3>주문 관리</h3><p>고객 주문부터 결제 처리 상태까지 한 화면에서 확인합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/payment-operations">PG 거래</a><a class="btn btn-primary" href="/admin/commerce/preview">고객 주문 테스트</a></div></header>
 
-        <section class="content payment-page">
-            <div class="payment-hero">
-                <div>
-                    <span class="badge">주문 운영</span>
-                    <h2>주문 관리</h2>
-                    <p>주문 상품 상세를 기준으로 결제금액을 계산하고, 결제 승인 후 기존 PG 승인, SALE 매출 원장, 외부전송, 알림톡 Queue 흐름으로 연결합니다.</p>
-                </div>
-                <div class="hero-actions-inline">
-                    <a class="btn btn-primary" href="/admin/payment-operations">PG 운영 보기</a>
-                    <a class="btn btn-light" href="/admin/payment-operations/sales-ledger">매출 원장 보기</a>
-                    <a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리 보기</a>
-                </div>
+    <nav class="page-tabs">
+      <button type="button" class="active" data-tab="list">주문 목록</button>
+      <button type="button" data-tab="mock">Mock 주문 생성</button>
+    </nav>
+
+    <div class="page-tab-panel active" id="tab-list">
+      <div class="filter-bar order-filter-row">
+        <label>주문일 <input type="date" id="filterDateFrom"> ~ <input type="date" id="filterDateTo"></label>
+        <label>결제상태 <select id="filterPaymentStatus"><option value="">전체</option><option value="READY">결제 대기</option><option value="APPROVED">결제 승인</option><option value="APPROVE_UNKNOWN">결과 불명</option><option value="FAILED">결제 실패</option><option value="CANCELLED">취소</option></select></label>
+        <input id="orderKeyword" type="search" placeholder="주문번호, 구매자명 검색">
+        <button class="btn btn-primary order-search-button" id="orderSearchBtn" type="button">검색</button>
+        <button class="btn btn-text" id="orderRefreshBtn">초기화</button>
+      </div>
+      <div class="quick-filters" id="quickFilters"></div>
+      <div class="data-table-wrap order-table-wrap">
+        <table class="data-table order-list-table">
+          <thead><tr>
+            <th class="row-index">#</th>
+            <th data-sort="orderNo">주문번호</th>
+            <th data-sort="createdAt">주문일시</th>
+            <th data-sort="buyerName">구매자</th>
+            <th>상품</th>
+            <th class="amount" data-sort="payableAmount">결제금액</th>
+            <th data-sort="paymentStatus">결제상태</th>
+            <th data-sort="orderStatus">주문 상태</th>
+            <th class="actions">관리</th>
+          </tr></thead>
+          <tbody id="orderRows"></tbody>
+        </table>
+        <div class="data-table-empty" id="orderEmpty" hidden><strong>생성된 주문이 없습니다.</strong><p>고객 주문 테스트 또는 Mock 주문 생성으로 주문을 만들어 보세요.</p></div>
+        <div id="orderPagination"></div>
+      </div>
+    </div>
+
+    <div class="page-tab-panel" id="tab-mock">
+      <div class="mock-generate-grid">
+        <div class="mock-generate-main">
+          <section class="card ops-panel">
+            <div class="panel-header"><h3>기본 정보</h3></div>
+            <div class="form-grid three-column">
+              <label>구매자명<input id="buyerNameInput" value="포트폴리오 고객"></label>
+              <label>연락처<input id="buyerPhoneInput" value="010-0000-0000"></label>
+              <label>매출처<input id="storeInput" placeholder="선택 입력" disabled></label>
             </div>
+          </section>
+          <section class="card ops-panel">
+            <div class="panel-header order-item-header"><h3>상품 정보</h3><button class="btn btn-light" id="addOrderItemBtn">+ 상품 추가</button></div>
+            <div class="responsive-table"><table class="order-item-table"><thead><tr><th>분류</th><th>상품</th><th>옵션</th><th>단가</th><th>수량</th><th>금액</th><th></th></tr></thead><tbody id="orderItemBody"></tbody></table></div>
+            <div class="mock-order-total"><span>총 주문금액</span><strong id="payableAmountPreview">0원</strong></div>
+          </section>
+        </div>
+        <aside class="mock-scenario-panel">
+          <div class="panel-header"><h3>시나리오 선택</h3></div>
+          <div class="scenario-list" id="scenarioList"></div>
+          <div class="button-row mock-generate-actions">
+            <button class="btn btn-light" id="mockResetBtn">초기화</button>
+            <button class="btn btn-primary" id="mockCreateBtn">Mock 주문 생성</button>
+          </div>
+          <p class="preview-message" id="mockMessage"></p>
+        </aside>
+      </div>
+    </div>
 
-            <div class="demo-flow-guide">
-                <strong>권장 시연 순서</strong>
-                <span>주문 상품 입력 → 서버 금액 계산 → 주문 결제 승인 → PG 운영에서 결제 추적 → 매출 원장 SALE 확인 → 정산 초안 생성</span>
-            </div>
+  </section>
+</main></div>
 
-            <section class="card ops-panel">
-                <div class="panel-header">
-                    <div>
-                        <h3>주문 흐름 요약</h3>
-                        <p class="section-help">상품 마스터, 재고, 쿠폰, 배송 상태는 확장 대상으로 남기고, 이 화면은 주문 상품 snapshot과 결제 운영 연결에 집중합니다.</p>
-                    </div>
-                    <button class="btn btn-light" id="orderRefreshBtn" type="button">새로고침</button>
-                </div>
-                <div class="metric-grid">
-                    <div><span>총 주문</span><strong id="orderTotalCount">0</strong></div>
-                    <div><span>결제 완료</span><strong id="orderPaidCount">0</strong></div>
-                    <div><span>결제 대기</span><strong id="orderPaymentReadyCount">0</strong></div>
-                    <div><span>승인 결과불명</span><strong id="orderPaymentUnknownCount">0</strong></div>
-                    <div class="metric-highlight"><span>총 결제금액</span><strong id="orderTotalAmount">0원</strong></div>
-                </div>
-                <div id="orderMessageBox" class="message-box">상품 행을 입력하면 화면에서 예상 금액을 계산하고, 서버에서 다시 검증해 주문을 생성합니다.</div>
-            </section>
-
-            <section class="card ops-panel">
-                <div class="panel-header">
-                    <div>
-                        <h3>주문 생성</h3>
-                        <p class="section-help">최종 결제금액은 서버에서 상품합계 + 배송비 - 할인금액으로 다시 계산합니다.</p>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <label>주문번호 <input id="orderNoInput" type="text" placeholder="비워두면 자동 생성" /></label>
-                    <label>구매자명 <input id="buyerNameInput" type="text" value="포트폴리오 고객" /></label>
-                    <label>연락처 <input id="buyerPhoneInput" type="text" value="010-0000-0000" /></label>
-                    <label>배송비 <input id="deliveryFeeInput" type="number" min="0" step="100" value="3000" /></label>
-                    <label>할인금액 <input id="discountAmountInput" type="number" min="0" step="100" value="2000" /></label>
-                </div>
-
-                <div class="panel-header order-item-header">
-                    <div>
-                        <h3>주문 상품</h3>
-                        <p class="section-help">단가와 수량을 기준으로 상품금액을 계산합니다.</p>
-                    </div>
-                    <button class="btn btn-light" id="addOrderItemBtn" type="button">상품 행 추가</button>
-                </div>
-
-                <div class="responsive-table">
-                    <table class="order-item-table">
-                        <thead>
-                        <tr>
-                            <th>상품코드</th>
-                            <th>상품명</th>
-                            <th>옵션</th>
-                            <th>단가</th>
-                            <th>수량</th>
-                            <th>상품금액</th>
-                            <th>삭제</th>
-                        </tr>
-                        </thead>
-                        <tbody id="orderItemBody"></tbody>
-                    </table>
-                </div>
-
-                <div class="metric-grid order-amount-grid">
-                    <div><span>상품합계</span><strong id="productAmountPreview">0원</strong></div>
-                    <div><span>배송비</span><strong id="deliveryFeePreview">0원</strong></div>
-                    <div><span>할인금액</span><strong id="discountAmountPreview">0원</strong></div>
-                    <div class="metric-highlight"><span>최종 결제금액</span><strong id="payableAmountPreview">0원</strong></div>
-                </div>
-
-                <div class="button-row">
-                    <button class="btn btn-primary" id="createOrderBtn" type="button">주문 생성</button>
-                    <button class="btn btn-light" id="createMockOrderBtn" type="button">Mock 주문 생성</button>
-                </div>
-            </section>
-
-            <section class="card table-section">
-                <div class="panel-header">
-                    <div>
-                        <h3>주문 목록</h3>
-                        <p class="table-caption">결제 승인 버튼을 누르면 기존 결제 승인 서비스가 호출되고, 결제 거래와 SALE 원장이 생성됩니다. 행을 선택하면 주문 상품 상세를 확인할 수 있습니다.</p>
-                    </div>
-                </div>
-                <div class="status-legend">
-                    <span><b class="status-dot ready"></b>CREATED: 주문 생성 완료, 결제 대기</span>
-                    <span><b class="status-dot paid"></b>PAID: 결제 승인 완료</span>
-                    <span><b class="status-dot unknown"></b>APPROVE_UNKNOWN: PG 승인 결과불명</span>
-                    <span><b class="status-dot cancel"></b>FAILED: 결제 실패</span>
-                </div>
-                <div id="commerceOrderTable" class="tabulator-host"></div>
-            </section>
-        </section>
-    </main>
+<div class="commerce-modal" id="order-detail-modal" aria-hidden="true">
+  <div class="commerce-modal-dim" data-close-detail></div>
+  <section class="commerce-modal-card order-detail-card" role="dialog" aria-modal="true">
+    <div class="modal-title-row">
+      <div class="detail-breadcrumb"><a href="#" data-close-detail>주문 관리</a><span>&gt;</span><span>주문 상세</span></div>
+      <button class="icon-close" type="button" data-close-detail>×</button>
+    </div>
+    <div id="order-detail-body"></div>
+  </section>
 </div>
 
-<script th:src="@{/vendor/tabulator/tabulator.min.js}"></script>
-<script th:src="@{/js/common.js}"></script>
-<script th:src="@{/js/pages/commerce-orders.js}"></script>
-<script th:src="@{/js/scroll-top.js}"></script>
-</body>
-</html>
+<script th:src="@{/js/admin-pagination.js}"></script><script th:src="@{/js/common.js}"></script><script th:src="@{/js/pages/commerce-orders.js}"></script>
+</body></html>
