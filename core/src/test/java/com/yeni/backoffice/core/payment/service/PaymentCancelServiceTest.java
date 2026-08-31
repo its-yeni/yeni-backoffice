@@ -2,6 +2,7 @@ package com.yeni.backoffice.core.payment.service;
 
 import com.yeni.backoffice.core.common.exception.ValidationBusinessException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
+import com.yeni.backoffice.core.commerce.service.CommerceOrderPaymentStateService;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapterResolver;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentBridgeCancelRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentBridgeCancelResponse;
@@ -54,7 +55,8 @@ class PaymentCancelServiceTest {
                 salesLedgerService,
                 notificationService,
                 recoveryService,
-                auditHelper
+                auditHelper,
+                mock(CommerceOrderPaymentStateService.class)
         );
     }
 

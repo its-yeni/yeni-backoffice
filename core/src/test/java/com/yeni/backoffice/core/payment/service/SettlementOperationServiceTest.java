@@ -5,6 +5,8 @@ import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.payment.config.InicisStdPayProperties;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementStatementResponse;
+import com.yeni.backoffice.core.payment.repository.PgSettlementImportRepository;
+import com.yeni.backoffice.core.payment.repository.PgSettlementReconciliationRepository;
 import com.yeni.backoffice.core.payment.repository.SalesTransactionRepository;
 import com.yeni.backoffice.core.payment.repository.SettlementDetailRepository;
 import com.yeni.backoffice.core.payment.repository.SettlementFeeDetailRepository;
@@ -65,7 +67,11 @@ class SettlementOperationServiceTest {
                 mock(SettlementDetailRepository.class),
                 mock(SettlementFeeDetailRepository.class),
                 mock(SettlementLogRepository.class),
-                processor
+                processor,
+                mock(PgSettlementImportRepository.class),
+                mock(PgSettlementReconciliationRepository.class),
+                mock(com.yeni.backoffice.core.payment.repository.SalesTransactionLineRepository.class),
+                mock(com.yeni.backoffice.core.commerce.repository.CommerceStoreRepository.class)
         );
         ExecutorService executor = Executors.newSingleThreadExecutor();
 

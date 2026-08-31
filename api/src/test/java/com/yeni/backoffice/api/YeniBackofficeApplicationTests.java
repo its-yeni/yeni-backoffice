@@ -6,6 +6,22 @@ import com.yeni.backoffice.api.database.view.DatabaseSpecDescriptionCatalog;
 import com.yeni.backoffice.api.database.view.DatabaseSpecService;
 import com.yeni.backoffice.core.common.exception.BusinessException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
+import com.yeni.backoffice.core.commerce.repository.ProductRepository;
+import com.yeni.backoffice.core.commerce.repository.CommerceOrderRepository;
+import com.yeni.backoffice.core.commerce.repository.InventoryTransactionRepository;
+import com.yeni.backoffice.core.commerce.repository.CommerceStoreRepository;
+import com.yeni.backoffice.core.commerce.entity.CommerceStore;
+import com.yeni.backoffice.core.commerce.enums.StoreBusinessType;
+import com.yeni.backoffice.core.commerce.dto.ProductDtos.ProductSaveRequest;
+import com.yeni.backoffice.core.commerce.dto.CommerceOrderDtos.CommerceOrderCreateRequest;
+import com.yeni.backoffice.core.commerce.dto.CommerceOrderDtos.CommerceOrderItemCreateRequest;
+import com.yeni.backoffice.core.commerce.service.ProductService;
+import com.yeni.backoffice.core.commerce.service.CommerceOrderService;
+import com.yeni.backoffice.core.commerce.service.ProductOptionService;
+import com.yeni.backoffice.core.commerce.service.ProductVariantService;
+import com.yeni.backoffice.core.commerce.dto.ProductOptionDtos.GroupRequest;
+import com.yeni.backoffice.core.commerce.dto.ProductOptionDtos.ValueRequest;
+import com.yeni.backoffice.core.commerce.dto.ProductVariantDtos.VariantUpdateRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentApproveRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentApproveResponse;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentBridgeCancelRequest;
@@ -13,12 +29,14 @@ import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentBridgeCance
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SalesLedgerLinksResponse;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SalesLedgerPageResponse;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
+import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementPayRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementStatementResponse;
 import com.yeni.backoffice.core.payment.enums.PaymentStatus;
 import com.yeni.backoffice.core.payment.enums.PgProvider;
 import com.yeni.backoffice.core.payment.enums.RecoveryStatus;
 import com.yeni.backoffice.core.payment.enums.RecoveryType;
 import com.yeni.backoffice.core.payment.enums.SaleType;
+import com.yeni.backoffice.core.payment.enums.SaleStatus;
 import com.yeni.backoffice.core.payment.enums.LedgerStatus;
 import com.yeni.backoffice.core.payment.enums.SalesSettlementStatus;
 import com.yeni.backoffice.core.payment.entity.SalesTransaction;
@@ -47,9 +65,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -68,16 +88,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
 		"spring.datasource.url=jdbc:h2:mem:yeni-backoffice-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE",
 		"spring.datasource.driver-class-name=org.h2.Driver",
 		"spring.jpa.hibernate.ddl-auto=create-drop",
-		"spring.h2.console.enabled=false"
+		"spring.h2.console.enabled=false",
+		"commerce.product-image-dir=./build/test-product-images"
 })
 @AutoConfigureMockMvc
+@ActiveProfiles("test") // demo 프로필의 시연용 시드 데이터가 통합 테스트에 섞이지 않도록 test만 활성화한다.
 class YeniBackofficeApplicationTests {
 
 	@Autowired
@@ -85,6 +110,17 @@ class YeniBackofficeApplicationTests {
 
 	@Autowired
 	private ObjectMapper objectMapper;
+
+	@Autowired
+	private ProductRepository productRepository;
+
+	@Autowired private CommerceOrderRepository commerceOrderRepository;
+	@Autowired private ProductService productService;
+	@Autowired private CommerceOrderService commerceOrderService;
+	@Autowired private ProductOptionService productOptionService;
+	@Autowired private ProductVariantService productVariantService;
+	@Autowired private InventoryTransactionRepository inventoryTransactionRepository;
+	@Autowired private CommerceStoreRepository commerceStoreRepository;
 
 	@Autowired
 	private PaymentApproveService paymentApproveService;
@@ -185,12 +221,14 @@ class YeniBackofficeApplicationTests {
 	void salesLedgerAndSettlementPagesExplainFiltersAndDraftRecalculation() throws Exception {
 		mockMvc.perform(get("/admin/payment-operations/sales-ledger"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("빠른 필터")));
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("승인과 취소를 별도 거래로 보관")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("전체 정산 상태")));
 
 		mockMvc.perform(get("/admin/payment-operations/settlements"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("오늘 정산 초안 생성/재계산")))
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("기존 명세에 누적")));
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("오늘 정산 초안 생성")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("승인 매출")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("최종 정산액")));
 	}
 
 	@Test
@@ -251,44 +289,35 @@ class YeniBackofficeApplicationTests {
 
 	@Test
 	void commerceOrderPaymentCreatesPaymentTraceAndSaleLedger() throws Exception {
+		var product = productService.create(new ProductSaveRequest(unique("PAYMENT-FLOW"), "결제 흐름 검증 상품", "TEST",
+				BigDecimal.valueOf(29000), 10, "ON_SALE"));
+		Long productId = product.id();
 		MvcResult orderResult = mockMvc.perform(post("/admin/api/commerce/orders")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content("""
+						.content(("""
 								{
 								  "orderNo": "ORDER-COMMERCE-TEST-001",
 								  "buyerName": "포트폴리오 고객",
-								  "productName": "커머스 주문 테스트 상품",
-								  "deliveryFee": 3000,
-								  "discountAmount": 2000,
 								  "items": [
 								    {
-								      "productCode": "K2-DEMO-001",
-								      "productName": "커머스 주문 테스트 상품",
-								      "optionName": "블랙 / 095",
-								      "unitPrice": 10000,
+								      "productId": %d,
+								      "unitPrice": 1,
 								      "quantity": 2
-								    },
-								    {
-								      "productCode": "K2-DEMO-002",
-								      "productName": "추가 구성 상품",
-								      "optionName": "기본",
-								      "unitPrice": 5000,
-								      "quantity": 1
 								    }
 								  ]
 								}
-								"""))
+								""").formatted(productId)))
 				.andExpect(status().isOk())
 				.andReturn();
 
 		JsonNode order = objectMapper.readTree(orderResult.getResponse().getContentAsString());
-		assertThat(order.get("orderStatus").asText()).isEqualTo("CREATED");
+		assertThat(order.get("orderStatus").asText()).isEqualTo("PENDING_PAYMENT");
 		assertThat(order.get("paymentStatus").asText()).isEqualTo("READY");
-		assertThat(order.get("productAmount").decimalValue()).isEqualByComparingTo("25000");
-		assertThat(order.get("deliveryFee").decimalValue()).isEqualByComparingTo("3000");
-		assertThat(order.get("discountAmount").decimalValue()).isEqualByComparingTo("2000");
-		assertThat(order.get("payableAmount").decimalValue()).isEqualByComparingTo("26000");
-		assertThat(order.get("items")).hasSize(2);
+		assertThat(order.get("productAmount").decimalValue()).isEqualByComparingTo("58000");
+		assertThat(order.get("deliveryFee").decimalValue()).isEqualByComparingTo("0");
+		assertThat(order.get("discountAmount").decimalValue()).isEqualByComparingTo("0");
+		assertThat(order.get("payableAmount").decimalValue()).isEqualByComparingTo("58000");
+		assertThat(order.get("items")).hasSize(1);
 
 		MvcResult paidResult = mockMvc.perform(post("/admin/api/commerce/orders/{orderId}/pay", order.get("id").asLong()))
 				.andExpect(status().isOk())
@@ -307,10 +336,10 @@ class YeniBackofficeApplicationTests {
 				.getContentAsString());
 
 		assertThat(trace.get("payment").get("orderNo").asText()).isEqualTo("ORDER-COMMERCE-TEST-001");
-		assertThat(trace.get("payment").get("approvedAmount").decimalValue()).isEqualByComparingTo("26000");
+		assertThat(trace.get("payment").get("approvedAmount").decimalValue()).isEqualByComparingTo("58000");
 		assertThat(trace.get("sales")).hasSize(1);
 		assertThat(trace.get("sales").get(0).get("saleType").asText()).isEqualTo("SALE");
-		assertThat(trace.get("sales").get(0).get("totalAmount").decimalValue()).isEqualByComparingTo("26000");
+		assertThat(trace.get("sales").get(0).get("totalAmount").decimalValue()).isEqualByComparingTo("58000");
 		assertThat(trace.get("externalSends")).hasSize(1);
 		assertThat(trace.get("alimtalkQueues")).hasSize(1);
 	}
@@ -983,6 +1012,18 @@ class YeniBackofficeApplicationTests {
 	@Test
 	void confirmedAndPaidSettlementStatusTransitionsAreRestricted() {
 		LocalDate targetDate = uniqueSettlementDate();
+		String suffix = UUID.randomUUID().toString();
+		salesRepository.save(SalesTransaction.builder()
+				.sourceType("TEST").sourceId(Math.abs((long) suffix.hashCode()))
+				.orderNo("ORDER-" + suffix).tid("TID-" + suffix).pgTransactionId("TID-" + suffix)
+				.saleType(SaleType.SALE).saleAmount(new BigDecimal("10000"))
+				.supplyAmount(new BigDecimal("9091")).vatAmount(new BigDecimal("909"))
+				.totalAmount(new BigDecimal("10000")).saleStatus(SaleStatus.APPROVED)
+				.ledgerStatus(LedgerStatus.POSTED).settlementStatus(SalesSettlementStatus.NOT_SETTLED)
+				.businessDate(targetDate).occurredAt(targetDate.atStartOfDay())
+				.pgCode("INICIS").paymentMethod("CARD").externalSendRequired(false)
+				.confirmedYn(true).confirmedAt(targetDate.atStartOfDay()).settlementIncludedYn(false)
+				.build());
 		SettlementStatementResponse draft = settlementOperationService.runDailySettlement(new SettlementBatchRunRequest(targetDate));
 
 		SettlementStatementResponse confirmed = settlementOperationService.confirmStatement(draft.id());
@@ -990,9 +1031,9 @@ class YeniBackofficeApplicationTests {
 		assertThatThrownBy(() -> settlementOperationService.confirmStatement(draft.id()))
 				.isInstanceOf(BusinessException.class);
 
-		SettlementStatementResponse paid = settlementOperationService.markPaid(draft.id());
+		SettlementStatementResponse paid = settlementOperationService.markPaid(draft.id(), new SettlementPayRequest("TEST-PAYOUT", "***-1234"));
 		assertThat(paid.settlementStatus()).isEqualTo("PAID");
-		assertThatThrownBy(() -> settlementOperationService.markPaid(draft.id()))
+		assertThatThrownBy(() -> settlementOperationService.markPaid(draft.id(), new SettlementPayRequest("TEST-PAYOUT-2", "***-1234")))
 				.isInstanceOf(BusinessException.class);
 		assertThatThrownBy(() -> settlementOperationService.runDailySettlement(new SettlementBatchRunRequest(targetDate)))
 				.isInstanceOfSatisfying(BusinessException.class, exception ->
@@ -1305,6 +1346,210 @@ class YeniBackofficeApplicationTests {
 	}
 
 	private record ConcurrentRetryResult(int successCount, int businessFailureCount, int unexpectedFailureCount) {
+	}
+
+	@Test
+	void commerceOrderUsesMasterPriceAndReservesStock() {
+		String code = unique("PRICE");
+		var product = productService.create(new ProductSaveRequest(code, "서버 가격 상품", "TEST",
+				BigDecimal.valueOf(12345), 5, "ON_SALE"));
+		var order = commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("ORDER"), "buyer", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 2))));
+		assertThat(order.payableAmount()).isEqualByComparingTo("24690");
+		assertThat(order.items().get(0).unitPrice()).isEqualByComparingTo("12345");
+		assertThat(productRepository.findById(product.id()).orElseThrow().getStockQuantity()).isEqualTo(3);
+	}
+
+	@Test
+	void storeContextSeparatesOrderApiAndOperationsDashboard() throws Exception {
+		CommerceStore firstStore = commerceStoreRepository.save(CommerceStore.builder()
+				.storeCode("TSA-" + UUID.randomUUID().toString().substring(0, 8)).storeName("통합 테스트 A점")
+				.businessType(StoreBusinessType.ONLINE_RETAIL).brandName("통합 테스트")
+				.description("매장 범위 검증").active(true).build());
+		CommerceStore secondStore = commerceStoreRepository.save(CommerceStore.builder()
+				.storeCode("TSB-" + UUID.randomUUID().toString().substring(0, 8)).storeName("통합 테스트 B점")
+				.businessType(StoreBusinessType.ONLINE_RETAIL).brandName("통합 테스트")
+				.description("매장 범위 검증").active(true).build());
+		var product = productService.create(new ProductSaveRequest(unique("STORE-SCOPE"), "매장 범위 상품", "TEST",
+				BigDecimal.valueOf(5000), 10, "ON_SALE"));
+		var firstOrder = commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("ORDER-A"), "buyer-a", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 1))));
+		var secondOrder = commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("ORDER-B"), "buyer-b", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 1))));
+		commerceOrderService.assignStore(firstOrder.id(), firstStore.getId());
+		commerceOrderService.assignStore(secondOrder.id(), secondStore.getId());
+
+		JsonNode firstStoreOrders = objectMapper.readTree(mockMvc.perform(get("/admin/api/commerce/orders")
+				.param("storeId", firstStore.getId().toString())).andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString());
+		assertThat(firstStoreOrders).hasSize(1);
+		assertThat(firstStoreOrders.get(0).get("id").asLong()).isEqualTo(firstOrder.id());
+		assertThat(commerceOrderRepository.findById(firstOrder.id()).orElseThrow().getStoreId())
+				.isEqualTo(firstStore.getId());
+
+		mockMvc.perform(get("/admin/operations-dashboard").param("storeId", firstStore.getId().toString()))
+				.andExpect(status().isOk());
+	}
+
+	@Test
+	void adminAuditLogPageAndUnifiedApiLoad() throws Exception {
+		mockMvc.perform(get("/admin/audit-logs"))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/admin/api/audit-logs"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray());
+	}
+
+	@Test
+	void productAndCategoryPagesLoad() throws Exception {
+		mockMvc.perform(get("/admin/commerce/products")).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("옵션·조합 편집")));
+		mockMvc.perform(get("/admin/commerce/categories")).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("수정 버튼")));
+	}
+
+	@Test
+	void portfolioEndToEndJourneyAndOperationalScreensStayConnected() throws Exception {
+		mockMvc.perform(get("/"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(header().string("Location", "/admin/operations-dashboard"));
+		mockMvc.perform(get("/dashboard"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("상품 등록에서 지급 근거까지")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("외부 정산 CSV")));
+		mockMvc.perform(get("/admin/operations-dashboard")).andExpect(status().isOk());
+		mockMvc.perform(get("/admin/commerce/products")).andExpect(status().isOk());
+		mockMvc.perform(get("/admin/commerce/inventory")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("입고예정")));
+		mockMvc.perform(get("/admin/commerce/suppliers")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("공급처 관리")));
+		mockMvc.perform(get("/admin/commerce/purchase-orders")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("발주 관리")));
+		mockMvc.perform(get("/admin/commerce/stock-counts")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("재고 실사")));
+		mockMvc.perform(get("/admin/commerce/orders")).andExpect(status().isOk());
+		mockMvc.perform(get("/admin/payment-operations")).andExpect(status().isOk());
+		mockMvc.perform(get("/admin/payment-operations/sales-ledger")).andExpect(status().isOk());
+		mockMvc.perform(get("/admin/payment-operations/settlements/reconciliation")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("대사 예외 처리")));
+		mockMvc.perform(get("/admin/payment-operations/settlements")).andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("최종 정산액")));
+	}
+
+	@Test
+	void orderOperationsPageExposesTraceAndOptionalEngineeringNote() throws Exception {
+		mockMvc.perform(get("/admin/commerce/orders"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("설계 노트")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("order-detail-modal")));
+	}
+
+	@Test
+	void operationsDashboardShowsActionQueueFromOperationalData() throws Exception {
+		// 예외 큐 항목은 우선순위 탭 필터·페이지네이션을 지원하기 위해 서버 렌더링이 아니라 JS로 그려진다
+		// (Thymeleaf JS 인라이닝은 한글을 유니코드로, "/"는 "\/"로 이스케이프해서 원문 텍스트/URL 그대로는
+		// 못 찾으므로, 그 데이터가 실제로 페이지에 전달됐는지는 슬래시가 없는 고유 쿼리 조각으로 확인한다).
+		mockMvc.perform(get("/admin/operations-dashboard"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("오늘 확인할 작업")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("3분 운영 데모 시작")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("외부 CSV 비교")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("status=UNKNOWN")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("health=LOW")));
+	}
+
+	@Test
+	void productImageUploadUsesGeneratedPublicPath() throws Exception {
+		MockMultipartFile image = new MockMultipartFile("file", "unsafe-name.png", "image/png", new byte[]{(byte)137,80,78,71,13,10,26,10,1});
+		JsonNode result = objectMapper.readTree(mockMvc.perform(multipart("/admin/api/commerce/product-images").file(image))
+				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+		assertThat(result.get("imageUrl").asText()).startsWith("/uploads/products/").endsWith(".png").doesNotContain("unsafe-name");
+	}
+
+	@Test
+	void failedPaymentRestoresReservedStockAndMarksOrderFailed() {
+		String code = unique("FAIL-STOCK");
+		var product = productService.create(new ProductSaveRequest(code, "실패 복구 상품", "TEST",
+				BigDecimal.valueOf(1000), 2, "ON_SALE"));
+		var order = commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("ORDER-FAIL"), "buyer", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 2))));
+		assertThatThrownBy(() -> commerceOrderService.approvePayment(order.id())).isInstanceOf(BusinessException.class);
+		assertThat(productRepository.findById(product.id()).orElseThrow().getStockQuantity()).isEqualTo(2);
+		assertThat(commerceOrderRepository.findById(order.id()).orElseThrow().getOrderStatus().name()).isEqualTo("PAYMENT_FAILED");
+	}
+
+	@Test
+	void concurrentOrdersCannotOversellProduct() throws Exception {
+		String code = unique("CONCURRENT-STOCK");
+		var product = productService.create(new ProductSaveRequest(code, "동시성 상품", "TEST",
+				BigDecimal.valueOf(1000), 1, "ON_SALE"));
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		CountDownLatch ready = new CountDownLatch(2), start = new CountDownLatch(1), done = new CountDownLatch(2);
+		AtomicInteger successes = new AtomicInteger();
+		for (int i = 0; i < 2; i++) executor.submit(() -> { try { ready.countDown(); start.await();
+			commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("RACE"), "buyer", null,
+					List.of(new CommerceOrderItemCreateRequest(product.id(), 1)))); successes.incrementAndGet();
+		} catch (Exception ignored) { } finally { done.countDown(); }});
+		assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue(); start.countDown(); assertThat(done.await(10, TimeUnit.SECONDS)).isTrue(); executor.shutdownNow();
+		assertThat(successes.get()).isEqualTo(1);
+		assertThat(productRepository.findById(product.id()).orElseThrow().getStockQuantity()).isZero();
+	}
+
+	@Test
+	void customerCatalogQueryDoesNotExposeSoldOutOrStoppedProducts() throws Exception {
+		String storeCode = "CATALOG-" + UUID.randomUUID().toString().substring(0, 8);
+		var onSale = productService.create(new ProductSaveRequest(unique("ON"), "판매 상품", "TEST",
+				BigDecimal.valueOf(1000), 3, "ON_SALE", null, true, storeCode, List.of()));
+		productService.create(new ProductSaveRequest(unique("SOLD"), "품절 상품", "TEST",
+				BigDecimal.valueOf(1000), 0, "SOLD_OUT", null, true, storeCode, List.of()));
+		productService.create(new ProductSaveRequest(unique("STOP"), "판매 중지 상품", "TEST",
+				BigDecimal.valueOf(1000), 3, "STOPPED", null, true, storeCode, List.of()));
+
+		JsonNode response = objectMapper.readTree(mockMvc.perform(get("/admin/api/commerce/products")
+				.param("storeCode", storeCode).param("saleStatus", "ON_SALE").param("size", "20"))
+				.andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+		assertThat(response.get("items").size()).isEqualTo(1);
+		assertThat(response.get("items").get(0).get("id").asLong()).isEqualTo(onSale.id());
+	}
+
+	@Test
+	void selectedOptionCombinationResolvesToSellableSkuAndReservesItsStock() {
+		var product = productService.create(new ProductSaveRequest(unique("VARIANT"), "옵션 상품", "TEST",
+				BigDecimal.valueOf(25000), 1, "ON_SALE"));
+		var color = productOptionService.createGroup(product.id(), new GroupRequest("색상", "SINGLE", true, 1, 1, true,
+				List.of(new ValueRequest("Black", BigDecimal.ZERO, false, 0, "ON_SALE"),
+						new ValueRequest("White", BigDecimal.ZERO, false, 0, "ON_SALE"))));
+		var volume = productOptionService.createGroup(product.id(), new GroupRequest("용량", "SINGLE", true, 1, 1, true,
+				List.of(new ValueRequest("350ml", BigDecimal.ZERO, false, 0, "ON_SALE"),
+						new ValueRequest("500ml", BigDecimal.valueOf(2000), false, 0, "ON_SALE"))));
+		var generated = productVariantService.generate(product.id());
+		var black500 = generated.stream().filter(item -> "Black / 500ml".equals(item.optionSummary())).findFirst().orElseThrow();
+		productVariantService.update(black500.id(), new VariantUpdateRequest(black500.sku(), null,
+				black500.additionalPrice(), 5, "ON_SALE"));
+
+		var order = commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("OPTION-ORDER"), "buyer", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 1,
+						List.of(color.values().get(0).id(), volume.values().get(1).id()), List.of()))));
+		assertThat(order.items().get(0).productVariantId()).isEqualTo(black500.id());
+		assertThat(order.payableAmount()).isEqualByComparingTo("27000");
+		assertThat(productVariantService.list(product.id()).stream().filter(item -> item.id().equals(black500.id())).findFirst().orElseThrow().availableQuantity()).isEqualTo(4);
+		var reserveAudit = inventoryTransactionRepository.findByVariantIdOrderByIdDesc(black500.id()).get(0);
+		assertThat(reserveAudit.getType().name()).isEqualTo("RESERVE");
+		assertThat(reserveAudit.getStockBefore()).isEqualTo(5);
+		assertThat(reserveAudit.getStockAfter()).isEqualTo(5);
+		assertThat(reserveAudit.getReservedBefore()).isZero();
+		assertThat(reserveAudit.getReservedAfter()).isEqualTo(1);
+		assertThat(reserveAudit.getReferenceId()).isEqualTo(order.id());
+	}
+
+	@Test
+	void soldOutOptionCombinationIsRejectedBeforePayment() {
+		var product = productService.create(new ProductSaveRequest(unique("SOLD-VARIANT"), "품절 옵션 상품", "TEST",
+				BigDecimal.valueOf(10000), 1, "ON_SALE"));
+		var group = productOptionService.createGroup(product.id(), new GroupRequest("색상", "SINGLE", true, 1, 1, true,
+				List.of(new ValueRequest("Black", BigDecimal.ZERO, false, 0, "ON_SALE"))));
+		productVariantService.generate(product.id());
+		assertThatThrownBy(() -> commerceOrderService.createOrder(new CommerceOrderCreateRequest(unique("SOLD-ORDER"), "buyer", null,
+				List.of(new CommerceOrderItemCreateRequest(product.id(), 1, List.of(group.values().get(0).id()), List.of())))))
+				.isInstanceOf(BusinessException.class);
 	}
 
 	private record ConcurrentWorkerResult(int claimedCount, int successCount) {
