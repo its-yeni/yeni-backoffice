@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>배송 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css"><link rel="stylesheet" href="/css/pages/deliveries.css">
+</head>
+<body>
+<div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content product-page commerce-page">
+  <header class="page-header"><div><h3>배송 관리</h3><p>주문의 배송지 정보를 확인하고 배송 시작(운송장 발급)·배송 완료를 처리합니다. 재고가 창고에서 빠지는 "출고"와는 별개로, 택배사가 실어 나른 뒤 고객이 받기까지의 상태입니다.</p></div><div class="page-header-actions"><button type="button" class="btn btn-light" id="bulk-dispatch-open">송장 일괄등록</button><a class="btn btn-light" href="/admin/commerce/returns">반품 관리</a><a class="btn btn-light" href="/admin/commerce/shipments">출고 관리</a></div></header>
+
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">📦</span><div><span>배송 준비</span><strong id="kpi-dv-preparing">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">🚚</span><div><span>배송 중</span><strong id="kpi-dv-transit">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-ok">✅</span><div><span>배송 완료</span><strong id="kpi-dv-delivered">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-muted">⏱</span><div><span>지연 건</span><strong id="kpi-dv-stale">0<em>건</em></strong></div></div>
+  </div>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="delivery-keyword" type="search" placeholder="주문번호, 구매자, 받는분, 운송장번호 검색"></label>
+    <select id="delivery-status-filter"><option value="">배송 상태 전체</option><option value="PREPARING">배송 준비</option><option value="IN_TRANSIT">배송 중</option><option value="DELIVERED">배송 완료</option><option value="RETURNED">반송</option></select>
+    <label class="filter-checkbox"><input type="checkbox" id="delivery-stale-only"> 지연 건만 보기(배송중 72시간 초과)</label>
+    <div class="cmc-toolbar-actions"><button type="button" class="btn btn-text" id="delivery-filter-reset">초기화</button></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table delivery-table">
+      <thead><tr><th data-sort="orderNo">주문번호</th><th data-sort="buyerName">구매자</th><th data-sort="receiverName">받는분 / 연락처</th><th>배송지</th><th data-sort="carrier">택배사 / 운송장번호</th><th data-sort="status">배송 상태</th><th class="actions">관리</th></tr></thead>
+      <tbody id="delivery-rows"></tbody>
+    </table>
+    <div class="data-table-empty" id="empty-delivery" hidden><strong>조건에 맞는 배송 건이 없습니다.</strong><p>주문이 결제 완료되고 배송지가 등록되면 여기에 표시됩니다.</p></div>
+    <div id="delivery-pagination"></div>
+  </div>
+</section></main></div>
+
+<div class="commerce-modal" id="bulk-dispatch-modal" aria-hidden="true">
+  <div class="commerce-modal-dim" data-close-bulk-dispatch></div>
+  <section class="commerce-modal-card bulk-dispatch-card" role="dialog" aria-modal="true">
+    <div class="modal-title-row"><h2>송장 일괄등록</h2><button type="button" class="icon-close" data-close-bulk-dispatch>&times;</button></div>
+    <div class="bulk-dispatch-body">
+      <p class="bulk-dispatch-hint">CSV 파일 또는 아래 텍스트에 <strong>주문번호,택배사,운송장번호</strong> 형식으로 한 줄씩 입력하세요. (엑셀에서 "CSV UTF-8로 저장" 후 업로드하면 됩니다)</p>
+      <input type="file" id="bulk-dispatch-file" accept=".csv,text/csv">
+      <textarea id="bulk-dispatch-text" rows="6" placeholder="ORD-20260101-ABC123,CJ대한통운,111222333&#10;ORD-20260101-DEF456,한진택배,444555666"></textarea>
+      <button type="button" class="btn btn-primary" id="bulk-dispatch-submit">일괄 등록</button>
+      <div id="bulk-dispatch-result"></div>
+    </div>
+  </section>
+</div>
+
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/deliveries.js"></script>
+</body></html>

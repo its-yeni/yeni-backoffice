@@ -1,0 +1,26 @@
+/* 배송 관리 화면 전용 — 공통 테이블/필터 토큰은 components.css, commerce-list-system.css 재사용 */
+.delivery-table td { vertical-align: middle; }
+.delivery-table small { color: var(--text-secondary); }
+.delivery-request { color: var(--text-muted); font-style: italic; }
+
+.delivery-dispatch-form { display: flex; align-items: center; gap: 6px; }
+.delivery-dispatch-form select { height: 32px; padding: 0 6px; border: 1px solid var(--border-default); border-radius: var(--radius-control); font-size: 12px; }
+.delivery-dispatch-form input { width: 110px; height: 32px; padding: 0 8px; border: 1px solid var(--border-default); border-radius: var(--radius-control); font-size: 12px; }
+
+.text-link { color: var(--primary); text-decoration: none; font-size: 13px; }
+.text-link:hover { text-decoration: underline; }
+
+.filter-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.stale-badge { color: var(--danger); font-weight: 600; }
+
+.bulk-dispatch-card { width: min(560px, calc(100vw - 32px)); }
+.bulk-dispatch-body { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px; }
+.bulk-dispatch-hint { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.bulk-dispatch-body textarea { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--border-default); border-radius: var(--radius-control); font-size: 12px; font-family: inherit; resize: vertical; }
+.bulk-dispatch-result-table { margin-top: 8px; font-size: 12px; }
+.bulk-success { color: var(--success); }
+.bulk-fail { color: var(--danger); }
+
+/* 주문 상세에서 특정 배송 건으로 넘어왔을 때 강조 */
+.data-table tbody tr.row-focus { background: var(--primary-soft); box-shadow: inset 3px 0 0 var(--primary); }
+

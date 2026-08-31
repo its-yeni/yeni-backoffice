@@ -1,0 +1,5 @@
+package com.yeni.backoffice.core.commerce.repository;
+import com.yeni.backoffice.core.commerce.entity.StoreVariantInventory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.*;
+public interface StoreVariantInventoryRepository extends JpaRepository<StoreVariantInventory,Long>{List<StoreVariantInventory> findByStoreId(Long storeId);List<StoreVariantInventory> findByVariantId(Long variantId);Optional<StoreVariantInventory> findByStoreIdAndVariantId(Long storeId,Long variantId);@org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE) @org.springframework.data.jpa.repository.Query("select i from StoreVariantInventory i where i.storeId=:storeId and i.variantId=:variantId") Optional<StoreVariantInventory> findForUpdate(@org.springframework.data.repository.query.Param("storeId") Long storeId,@org.springframework.data.repository.query.Param("variantId") Long variantId);}

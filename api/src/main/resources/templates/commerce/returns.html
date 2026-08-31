@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>반품 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css"><link rel="stylesheet" href="/css/pages/deliveries.css"><link rel="stylesheet" href="/css/pages/returns.css">
+</head>
+<body>
+<div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="product-page commerce-page">
+  <header class="page-header"><div><h3>반품 관리</h3><p>반품 접수 → 검수 → 완료(재고 복원·환불 확정) 또는 반려까지 처리합니다. 검수를 통과하기 전에는 재고도 환불도 반영되지 않습니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/deliveries">배송 관리</a></div></header>
+
+  <div class="cmc-kpis">
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">📥</span><div><span>접수</span><strong id="kpi-rt-requested">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico">🔍</span><div><span>검수 중</span><strong id="kpi-rt-inspecting">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-ok">✅</span><div><span>완료</span><strong id="kpi-rt-completed">0<em>건</em></strong></div></div>
+    <div class="cmc-kpi"><span class="cmc-kpi-ico is-muted">🚫</span><div><span>반려</span><strong id="kpi-rt-rejected">0<em>건</em></strong></div></div>
+  </div>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="return-keyword" type="search" placeholder="주문번호, 구매자 검색"></label>
+    <select id="return-status-filter"><option value="">반품 상태 전체</option><option value="REQUESTED">접수</option><option value="INSPECTING">검수 중</option><option value="COMPLETED">완료</option><option value="REJECTED">반려</option></select>
+    <label class="filter-checkbox"><input type="checkbox" id="return-stale-only"> 지연 건만 보기(48시간 초과)</label>
+    <div class="cmc-toolbar-actions"><button type="button" class="btn btn-text" id="return-filter-reset">초기화</button><button type="button" class="btn btn-primary" id="return-new-open">반품 접수</button></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table return-table">
+      <thead><tr><th data-sort="orderNo">주문번호</th><th data-sort="buyerName">구매자</th><th data-sort="reason">반품 사유</th><th data-sort="responsibility">귀책</th><th data-sort="returnShippingFee">반송비</th><th data-sort="refundAmount">환불 금액</th><th data-sort="status">상태</th><th class="actions">관리</th></tr></thead>
+      <tbody id="return-rows"></tbody>
+    </table>
+    <div class="data-table-empty" id="empty-return" hidden><strong>조건에 맞는 반품 건이 없습니다.</strong><p>고객이 반품을 접수하거나, 관리자가 직접 접수하면 여기에 표시됩니다.</p></div>
+    <div id="return-pagination"></div>
+  </div>
+</section></main></div>
+
+<div class="commerce-modal" id="return-create-modal" aria-hidden="true">
+  <div class="commerce-modal-dim" data-close-return-create></div>
+  <section class="commerce-modal-card return-create-card" role="dialog" aria-modal="true">
+    <div class="modal-title-row"><h2>반품 접수</h2><button type="button" class="icon-close" data-close-return-create>&times;</button></div>
+    <div class="return-form">
+      <label>주문 번호(ID)<input type="number" id="return-order-id" placeholder="예: 12"></label>
+      <label>배송 ID(선택, 부분배송 중 특정 건만 반품할 때)<input type="number" id="return-delivery-id" placeholder="비워두면 주문 전체 반품"></label>
+      <label>반품 사유<input type="text" id="return-reason" placeholder="예: 단순 변심"></label>
+      <label>귀책<select id="return-responsibility"><option value="CUSTOMER_FAULT">고객 귀책(단순 변심 등)</option><option value="SELLER_FAULT">판매자 귀책(오배송/불량)</option></select></label>
+      <label>반송비(원, 고객 귀책일 때만 환불에서 차감)<input type="number" id="return-shipping-fee" value="0" min="0"></label>
+      <button type="button" class="btn btn-primary" id="return-create-submit">접수</button>
+    </div>
+  </section>
+</div>
+
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/returns.js"></script>
+</body></html>

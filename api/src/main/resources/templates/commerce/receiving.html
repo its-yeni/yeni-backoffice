@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>입고 관리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"><link rel="stylesheet" href="/css/pages/inventory-operations.css"><link rel="stylesheet" href="/css/pages/commerce-system.css">
+</head>
+<body>
+<div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="product-page commerce-page receiving-page">
+  <header class="page-header"><div><h3>입고 관리</h3><p>입고할 상품을 선택하고 입고 정보를 입력한 후 입고를 등록합니다.</p></div></header>
+
+  <aside class="receiving-guide">
+    <strong>입고 진행</strong>
+    <ol>
+      <li><b>1</b><div><strong>상품 선택</strong><small>입고할 SKU를 선택해 목록에 추가합니다.</small></div></li>
+      <li><b>2</b><div><strong>입고 정보 입력</strong><small>수량·위치·입고 유형을 입력합니다. LOT 번호는 입고 시 자동 발번됩니다.</small></div></li>
+      <li><b>3</b><div><strong>입고 등록</strong><small>확인 후 재고에 반영합니다.</small></div></li>
+    </ol>
+  </aside>
+
+  <div class="cmc-toolbar">
+    <label class="cmc-search"><input id="receiving-keyword" type="search" placeholder="상품명 · 상품코드 · SKU · 바코드 검색"></label>
+    <select id="receiving-category-filter"><option value="">카테고리 전체</option></select>
+    <select id="receiving-status-filter"><option value="">재고 상태 전체</option><option value="ON_SALE">판매중</option><option value="SOLD_OUT">품절</option><option value="STOPPED">판매중지</option></select>
+    <select id="receiving-availability-filter"><option value="">입고 가능 전체</option><option value="Y">가능</option><option value="N">불가</option></select>
+    <div class="cmc-toolbar-actions"><button type="button" class="btn btn-text" id="receiving-filter-reset">초기화</button><button type="button" class="btn btn-primary" id="receiving-search-btn">검색</button></div>
+  </div>
+
+  <p class="receiving-stock-note">
+    <b>현재 재고</b> 창고에 실제로 있는 수량 &nbsp;·&nbsp; <b>예약 재고</b> 주문이 생성돼 확보됐지만 아직 출고되지 않은 수량 &nbsp;·&nbsp; <b>가용 재고</b> = 현재 − 예약 (새 주문에 쓸 수 있는 수량)
+  </p>
+
+  <div class="receiving-split">
+    <section class="receiving-select-section">
+      <div class="receiving-section-title-row">
+        <div class="receiving-section-title"><strong>1. 입고할 상품을 선택하세요.</strong><span>전체 <b id="select-total-count">0</b>건</span></div>
+        <button type="button" class="btn btn-primary" id="add-selected-btn">선택 추가 (<span id="checked-count">0</span>)</button>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table receiving-select-table">
+          <thead><tr><th class="checkbox-col"><input type="checkbox" id="select-all-page"></th><th>카테고리</th><th>상품 / SKU</th><th class="number">현재</th><th class="number" title="현재 − 예약. 새 주문에 쓸 수 있는 수량">가용</th></tr></thead>
+          <tbody id="select-rows"></tbody>
+        </table>
+        <div class="data-table-empty" id="select-empty" hidden><strong>조건에 맞는 SKU가 없습니다.</strong><p>검색 조건을 변경해 보세요.</p></div>
+        <div id="select-pagination"></div>
+      </div>
+    </section>
+
+    <section class="receiving-pending-section">
+      <div class="receiving-section-title-row">
+        <div class="receiving-section-title"><strong>2. 입고 상품 목록 (<span id="pending-count">0</span>)</strong></div>
+        <div class="pending-actions"><button type="button" class="btn btn-text" id="pending-clear-selected">선택 삭제</button><button type="button" class="btn btn-text" id="pending-clear-all">전체 초기화</button></div>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table receiving-pending-table" id="pending-table">
+          <thead><tr><th class="checkbox-col"><input type="checkbox" id="pending-select-all"></th><th>상품 / SKU</th><th class="number">현재</th><th>수량 *</th><th>입고 위치 *</th><th>LOT</th><th>제조일</th><th>유통기한</th><th>입고 유형 *</th><th>메모</th><th></th></tr></thead>
+          <tbody id="pending-rows"></tbody>
+        </table>
+        <div class="pending-empty" id="pending-empty">
+          <svg viewBox="0 0 24 24"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+          <strong>선택된 상품이 없습니다.</strong>
+          <p>왼쪽 목록에서 입고할 상품을 선택하고 "선택 추가" 버튼을 클릭하세요.</p>
+        </div>
+      </div>
+      <div class="pending-footer">
+        <div class="pending-summary">총 <b id="summary-sku-count">0</b>개 SKU · 총 입고 예정 수량 <b id="summary-qty-sum">0</b>개</div>
+        <div class="pending-footer-actions"><button type="button" class="btn btn-light" id="pending-cancel">취소</button><button type="button" class="btn btn-primary" id="pending-submit" disabled>입고 등록</button></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="receiving-flow-complete" id="receiving-flow-complete" hidden>
+    <div><strong>초기 입고가 완료되었습니다.</strong><span>상품 판매 상태를 켜고 고객 화면 노출을 확인하세요.</span></div>
+    <a class="btn btn-primary" id="receiving-next-product" href="/admin/commerce/products">다음: 판매 상태 설정 →</a>
+  </aside>
+
+  <section class="receiving-history">
+    <div class="receiving-section-title"><strong>최근 입고 내역</strong><span>최근 200건까지 표시합니다.</span></div>
+    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>발생일시</th><th>상품</th><th>SKU</th><th class="number">입고 수량</th><th class="number">입고 후 재고</th><th>사유</th></tr></thead><tbody id="receiving-history-rows"></tbody></table><div class="data-table-empty" id="empty-receiving-history" hidden><strong>입고 이력이 없습니다.</strong><p>첫 입고를 등록해 보세요.</p></div></div>
+  </section>
+</section></main></div>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/receiving.js"></script>
+</body></html>

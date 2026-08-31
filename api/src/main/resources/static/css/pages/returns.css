@@ -1,0 +1,12 @@
+/* 반품 관리 화면 전용 — 배송 관리(deliveries.css)의 인라인 폼/상태 표시 패턴을 그대로 재사용 */
+.return-table td { vertical-align: middle; }
+.return-table small { color: var(--text-secondary); }
+
+.filter-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.stale-badge { color: var(--danger); font-weight: 600; }
+
+.return-create-card { width: min(480px, calc(100vw - 32px)); }
+.return-form { display: flex; flex-direction: column; gap: 12px; padding: 4px 20px 20px; }
+.return-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.return-form input, .return-form select { height: 36px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-control); font-size: 13px; }
+.return-form .btn { align-self: flex-end; margin-top: 4px; }
