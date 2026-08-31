@@ -1,0 +1,32 @@
+:root {
+    --commerce-blue: var(--primary); --commerce-blue-soft: var(--primary-soft); --commerce-text: #29364a;
+    --commerce-muted: #8793a4; --commerce-line: #e2e7ee; --commerce-surface: #fff; --commerce-soft: #f4f6f8;
+    /* commerce-orders.css reads var(--admin-line/--admin-text/--admin-soft, ...) with
+       hardcoded fallbacks that happen to equal the commerce-* values above — these
+       were never actually defined, so every call silently used the fallback. Aliasing
+       them here connects it to the real token instead of leaving it a dead reference. */
+    --admin-line: var(--commerce-line); --admin-line-soft: #f1f2f6;
+    --admin-text: var(--commerce-text); --admin-soft: var(--commerce-soft);
+}
+.commerce-page { min-height: calc(100vh - var(--topbar-height)); padding: 22px var(--content-gutter) 36px; background: var(--commerce-surface); color: var(--commerce-text); }
+.commerce-page * { box-sizing: border-box; }
+.commerce-kicker { display: block; margin-bottom: 4px; color: var(--commerce-muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.commerce-title { margin: 0; font-size: 24px; letter-spacing: -.03em; }
+.commerce-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.commerce-primary, .commerce-secondary { height: var(--control-height); padding: 0 13px; border: 0; border-radius: var(--radius-control); font-size: 13px; font-weight: 700; }
+.commerce-primary { background: var(--commerce-blue); color: #fff; }
+.commerce-secondary { background: var(--commerce-blue-soft); color: var(--primary-hover); }
+.commerce-switch { position: relative; display: inline-flex; width: 46px; height: 26px; }
+.commerce-switch input { position: absolute; opacity: 0; }
+.commerce-switch span { width: 100%; height: 100%; border-radius: 999px; background: #e5e9ee; transition: .2s; }
+.commerce-switch span::after { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.1); content: ""; transition: .2s; }
+.commerce-switch input:checked + span { background: var(--commerce-blue); }
+.commerce-switch input:checked + span::after { transform: translateX(20px); }
+.commerce-modal { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; isolation: isolate; }
+.commerce-modal.open { display: flex; }
+.commerce-modal-dim { position: absolute; z-index: -1; inset: 0; background: rgba(16,22,30,.58); backdrop-filter: blur(1px); }
+.commerce-modal-card { position: relative; width: min(820px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; border-radius: var(--radius-overlay); background: #fff; box-shadow: var(--shadow-overlay); }
+@media (max-width: 900px) {
+    .commerce-page { padding: 20px var(--content-gutter) 32px; }
+    .commerce-toolbar { align-items: stretch; flex-direction: column; }
+}

@@ -5,6 +5,595 @@ function toggleSidebar() {
     }
 }
 
+/* 관리자 작업 탭과 화면별 작업 상태를 브라우저 세션 동안 유지한다. */
+window.AdminWorkspace = (function () {
+    const TABS_KEY = "yeni-admin-workspace-tabs-v1";
+    const STATE_PREFIX = "yeni-admin-page-state-v1:";
+    const MAX_TABS = 12;
+    const TAB_TITLES = {
+        "/admin/operations-dashboard":"운영 대시보드", "/admin/commerce/products":"상품 목록",
+        "/admin/commerce/categories":"카테고리 관리", "/admin/commerce/options":"옵션 관리",
+        "/admin/commerce/product-options":"상품 옵션 설정", "/admin/commerce/preview":"구매·결제 시뮬레이션",
+        "/admin/commerce/orders":"주문 관리", "/admin/commerce/stores":"매장 관리",
+        "/admin/commerce/suppliers":"공급처 관리", "/admin/commerce/purchase-orders":"발주 관리",
+        "/admin/commerce/stock-counts":"재고 실사",
+        "/admin/commerce/receiving":"입고 관리", "/admin/commerce/inventory":"재고 현황",
+        "/admin/commerce/inventory/transfers":"재고 이동", "/admin/commerce/shipments":"출고 관리",
+        "/admin/commerce/deliveries":"배송 관리", "/admin/commerce/returns":"반품 관리",
+        "/admin/commerce/inventory/lots":"LOT·유통기한", "/admin/commerce/inventory/replenishment":"발주 제안",
+        "/admin/commerce/inventory/insights":"재고 인사이트",
+        "/admin/commerce/inventory/transactions":"입출고 내역", "/admin/payment-operations":"PG 거래",
+        "/admin/payment-operations/sales-ledger":"매출 원장", "/admin/payment-operations/pending-sales":"미확정 매출",
+        "/admin/payment-operations/sales-analytics":"매출 분석", "/admin/payment-operations/settlements":"정산 관리",
+        "/admin/payment-operations/settlements/reconciliation":"PG 대사", "/admin/payment-operations/pg-reconciliation":"PG 대사",
+        "/admin/analytics":"운영 개요", "/admin/analytics/orders":"주문 분석", "/admin/analytics/payments":"결제 분석",
+        "/admin/analytics/settlements":"정산 분석", "/admin/analytics/inventory":"재고 분석",
+        "/admin/database-spec":"DB 명세", "/admin/audit-logs":"감사 로그", "/admin/navigation":"메뉴 관리"
+    };
+
+    function pageKey() {
+        return location.pathname + "|" + (activeBrandId() || 0) + "|" + (activeStoreId() || 0);
+    }
+
+    function readTabs() {
+        try {
+            const stored = JSON.parse(sessionStorage.getItem(TABS_KEY) || "[]");
+            const unique = new Map();
+            stored.forEach(tab => {
+                let path = tab.path;
+                try { path = new URL(tab.url || tab.path, location.origin).pathname; }
+                catch (ignore) { path = tab.path; }
+                if (!path || !path.startsWith("/admin/")) return;
+                unique.set(path, {path:path, url:tab.url || path, title:TAB_TITLES[path] || tab.title || "관리 화면"});
+            });
+            const normalized = Array.from(unique.values()).slice(-MAX_TABS);
+            if (JSON.stringify(stored) !== JSON.stringify(normalized)) sessionStorage.setItem(TABS_KEY, JSON.stringify(normalized));
+            return normalized;
+        }
+        catch (ignore) { return []; }
+    }
+
+    function writeTabs(tabs) {
+        let list = tabs.slice();
+        // MAX_TABS를 넘으면 가장 오래된 것부터 버리되, 지금 보고 있는 탭은 남긴다.
+        while (list.length > MAX_TABS) {
+            const dropIndex = list[0].path === location.pathname && list.length > 1 ? 1 : 0;
+            list.splice(dropIndex, 1);
+        }
+        sessionStorage.setItem(TABS_KEY, JSON.stringify(list));
+    }
+
+    function pageTitle() {
+        if (TAB_TITLES[location.pathname]) return TAB_TITLES[location.pathname];
+        // 본문 페이지 헤더만 본다 — 상단바의 설계 노트 드로어(h2)를 제목으로 잡지 않도록 제외.
+        const candidates = document.querySelectorAll("main .page-header h1, main .page-header h2, main .page-header h3, main .page-title");
+        for (const node of candidates) {
+            if (node.closest(".topbar") || node.closest(".design-note-drawer")) continue;
+            const text = node.textContent.trim();
+            if (text) return text;
+        }
+        return document.title.split("-")[0].trim() || "관리 화면";
+    }
+
+    function rememberCurrentTab() {
+        if (!location.pathname.startsWith("/admin/")) return [];
+        const tabs = readTabs();
+        const existing = tabs.find(tab => tab.path === location.pathname);
+        if (existing) {
+            existing.url = location.href;
+            existing.title = pageTitle();
+        } else {
+            tabs.push({ path: location.pathname, url: location.href, title: pageTitle() });
+        }
+        writeTabs(tabs);
+        return readTabs();
+    }
+
+    function render() {
+        const host = document.getElementById("workspaceTabs");
+        if (!host) return;
+        const tabs = rememberCurrentTab();
+        host.innerHTML = tabs.map(tab => {
+            const active = tab.path === location.pathname;
+            return `<div class="workspace-tab${active ? " active" : ""}" data-workspace-path="${escapeHtml(tab.path)}">`
+                + `<a class="workspace-tab-label" href="${escapeHtml(tab.url)}"${active ? ' aria-current="page"' : ""}>${escapeHtml(tab.title)}</a>`
+                + `<button class="workspace-tab-close" type="button" data-close-workspace="${escapeHtml(tab.path)}" aria-label="${escapeHtml(tab.title)} 탭 닫기">×</button></div>`;
+        }).join("");
+        host.querySelectorAll("[data-close-workspace]").forEach(button => {
+            button.addEventListener("click", event => {
+                event.preventDefault();
+                event.stopPropagation();
+                const path = button.dataset.closeWorkspace;
+                const currentTabs = readTabs();
+                const index = currentTabs.findIndex(tab => tab.path === path);
+                const remaining = currentTabs.filter(tab => tab.path !== path);
+                writeTabs(remaining);
+                if (window.AdminHtmxNavigation) window.AdminHtmxNavigation.dropCachedView(path);
+                if (path === location.pathname) {
+                    const fallback = remaining[Math.min(Math.max(index - 1, 0), remaining.length - 1)];
+                    location.href = fallback ? fallback.url : "/admin/operations-dashboard";
+                } else render();
+            });
+        });
+        host.querySelectorAll('.workspace-tab.active .workspace-tab-label').forEach(link => {
+            link.addEventListener('click', event => event.preventDefault());
+        });
+    }
+
+    function serializableControls() {
+        return Array.from(document.querySelectorAll("main input, main select, main textarea"))
+            .filter(control => !["file", "password"].includes(control.type));
+    }
+
+    function savePageState() {
+        if (!location.pathname.startsWith("/admin/")) return;
+        const controls = [];
+        serializableControls().forEach((control, index) => {
+            const sameName = control.name
+                ? serializableControls().filter(item => item.name === control.name).indexOf(control)
+                : -1;
+            controls.push({
+                id: control.id || null,
+                name: control.name || null,
+                nameIndex: sameName,
+                index: index,
+                value: control.type === "checkbox" || control.type === "radio" ? control.checked : control.value
+            });
+        });
+        sessionStorage.setItem(STATE_PREFIX + pageKey(), JSON.stringify({
+            controls: controls,
+            scrollY: window.scrollY,
+            url: location.href,
+            savedAt: Date.now()
+        }));
+        const tabs = readTabs();
+        const current = tabs.find(tab => tab.path === location.pathname);
+        if (current) current.url = location.href;
+        writeTabs(tabs);
+    }
+
+    function restorePageState(finalPass) {
+        let state;
+        try { state = JSON.parse(sessionStorage.getItem(STATE_PREFIX + pageKey()) || "null"); }
+        catch (ignore) { return; }
+        if (!state || !state.controls) return;
+        const currentControls = serializableControls();
+        const savedControls = Array.isArray(state.controls)
+            ? state.controls
+            : Object.entries(state.controls).map(([id, value]) => ({id: id, value: value}));
+        savedControls.forEach(saved => {
+            let control = saved.id ? document.getElementById(saved.id) : null;
+            if (!control && saved.name) {
+                control = currentControls.filter(item => item.name === saved.name)[saved.nameIndex];
+            }
+            if (!control && Number.isInteger(saved.index)) control = currentControls[saved.index];
+            if (!control || control.dataset.noWorkspaceRestore === "true") return;
+            if (control.type === "checkbox" || control.type === "radio") control.checked = Boolean(saved.value);
+            else control.value = saved.value;
+        });
+        requestAnimationFrame(() => window.scrollTo(0, Number(state.scrollY || 0)));
+        document.dispatchEvent(new CustomEvent("workspace:state-restored", { detail: state }));
+        if (finalPass) {
+            const searchButton = document.querySelector('main button[id*="search"], main button[id*="filter-apply"]');
+            if (searchButton && !searchButton.disabled) searchButton.click();
+        }
+    }
+
+    function initialize() {
+        if (!location.pathname.startsWith("/admin/")) return;
+        render();
+        window.setTimeout(() => restorePageState(false), 0);
+        window.setTimeout(() => restorePageState(false), 350);
+        window.setTimeout(() => restorePageState(true), 900);
+        document.addEventListener("input", event => {
+            if (event.target.closest("main")) savePageState();
+        });
+        document.addEventListener("change", event => {
+            if (event.target.closest("main")) savePageState();
+        });
+        let scrollTimer;
+        window.addEventListener("scroll", () => {
+            window.clearTimeout(scrollTimer);
+            scrollTimer = window.setTimeout(savePageState, 120);
+        }, { passive: true });
+        window.addEventListener("pagehide", savePageState);
+        document.addEventListener("click", event => {
+            const link = event.target.closest("a[href]");
+            let adminLink = false;
+            try { adminLink = Boolean(link) && new URL(link.href, location.origin).pathname.startsWith("/admin/"); }
+            catch (ignore) { adminLink = false; }
+            if (adminLink && !link.closest("#workspaceTabs")) savePageState();
+        }, true);
+    }
+
+    return { initialize: initialize, save: savePageState, restore: restorePageState, refresh: render };
+})();
+
+document.addEventListener("DOMContentLoaded", AdminWorkspace.initialize);
+
+/*
+ * Thymeleaf 화면을 점진적으로 전환하는 HTMX 작업 셸.
+ * 공통 사이드바/상단바는 유지하고 본문, 페이지별 자산, 팝업만 교체한다.
+ */
+window.AdminHtmxNavigation = (function () {
+    const HTMX_SRC = "/webjars/htmx.org/2.0.8/dist/htmx.min.js";
+    const SUPPORTED = [
+        "/admin/commerce/products",
+        "/admin/commerce/categories",
+        "/admin/commerce/options",
+        "/admin/commerce/product-options",
+        "/admin/commerce/preview",
+        "/admin/commerce/stores",
+        "/admin/commerce/orders",
+        "/admin/commerce/receiving",
+        "/admin/commerce/inventory",
+        "/admin/commerce/inventory/transfers",
+        "/admin/commerce/shipments",
+        "/admin/commerce/deliveries",
+        "/admin/commerce/returns",
+        "/admin/commerce/inventory/transactions",
+        "/admin/payment-operations",
+        "/admin/payment-operations/sales-ledger",
+        "/admin/payment-operations/pending-sales",
+        "/admin/payment-operations/sales-analytics",
+        "/admin/payment-operations/settlements",
+        "/admin/payment-operations/settlements/reconciliation",
+        "/admin/payment-operations/pg-reconciliation",
+        "/admin/operations-dashboard",
+        "/admin/database-spec",
+        "/admin/audit-logs",
+        "/admin/navigation"
+    ];
+    let responseDocument = null;
+    let loadingScript = Promise.resolve();
+    const scriptSourceCache = new Map();
+    const viewCache = new Map();
+
+    function supportedPath(href) {
+        try { return SUPPORTED.includes(new URL(href, location.origin).pathname); }
+        catch (ignore) { return false; }
+    }
+
+    function enhanceLinks(root) {
+        (root || document).querySelectorAll('a[href]').forEach(link => {
+            if (!supportedPath(link.href)) return;
+            link.setAttribute("hx-get", link.getAttribute("href"));
+            link.setAttribute("hx-target", "main > section:first-of-type");
+            link.setAttribute("hx-select", "main > section:first-of-type");
+            link.setAttribute("hx-swap", "outerHTML show:top");
+            link.setAttribute("hx-push-url", "true");
+            if (window.htmx) window.htmx.process(link);
+        });
+    }
+
+    function pageAssets(doc) {
+        return {
+            styles: Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]')).map(link => link.href),
+            inlineScripts: Array.from(doc.querySelectorAll('script:not([src])')).map(script => script.textContent)
+                .filter(code => code.trim() && !code.includes("sidebar-collapsed") && !code.includes("var aliases=")),
+            scripts: Array.from(doc.querySelectorAll('script[src]')).map(script => script.src)
+                .filter(src => !src.includes("/js/common.js") && !src.includes("/js/admin-pagination.js") && !src.includes("/js/demo-guide.js"))
+        };
+    }
+
+    function installStyles(styles) {
+        const loaded = new Set(Array.from(document.querySelectorAll('link[rel="stylesheet"][href]')).map(link => link.href));
+        styles.forEach(href => {
+            if (loaded.has(href)) return;
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = href;
+            link.dataset.htmxPageAsset = "true";
+            document.head.appendChild(link);
+        });
+    }
+
+    function executeScript(src) {
+        if (!scriptSourceCache.has(src)) {
+            scriptSourceCache.set(src, fetch(src).then(response => {
+                if (!response.ok) throw new Error("화면 스크립트를 불러오지 못했습니다: " + src);
+                return response.text();
+            }).catch(error => {
+                scriptSourceCache.delete(src);
+                throw error;
+            }));
+        }
+
+        return scriptSourceCache.get(src).then(code => {
+            const readyCallbacks = [];
+            const loadCallbacks = [];
+            const originalDocumentAdd = document.addEventListener;
+            const originalWindowAdd = window.addEventListener;
+
+            document.addEventListener = function (type, listener, options) {
+                if (type === "DOMContentLoaded") {
+                    readyCallbacks.push(listener);
+                    return;
+                }
+                return originalDocumentAdd.call(document, type, listener, options);
+            };
+            window.addEventListener = function (type, listener, options) {
+                if (type === "load") {
+                    loadCallbacks.push(listener);
+                    return;
+                }
+                return originalWindowAdd.call(window, type, listener, options);
+            };
+
+            try {
+                Function(code + "\n//# sourceURL=" + src)();
+            } finally {
+                document.addEventListener = originalDocumentAdd;
+                window.addEventListener = originalWindowAdd;
+            }
+
+            const readyEvent = new Event("DOMContentLoaded");
+            const loadEvent = new Event("load");
+            const invoke = (listener, target, event) => typeof listener === "function"
+                ? listener.call(target, event)
+                : listener?.handleEvent?.call(listener, event);
+            return Promise.all([
+                ...readyCallbacks.map(listener => invoke(listener, document, readyEvent)),
+                ...loadCallbacks.map(listener => invoke(listener, window, loadEvent))
+            ]);
+        });
+    }
+
+    function installPageExtras(doc) {
+        document.querySelectorAll("[data-htmx-page-extra]").forEach(element => element.remove());
+        const layout = doc.querySelector(".layout");
+        if (!layout || !layout.parentElement) return;
+        Array.from(layout.parentElement.children).forEach(element => {
+            if (element === layout || element.tagName === "SCRIPT") return;
+            const clone = document.importNode(element, true);
+            clone.dataset.htmxPageExtra = "true";
+            document.body.appendChild(clone);
+        });
+    }
+
+    function cacheCurrentView() {
+        const section = document.querySelector("main > section:first-of-type");
+        if (!section || section.dataset.workspacePlaceholder === "true") return null;
+        const path = location.pathname;
+        const placeholder = section.cloneNode(true);
+        placeholder.dataset.workspacePlaceholder = "true";
+        placeholder.setAttribute("aria-hidden", "true");
+        placeholder.inert = true;
+        section.replaceWith(placeholder);
+        const extras = Array.from(document.querySelectorAll("[data-htmx-page-extra]"));
+        extras.forEach(element => element.remove());
+        viewCache.set(path, {
+            section: section,
+            extras: extras,
+            title: document.title,
+            url: location.href,
+            scrollY: window.scrollY
+        });
+        return placeholder;
+    }
+
+    function restoreCachedView(path, url) {
+        const cached = viewCache.get(path);
+        if (!cached) return false;
+        const placeholder = cacheCurrentView() || document.querySelector("main > section:first-of-type");
+        if (!placeholder) return false;
+        placeholder.replaceWith(cached.section);
+        document.querySelectorAll("[data-htmx-page-extra]").forEach(element => element.remove());
+        cached.extras.forEach(element => document.body.appendChild(element));
+        history.pushState({workspacePath: path}, "", url || cached.url);
+        document.title = cached.title;
+        viewCache.delete(path);
+        responseDocument = null;
+        updateShell();
+        cached.section.classList.add("workspace-page-enter");
+        document.body.classList.remove("workspace-navigating");
+        window.setTimeout(() => cached.section.classList.remove("workspace-page-enter"), 240);
+        requestAnimationFrame(() => window.scrollTo(0, Number(cached.scrollY || 0)));
+        document.dispatchEvent(new CustomEvent("admin:page-restored", {detail: {path: path}}));
+        return true;
+    }
+
+    function handleNavigationClick(event) {
+        const link = event.target.closest("a[href]");
+        if (!link || !supportedPath(link.href)) return;
+        const destination = new URL(link.href, location.origin);
+        if (destination.pathname === location.pathname) return;
+
+        if (link.closest("#workspaceTabs") && viewCache.has(destination.pathname)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            restoreCachedView(destination.pathname, destination.href);
+            return;
+        }
+
+        document.body.classList.add("workspace-navigating");
+        cacheCurrentView();
+    }
+
+    function updateShell() {
+        document.title = responseDocument?.title || document.title;
+        document.querySelectorAll(".nav a").forEach(link => {
+            const href = new URL(link.href).pathname;
+            const active = href === location.pathname
+                || (href === "/admin/commerce/options" && location.pathname === "/admin/commerce/product-options")
+                || (href === "/admin/payment-operations/settlements/reconciliation" && location.pathname === "/admin/payment-operations/pg-reconciliation");
+            link.classList.toggle("active", active);
+            const group = link.closest(".nav-group");
+            if (active && group) setGroupExpanded(group, true);
+        });
+        if (window.AdminWorkspace) window.AdminWorkspace.refresh();
+        enhanceLinks(document);
+    }
+
+    function bindHtmxEvents() {
+        document.addEventListener("click", handleNavigationClick, true);
+        document.body.addEventListener("htmx:beforeSwap", event => {
+            if (!event.detail.xhr?.responseText) return;
+            responseDocument = new DOMParser().parseFromString(event.detail.xhr.responseText, "text/html");
+            installStyles(pageAssets(responseDocument).styles);
+        });
+        document.body.addEventListener("htmx:afterSwap", () => {
+            if (!responseDocument) return;
+            const enteredSection = document.querySelector("main > section:first-of-type");
+            if (enteredSection) {
+                enteredSection.classList.add("workspace-page-enter");
+                window.setTimeout(() => enteredSection.classList.remove("workspace-page-enter"), 240);
+            }
+            document.body.classList.remove("workspace-navigating");
+            const assets = pageAssets(responseDocument);
+            installPageExtras(responseDocument);
+            updateShell();
+            assets.inlineScripts.forEach(code => Function(code)());
+            loadingScript = assets.scripts.reduce((chain, src) => chain.then(() => executeScript(src)), Promise.resolve())
+                .then(() => {
+                    if (window.AdminWorkspace) window.AdminWorkspace.restore(true);
+                })
+                .then(() => document.dispatchEvent(new CustomEvent("admin:page-ready", {detail: {path: location.pathname}})))
+                .catch(error => {
+                    console.error(error);
+                    AppToast.error("화면 초기화에 실패해 전체 화면으로 다시 엽니다.");
+                    location.reload();
+                });
+            responseDocument = null;
+        });
+        document.body.addEventListener("htmx:afterSettle", () => {
+            // hx-push-url 반영이 끝난 실제 경로를 기준으로 탭을 최종 정리한다.
+            updateShell();
+        });
+        document.body.addEventListener("htmx:responseError", () => {
+            document.body.classList.remove("workspace-navigating");
+            const cached = viewCache.get(location.pathname);
+            const placeholder = document.querySelector('[data-workspace-placeholder="true"]');
+            if (cached && placeholder) {
+                placeholder.replaceWith(cached.section);
+                cached.extras.forEach(element => document.body.appendChild(element));
+                viewCache.delete(location.pathname);
+            }
+            AppToast.error("화면을 불러오지 못했습니다.");
+        });
+        document.body.addEventListener("htmx:historyRestore", () => {
+            fetch(location.href, {headers: {"X-Workspace-Assets": "true"}})
+                .then(response => response.text())
+                .then(html => {
+                    const doc = new DOMParser().parseFromString(html, "text/html");
+                    const assets = pageAssets(doc);
+                    installStyles(assets.styles);
+                    installPageExtras(doc);
+                    updateShell();
+                    assets.inlineScripts.forEach(code => Function(code)());
+                    return assets.scripts.reduce((chain, src) => chain.then(() => executeScript(src)), Promise.resolve())
+                        .then(() => {
+                            if (window.AdminWorkspace) window.AdminWorkspace.restore(true);
+                        });
+                })
+                .catch(error => {
+                    console.error(error);
+                    location.reload();
+                });
+        });
+    }
+
+    function initialize() {
+        enhanceLinks(document);
+        const script = document.createElement("script");
+        script.src = HTMX_SRC;
+        script.onload = () => { bindHtmxEvents(); enhanceLinks(document); };
+        script.onerror = () => console.warn("HTMX를 불러오지 못해 일반 페이지 이동을 사용합니다.");
+        document.head.appendChild(script);
+    }
+
+    function dropCachedView(path) {
+        viewCache.delete(path);
+    }
+
+    return {
+        initialize: initialize,
+        enhanceLinks: enhanceLinks,
+        dropCachedView: dropCachedView
+    };
+})();
+
+document.addEventListener("DOMContentLoaded", AdminHtmxNavigation.initialize);
+
+window.activeStoreCode=function(){return localStorage.getItem("commerce-store-code")||"YENI-SHOP-01";};
+window.activeBrandId=function(){return Number(new URLSearchParams(location.search).get("brandId")||localStorage.getItem("commerce-brand-id")||0);};
+window.activeStoreId=function(){return Number(new URLSearchParams(location.search).get("storeId")||localStorage.getItem("commerce-store-id")||0);};
+document.addEventListener("DOMContentLoaded",async function(){
+    return;
+    try{
+        const stores=await apiGet("/admin/api/commerce/stores");
+        const select=document.createElement("select");select.className="global-store-select";select.setAttribute("aria-label","현재 매장");
+        select.innerHTML=stores.filter(store=>store.active).map(store=>`<option value="${escapeHtml(store.storeCode)}">${escapeHtml(store.storeName)}</option>`).join("");
+        select.value=activeStoreCode();select.onchange=()=>{localStorage.setItem("commerce-store-code",select.value);location.reload();};
+        document.querySelector(".top-actions")?.prepend(select);
+    }catch(ignore){}
+});
+
+/* 상단바 브랜드·매장 선택기. "전체"(값 0)를 포함하며, 이 값이 화면 전반의 조회 범위를 결정한다.
+   - 매장을 고르면 그 매장 데이터만, "전체 매장"이면 모든 매장 합산.
+   - activeStoreId()가 0이면 withOperationalStore()가 storeId를 붙이지 않아 서버가 전체를 반환한다. */
+document.addEventListener("DOMContentLoaded",async function(){
+    if(!location.pathname.startsWith("/admin/"))return;
+    const SERVER_SCOPED=["/admin/operations-dashboard"]; // 서버 렌더링 → storeId 쿼리로만 좁혀짐
+    try{
+        const brands=await apiGet("/admin/api/brands");
+        if(!brands.length)return;
+        let brand=activeBrandId()?brands.find(b=>b.id===activeBrandId())||null:null;
+        let stores=brand?await apiGet(`/admin/api/brands/${brand.id}/stores`):await apiGet("/admin/api/commerce/stores");
+        let store=activeStoreId()?stores.find(s=>s.id===activeStoreId())||null:null;
+        persistCommerceContext(brand,store);
+
+        const context=document.createElement("div");context.className="global-commerce-context";
+        const brandSelect=document.createElement("select");brandSelect.className="global-brand-select";brandSelect.setAttribute("aria-label","현재 브랜드");
+        brandSelect.innerHTML='<option value="0">전체 브랜드</option>'+brands.map(b=>`<option value="${b.id}">${escapeHtml(b.brandName)}</option>`).join("");
+        brandSelect.value=String(brand?brand.id:0);
+        const storeSelect=document.createElement("select");storeSelect.className="global-store-select";storeSelect.setAttribute("aria-label","현재 매장");
+        const storeOptions=list=>'<option value="0">전체 매장</option>'+list.filter(s=>s.active).map(s=>`<option value="${s.id}">${escapeHtml(s.storeName)}</option>`).join("");
+        storeSelect.innerHTML=storeOptions(stores);
+        storeSelect.value=String(store?store.id:0);
+
+        function applyContext(brandId,storeId){
+            const url=new URL(location.href);
+            storeId?url.searchParams.set("storeId",storeId):url.searchParams.delete("storeId");
+            brandId?url.searchParams.set("brandId",brandId):url.searchParams.delete("brandId");
+            location.href=url.toString();
+        }
+        brandSelect.onchange=()=>{
+            const bid=Number(brandSelect.value);
+            persistCommerceContext(bid?brands.find(b=>b.id===bid):null,null);
+            applyContext(bid,0);
+        };
+        storeSelect.onchange=()=>{
+            const sid=Number(storeSelect.value);
+            persistCommerceContext(brand,sid?stores.find(s=>s.id===sid):null);
+            applyContext(brand?brand.id:0,sid);
+        };
+
+        const brandField=document.createElement("label");brandField.innerHTML="<span>브랜드</span>";brandField.append(brandSelect);
+        const storeField=document.createElement("label");storeField.innerHTML="<span>매장</span>";storeField.append(storeSelect);
+        context.append(brandField,storeField);document.querySelector(".topbar-context")?.append(context);
+
+        const brandLabel=brand?brand.brandName:"전체 브랜드", storeLabel=store?store.storeName:"전체 매장";
+        if(document.getElementById("console-brand"))document.getElementById("console-brand").textContent=brandLabel;
+        if(document.getElementById("console-store"))document.getElementById("console-store").textContent=storeLabel;
+        document.querySelectorAll("[data-operational-scope]").forEach(scope=>{
+            const title=scope.querySelector("strong");
+            if(title)title.textContent=`${brandLabel} · ${storeLabel}`;
+        });
+
+        if(store&&SERVER_SCOPED.includes(location.pathname)&&!new URLSearchParams(location.search).has("storeId")){
+            const url=new URL(location.href);url.searchParams.set("storeId",store.id);location.replace(url.toString());
+        }
+    }catch(ignore){}
+});
+function persistCommerceContext(brand,store){
+    localStorage.setItem("commerce-brand-id",String(brand&&brand.id?brand.id:0));
+    localStorage.setItem("commerce-store-id",String(store&&store.id?store.id:0));
+    if(store&&store.storeCode)localStorage.setItem("commerce-store-code",store.storeCode);
+    else localStorage.removeItem("commerce-store-code");
+}
+function reloadWithContext(brandId,storeId){const url=new URL(location.href);url.searchParams.set("brandId",brandId);url.searchParams.set("storeId",storeId);location.href=url.toString();}
+
 document.addEventListener("click", function(event) {
     const sidebar = document.getElementById("sidebar");
     const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
@@ -18,7 +607,21 @@ document.addEventListener("click", function(event) {
 
 document.addEventListener("DOMContentLoaded", function() {
     initializeSidebarGroups();
+    initializeSidebarCollapse();
 });
+
+function initializeSidebarCollapse() {
+    const button = document.getElementById("sidebarCollapseBtn");
+    const collapsed = localStorage.getItem("sidebar-collapsed") === "true";
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    if (!button) return;
+    button.addEventListener("click", function() {
+        const next = !document.body.classList.contains("sidebar-collapsed");
+        document.body.classList.toggle("sidebar-collapsed", next);
+        localStorage.setItem("sidebar-collapsed", String(next));
+        button.setAttribute("aria-label", next ? "사이드바 펼치기" : "사이드바 접기");
+    });
+}
 
 window.AppLoading = (function () {
     let activeCount = 0;
@@ -76,6 +679,35 @@ window.AppLoading = (function () {
     };
 })();
 
+window.AppToast = (function () {
+    let host;
+    function ensureHost() {
+        if (host) return host;
+        host = document.createElement("div");
+        host.className = "toast-host";
+        host.setAttribute("aria-live", "polite");
+        document.body.appendChild(host);
+        return host;
+    }
+    function show(message, type) {
+        const toast = document.createElement("div");
+        toast.className = "app-toast " + (type || "info");
+        toast.setAttribute("role", type === "error" ? "alert" : "status");
+        toast.textContent = message || "요청을 처리했습니다.";
+        ensureHost().appendChild(toast);
+        requestAnimationFrame(function () { toast.classList.add("open"); });
+        window.setTimeout(function () {
+            toast.classList.remove("open");
+            window.setTimeout(function () { toast.remove(); }, 180);
+        }, type === "error" ? 5000 : 3000);
+    }
+    return {
+        show: show,
+        success: function (message) { show(message, "success"); },
+        error: function (message) { show(message, "error"); }
+    };
+})();
+
 function initializeSidebarGroups() {
     document.querySelectorAll(".nav-group").forEach(function(group) {
         const groupCode = group.dataset.groupCode;
@@ -107,7 +739,19 @@ function setGroupExpanded(group, expanded) {
 
 async function parseApiResponse(response) {
     const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
+    const contentType = response.headers.get("content-type") || "";
+    if (response.redirected || contentType.includes("text/html")) {
+        throw new Error("서버가 JSON 대신 화면 응답을 반환했습니다. 세션이 만료됐을 수 있습니다.");
+    }
+
+    let data = {};
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch (error) {
+            throw new Error("서버 응답을 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
     if (response.ok) {
         return data;
     }
@@ -121,3 +765,267 @@ async function parseApiResponse(response) {
     error.response = data;
     throw error;
 }
+
+/* 여러 admin 페이지가 각자 다시 만들던 공통 유틸. 새로 만들 땐 이걸 먼저 확인. */
+function money(value) {
+    return Number(value || 0).toLocaleString("ko-KR") + "원";
+}
+
+function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value === undefined || value === null ? "" : String(value);
+    return div.innerHTML;
+}
+
+/* 결제ID·TID처럼 운영자가 자주 복사해서 쓰는 값을 렌더링하는 공통 헬퍼.
+   페이지마다 복사 버튼을 따로 만들지 말고 이걸 사용한다. 클릭 이벤트는
+   document 레벨에서 한 번만 위임 처리한다(아래 참고). */
+function copyableValue(value, emptyLabel) {
+    if (!value) return escapeHtml(emptyLabel || "-");
+    return '<span class="copy-chip" data-copy="' + escapeHtml(value) + '" title="클릭해서 복사">'
+        + '<span class="copy-chip-text">' + escapeHtml(value) + '</span>'
+        + '<svg class="copy-chip-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>'
+        + '</span>';
+}
+
+document.addEventListener("click", function (event) {
+    const chip = event.target.closest(".copy-chip");
+    if (!chip) return;
+    // 복사칩이 클릭 가능한 행/카드 안에 있는 경우가 많아, 상세 열기 같은
+    // 상위 클릭 핸들러가 같이 동작하지 않도록 여기서 막는다.
+    event.stopPropagation();
+    const value = chip.dataset.copy;
+    if (!value || !navigator.clipboard) return;
+    navigator.clipboard.writeText(value)
+        .then(function () { AppToast.success("복사했습니다: " + value); })
+        .catch(function () { AppToast.error("복사에 실패했습니다."); });
+});
+
+/* Mock 시나리오로 만들어진 데모 주문/거래를 실데이터와 구분해 보여주는 공통 배지.
+   DemoOrderSeedInitializer/Mock 주문 생성이 공통으로 쓰는 기본 연락처를 기준으로 판단한다. */
+function isDemoBuyerPhone(phone) {
+    return phone === "010-0000-0000";
+}
+function demoBadge() {
+    return '<span class="badge-demo" title="Mock 시나리오로 생성된 데모 데이터입니다">TEST</span>';
+}
+
+/* 데이터 요청 중 로딩 표시 — 상단 진행 바 + 0.5초 넘어가면 "잠시만 기다려 주세요" 안내.
+   apiGet/apiPost 가 자동으로 호출하므로 페이지 코드는 신경 쓰지 않아도 된다. */
+window.AppLoading = (function () {
+    let active = 0, bar, pill, pillTimer;
+    function ensure() {
+        if (bar || !document.body) return;
+        bar = document.createElement("div");
+        bar.className = "app-loading-bar";
+        pill = document.createElement("div");
+        pill.className = "app-loading-pill";
+        pill.textContent = "데이터를 불러오는 중입니다. 잠시만 기다려 주세요…";
+        document.body.appendChild(bar);
+        document.body.appendChild(pill);
+    }
+    function begin() {
+        ensure();
+        active++;
+        if (bar) bar.classList.add("is-on");
+        clearTimeout(pillTimer);
+        pillTimer = setTimeout(function () { if (active > 0 && pill) pill.classList.add("is-on"); }, 500);
+    }
+    function end() {
+        active = Math.max(0, active - 1);
+        if (active > 0) return;
+        clearTimeout(pillTimer);
+        if (bar) bar.classList.remove("is-on");
+        if (pill) pill.classList.remove("is-on");
+    }
+    return { begin: begin, end: end };
+})();
+
+async function apiGet(url) {
+    AppLoading.begin();
+    try { return parseApiResponse(await fetch(withOperationalStore(url))); }
+    finally { AppLoading.end(); }
+}
+
+async function apiPost(url, body, method) {
+    const requestBody={...(body||{})};
+    if(url.includes("/settlements/batch/run")&&activeStoreId())requestBody.storeId=activeStoreId();
+    AppLoading.begin();
+    try {
+        return parseApiResponse(await fetch(withOperationalStore(url), {
+            method: method || "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody)
+        }));
+    } finally { AppLoading.end(); }
+}
+
+function withOperationalStore(url){
+    const storeId=activeStoreId();
+    const scoped=url.includes("/commerce/orders")
+        ||url.includes("/commerce/location-inventory")
+        ||url.includes("/commerce/shipments")
+        ||url.includes("/commerce/deliveries")
+        ||url.includes("/commerce/returns")
+        ||url.includes("/payment-operations/payments")
+        ||url.includes("/sales-ledger")
+        ||url.includes("/settlements")
+        ||url.includes("/api/analytics/")
+        ||url.includes("/admin/api/dashboard");
+    if(!storeId||!scoped||/[?&]storeId=/.test(url))return url;
+    return url+(url.includes("?")?"&":"?")+"storeId="+encodeURIComponent(storeId);
+}
+
+/* 화면 우상단 "설계 노트" 버튼으로 여는 drawer. 설계 의도를 남겨둘 만한 화면에만 메모를 붙인다. */
+const AdminDesignNotes = (function () {
+    const notes = [
+        { match: "/admin/operations-dashboard", title: "예외부터 보이는 운영 대시보드",
+          why: "전체 건수보다, 지금 안 보면 고객·재고·정산에 영향 가는 게 뭔지가 먼저다.",
+          how: "결과불명·복구대기·안전재고·정산초안을 한 큐로 모으고, 각 항목에서 필터 걸린 원본 화면으로 바로 이동. 숫자는 전부 현재 데이터에서 계산." },
+        { match: "/admin/commerce/orders", title: "주문 상태 ≠ 결제 상태",
+          why: "주문 처리랑 PG 응답은 서로 다른 시점에 실패한다. 하나의 상태값으로 못 묶는다.",
+          how: "둘을 따로 추적. 주문 생성 때 서버에서 판매가 재검증 + SKU 재고 예약. PG 타임아웃/결과불명은 실패로 단정 안 하고 복구 대상으로 분리." },
+        { match: "/admin/payment-operations", title: "PG 장애를 운영 가능한 상태로",
+          why: "타임아웃 = 승인 실패 아님. 바로 재결제하면 중복 승인 난다.",
+          how: "멱등키로 중복 요청 차단, UNKNOWN은 복구 작업으로 분리, PG 요청·응답·후속처리 로그를 한 거래에 묶음. 실제 PG 대신 Mock Gateway." },
+        { match: "/admin/payment-operations/sales-ledger", title: "매출을 수정하지 않고 누적",
+          why: "매출 행을 덮어쓰면 부분취소 이력이랑 정산 근거가 사라진다.",
+          how: "승인(SALE)/취소(CANCEL)를 별도 불변 행으로. 주문번호·결제ID·TID로 원거래 연결. 확정 매출의 승인액 − 누적취소액만 정산 대상." },
+        { match: "/admin/payment-operations/settlements/reconciliation", title: "외부 자료와 내부 원장 대사",
+          why: "내부 DB가 일관돼도 실제 PG 처리 결과랑 맞는지는 별개다.",
+          how: "PG CSV와 내부 SALE/CANCEL을 거래 단위로 비교. 누락·외부단독·금액차이로 분류하고, 불일치 해소 전에는 정산 확정을 막는다." },
+        { match: "/admin/payment-operations/settlements", title: "원장 기준 정산",
+          why: "결제 상태를 직접 합산하면 취소·재처리 시 정산 근거가 흔들린다.",
+          how: "SALE/CANCEL 원장을 기준으로 초안 → 확정 → 지급. 동일 정산일·MID 중복 배치 방지. 대상액 − 수수료·VAT·조정 = 지급액이 맞아야 확정." },
+        { match: "/admin/commerce/inventory", title: "현재 수량이 아니라 변동 근거",
+          why: "숫자 하나만 저장하면 재고가 왜 달라졌는지 설명을 못 한다.",
+          how: "현재·예약·가용을 분리하고 입고·예약·해제·출고·조정·이동을 전부 변동 이력으로. 전역 수량은 매장 재고 합계 파생값. 가용 = 현재 − 예약(음수 불가)." },
+        { match: "/admin/commerce/products", title: "상품 원장과 판매 SKU 분리",
+          why: "상품 정보랑 옵션별 가격·재고·판매상태는 바뀌는 주기가 다르다.",
+          how: "상품은 공통 원장, 실제 판매/재고 단위는 옵션 조합(SKU). 주문은 상품 ID가 아니라 SKU + 서버 계산가에 붙는다." }
+    ];
+    function current() {
+        const path = location.pathname;
+        return notes.find(note => path.startsWith(note.match)) || {
+            title: "이 화면의 설계 메모",
+            why: "운영 화면은 데이터 나열로 끝나지 않고 현재 상태와 다음 행동을 같이 보여줘야 한다.",
+            how: "목록은 테이블 중심, 예외를 정상보다 먼저 배치, 브랜드·매장 컨텍스트를 요청에 일관되게 전달. 화면 값보다 서버 도메인 규칙이 최종 기준."
+        };
+    }
+    function render(note) {
+        return `<section><h3>왜</h3><p>${escapeHtml(note.why)}</p></section>`
+            + `<section><h3>어떻게</h3><p>${escapeHtml(note.how)}</p></section>`
+            + `<p class="design-note-scope">인증·권한·개인정보 마스킹·인프라는 공개 데모에서 단순화했습니다.</p>`;
+    }
+    function init() {
+        const trigger = document.getElementById("designNoteTrigger"), drawer = document.getElementById("designNoteDrawer"),
+            dim = document.getElementById("designNoteDim"), close = document.getElementById("designNoteClose"),
+            body = document.getElementById("designNoteBody"), title = document.getElementById("designNoteTitle");
+        if (!trigger || !drawer || !dim || !close || !body || !title) return;
+        const note = current();
+        title.textContent = note.title;
+        body.innerHTML = render(note);
+        const setOpen = open => {
+            drawer.classList.toggle("open", open);
+            drawer.setAttribute("aria-hidden", String(!open));
+            trigger.setAttribute("aria-expanded", String(open));
+            dim.hidden = !open;
+            document.body.classList.toggle("design-note-open", open);
+        };
+        trigger.addEventListener("click", () => setOpen(true));
+        close.addEventListener("click", () => setOpen(false));
+        dim.addEventListener("click", () => setOpen(false));
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && drawer.classList.contains("open")) setOpen(false);
+        });
+    }
+    return { init };
+})();
+document.addEventListener("DOMContentLoaded", AdminDesignNotes.init);
+
+/* 결제·정산 화면 상단에 전체 흐름 스트립을 삽입한다 — 사이드바 메뉴가 각각 어느 단계인지
+   운영자가 한눈에 파악하도록. 현재 화면 단계를 강조한다. */
+const AdminPaymentFlow = (function () {
+  const steps = [
+    { key: "approve", label: "① PG 승인·취소", href: "/admin/payment-operations", desc: "Mock PG 승인/취소, 결과불명·복구" },
+    { key: "ledger", label: "② 매출 원장", href: "/admin/payment-operations/sales-ledger", desc: "확정된 SALE/CANCEL 불변 기록" },
+    { key: "confirm", label: "③ 구매 확정", href: "/admin/payment-operations/pending-sales", desc: "배송 완료 시 매출 확정 → 정산 대상" },
+    { key: "recon", label: "④ PG 대사", href: "/admin/payment-operations/settlements/reconciliation", desc: "외부 PG 파일과 내부 원장 비교" },
+    { key: "settle", label: "⑤ 정산", href: "/admin/payment-operations/settlements", desc: "초안 → 확정 → 지급" },
+  ];
+  function activeKey() {
+    const p = location.pathname;
+    if (p.startsWith("/admin/payment-operations/settlements/reconciliation")) return "recon";
+    if (p.startsWith("/admin/payment-operations/settlements")) return "settle";
+    if (p.startsWith("/admin/payment-operations/pending-sales")) return "confirm";
+    if (p.startsWith("/admin/payment-operations/sales-ledger") || p.startsWith("/admin/payment-operations/sales-analytics")) return "ledger";
+    if (p === "/admin/payment-operations" || p.startsWith("/admin/payment-operations?")) return "approve";
+    return null;
+  }
+  function init() {
+    const active = activeKey();
+    if (!active) return;
+    const header = document.querySelector(".content > .page-header, .content > header.page-header, section.content .page-header");
+    if (!header) return;
+    const nav = document.createElement("nav");
+    nav.className = "payflow-strip";
+    nav.setAttribute("aria-label", "결제·정산 흐름");
+    nav.innerHTML = steps.map((s, i) =>
+      `${i ? '<span class="payflow-arrow">→</span>' : ''}<a class="payflow-step${s.key === active ? ' current' : ''}" href="${s.href}" title="${s.desc}">${s.label}</a>`
+    ).join("");
+    header.insertAdjacentElement("afterend", nav);
+  }
+  return { init };
+})();
+document.addEventListener("DOMContentLoaded", AdminPaymentFlow.init);
+
+/* ── 목록 표 정렬 헤더 ──────────────────────────────────────────────────────────
+   <th data-sort="key"> 를 클릭하면 asc↔desc 토글하고 sort-asc/sort-desc 클래스로 표시한다.
+   render 쪽에서 sorter.apply(rows) 로 정렬된 배열을 얻어 그린다.
+     const sorter = AdminTableSort.attach(tableEl, { defaultKey:'createdAt', defaultDir:'desc', onSort: render });
+     const shown = sorter.apply(filtered); */
+window.AdminTableSort = (function () {
+  function attach(tableEl, opts) {
+    opts = opts || {};
+    const state = { key: opts.defaultKey || null, dir: opts.defaultDir || 'asc' };
+    const accessor = opts.accessor || ((row, key) => row[key]);
+    function paint() {
+      tableEl.querySelectorAll('th[data-sort]').forEach(th => {
+        const on = th.dataset.sort === state.key;
+        th.classList.toggle('sort-asc', on && state.dir === 'asc');
+        th.classList.toggle('sort-desc', on && state.dir === 'desc');
+      });
+    }
+    tableEl.querySelectorAll('th[data-sort]').forEach(th => {
+      th.classList.add('sortable');
+      th.addEventListener('click', () => {
+        const k = th.dataset.sort;
+        if (state.key === k) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        else { state.key = k; state.dir = 'asc'; }
+        paint();
+        if (typeof opts.onSort === 'function') opts.onSort(state);
+      });
+    });
+    paint();
+    return {
+      get state() { return { key: state.key, dir: state.dir }; },
+      apply(rows) {
+        if (!state.key) return rows;
+        const dir = state.dir === 'asc' ? 1 : -1;
+        return [...rows].sort((a, b) => {
+          let av = accessor(a, state.key), bv = accessor(b, state.key);
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          if (typeof av !== 'number' && typeof bv !== 'number') {
+            const na = Number(av), nb = Number(bv);
+            if (!Number.isNaN(na) && !Number.isNaN(nb) && String(av).trim() !== '' && String(bv).trim() !== '') { av = na; bv = nb; }
+          }
+          if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+          return String(av).localeCompare(String(bv), 'ko') * dir;
+        });
+      }
+    };
+  }
+  return { attach };
+})();

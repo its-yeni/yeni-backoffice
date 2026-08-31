@@ -13,15 +13,15 @@
 
 .filter-input {
     padding: 8px 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border-strong);
     border-radius: 8px;
     font-size: 14px;
     outline: none;
 }
 
 .filter-input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    border-color: var(--admin-blue);
+    box-shadow: 0 0 0 3px rgba(177, 83, 46, 0.1);
 }
 
 .table-section {
@@ -30,7 +30,7 @@
 
 .panel-header {
     padding: 18px 20px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-default);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -38,17 +38,18 @@
 
 .panel-header h3 {
     margin: 0;
-    font-size: 17px;
+    font-size: var(--text-h3-size);
+    font-weight: var(--text-h3-weight);
 }
 
 .table-count {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 700;
 }
 
 .empty-cell {
-    color: #6b7280;
+    color: var(--text-secondary);
     text-align: center;
 }
 
@@ -66,17 +67,17 @@
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--gray-100);
+    color: var(--gray-700);
 }
 
 .btn-edit:hover {
-    background: #2563eb;
+    background: var(--admin-blue);
     color: #fff;
 }
 
 .btn-delete:hover {
-    background: #dc2626;
+    background: var(--danger);
     color: #fff;
 }
 
@@ -108,7 +109,7 @@
 
 .modal-header {
     padding: 18px 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-default);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -116,7 +117,8 @@
 
 .modal-header h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: var(--text-h3-size);
+    font-weight: var(--text-h3-weight);
 }
 
 .modal-close {
@@ -124,11 +126,11 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 
 .modal-close:hover {
-    color: #111827;
+    color: var(--text-primary);
 }
 
 .modal-body {
@@ -144,7 +146,7 @@
     margin-bottom: 6px;
     font-size: 14px;
     font-weight: 700;
-    color: #374151;
+    color: var(--gray-700);
 }
 
 .form-group input,
@@ -159,8 +161,8 @@
 
 .form-group input:focus,
 .form-group select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    border-color: var(--admin-blue);
+    box-shadow: 0 0 0 3px rgba(177, 83, 46, 0.1);
 }
 
 .form-group input[type="checkbox"] {
@@ -180,12 +182,12 @@
     flex-wrap: wrap;
     font-size: 14px;
     font-weight: 700;
-    color: #374151;
+    color: var(--gray-700);
 }
 
 .modal-footer {
     padding: 16px 24px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--border-default);
     display: flex;
     gap: 10px;
     justify-content: flex-end;

@@ -1,17 +1,18 @@
 <header class="topbar" xmlns:th="http://www.thymeleaf.org">
-    <div style="display:flex; align-items:center; gap:12px;">
+    <link rel="stylesheet" href="/css/demo-guide.css">
+    <div class="topbar-context">
         <button class="mobile-menu-btn" type="button" onclick="toggleSidebar()">메뉴</button>
-        <div class="page-title">
-            <h1 th:text="${title}">개요</h1>
-            <p th:text="${description}">백오피스 포트폴리오 화면입니다.</p>
-        </div>
     </div>
-
     <div class="top-actions">
-        <input class="search" type="text" placeholder="주문, 거래, 프로젝트 검색" />
-        <div class="profile-pill">
-            <div class="avatar">Y</div>
-            권예은
-        </div>
+        <button class="design-note-trigger" id="designNoteTrigger" type="button" aria-controls="designNoteDrawer" aria-expanded="false">설계 노트</button>
+        <div class="profile-pill"><div class="avatar">Y</div>권예은</div>
     </div>
+    <div class="design-note-dim" id="designNoteDim" hidden></div>
+    <aside class="design-note-drawer" id="designNoteDrawer" aria-hidden="true" aria-labelledby="designNoteTitle">
+        <header><div><span>설계 메모</span><h2 id="designNoteTitle">이 화면의 설계 메모</h2></div><button type="button" id="designNoteClose" aria-label="닫기">×</button></header>
+        <div class="design-note-body" id="designNoteBody"></div>
+    </aside>
+    <nav class="workspace-tabs" id="workspaceTabs" aria-label="열린 작업 화면"></nav>
 </header>
+<script src="/js/admin-pagination.js"></script>
+<script src="/js/demo-guide.js"></script>

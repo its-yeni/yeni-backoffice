@@ -10,6 +10,16 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(500, "서버 처리 중 오류가 발생했습니다."),
     DATA_INTEGRITY_VIOLATION(409, "이미 처리된 요청이거나 데이터 제약 조건과 충돌합니다."),
 
+    PRODUCT_NOT_FOUND(404, "상품을 찾을 수 없습니다."),
+    PRODUCT_CODE_DUPLICATED(409, "이미 사용 중인 상품코드입니다."),
+    PRODUCT_NOT_ON_SALE(409, "판매 중인 상품이 아닙니다."),
+    PRODUCT_STOCK_NOT_ENOUGH(409, "상품 재고가 부족합니다."),
+    PRODUCT_VARIANT_BARCODE_DUPLICATED(409, "이미 등록된 바코드입니다."),
+    PRODUCT_VARIANT_NOT_FOUND(404, "SKU를 찾을 수 없습니다."),
+    ORDER_NOT_FOUND(404, "주문을 찾을 수 없습니다."),
+    ORDER_PAYMENT_NOT_ALLOWED(409, "현재 주문 상태에서는 결제할 수 없습니다."),
+    ORDER_PAYMENT_AMOUNT_MISMATCH(409, "주문금액과 결제 요청금액이 일치하지 않습니다."),
+
     PAYMENT_NOT_FOUND(404, "결제 거래를 찾을 수 없습니다."),
     PAYMENT_ALREADY_APPROVED(409, "이미 승인된 주문번호입니다."),
     PAYMENT_ALREADY_CANCELED(409, "이미 전체 취소된 결제입니다."),

@@ -29,5 +29,11 @@ public class AdminNavigationGroup extends BaseTimeEntity {
 
     @Column(nullable = false)
     private Boolean useYn = true;
+
+    public void update(String groupName, Integer sortOrder, boolean useYn) {
+        this.groupName = groupName;
+        this.sortOrder = sortOrder;
+        this.useYn = useYn;
+    }
 }
 
