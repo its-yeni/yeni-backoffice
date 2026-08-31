@@ -1,20 +1,17 @@
 # Implementation Notes
 
-Spring Boot 기반 백오피스 포트폴리오에서 결제·취소, 매출 원장, 복구 작업, 후속 처리 Queue, 정산 흐름을 구현하며 고려한 설계 내용을 정리한 공개 문서입니다.
+결제·취소, 매출 원장, 복구 작업, 후속 처리 Queue, 정산을 구현하면서 흐름을 어떤 기준으로 나눴고
+중복 요청·동시 처리·결과불명을 코드에서 어떻게 다뤘는지 정리한 메모.
 
-이 프로젝트는 실제 PG 운영망이나 알림톡 외부망에 연결하지 않습니다. `MockPaymentGateway`, `MockExternalSendClient`, `MockAlimtalkClient`를 사용해 성공, 실패, 결과불명, 재처리 흐름을 재현합니다. 현재 코드에 구현된 범위와 운영 환경에서 추가로 필요한 항목을 구분해 설명합니다.
+실제 PG/외부망에는 붙지 않고 `MockPaymentGateway` 등으로 성공·실패·결과불명·재처리를 재현한다.
+재고·발주·실사 쪽은 [README](../README.md)의 "주요 흐름" 참고.
 
-## 1. 문서 목적
+기본 원칙:
 
-이 문서는 화면 기능을 나열하기보다 각 흐름을 어떤 기준으로 분리했고, 중복 요청·동시 처리·결과불명처럼 운영 과정에서 발생할 수 있는 상황을 코드에서 어떻게 다뤘는지 설명합니다.
-
-주요 설계 기준은 다음과 같습니다.
-
-- 확정되지 않은 결제 결과를 매출 원장과 정산에 반영하지 않습니다.
-- 중복 생성 방어에는 서비스 조회와 DB unique constraint를 함께 사용합니다.
-- 같은 자원을 동시에 변경하는 흐름은 row lock 또는 상태 조건부 claim으로 보호합니다.
-- 외부 후속 처리는 결제 저장 흐름과 분리해 Queue 상태로 추적합니다.
-- Mock 기반 현재 구현과 실제 운영 환경에서 필요한 확장 항목을 구분합니다.
+- 확정되지 않은 결제 결과는 매출 원장·정산에 반영하지 않는다
+- 중복 생성 방어는 서비스 사전 조회 + DB unique constraint 병행
+- 같은 자원을 동시에 바꾸는 흐름은 row lock 또는 상태 조건부 claim
+- 외부 후속 처리는 결제 저장 흐름과 분리해 Queue 상태로 추적
 
 ## 2. 전체 처리 흐름
 
@@ -264,5 +261,60 @@ API 오류는 `BusinessException`과 `ErrorCode`를 기준으로 처리하고 `A
 - 정산 후 취소의 다음정산차감 자동 반영
 - 영업일·공휴일 기준 D+N 정산과 셀러별 정산
 - 관리자 권한, 감사 로그 정책, 민감정보 마스킹
+
+## 14. 재고·물류 흐름
+
+재고 도메인은 일반 커머스/유통 백오피스의 입고 흐름을 따른다.
+
+```text
+발주서(PurchaseOrder) 작성(DRAFT)
+  -> 발주 확정(ORDERED)        : 미입고 수량이 "입고 예정"으로 잡힘
+  -> 입고 검수(GRN, 부분입고 가능): PurchaseOrderService.receive
+  -> 재고 원장(InventoryLedgerService)이 매장 재고·LOT·감사 로그를 한 번에 반영
+```
+
+주기적으로는 재고 실사(StockCount)로 시스템 수량과 실물을 대조하고, 차이만큼 조정을 전기한다.
+
+### 단일 재고 원장 (`InventoryLedgerService`)
+
+SKU 재고 증감(입고/예약/예약해제/출고/조정/이동)의 유일한 쓰기 경로다. 모든 변동은
+매장별 재고(`StoreVariantInventory`)와 LOT(`InventoryLot`)에 먼저 반영하고, 그 직후 해당 SKU의
+전역 프로젝션(`ProductVariant.stockQuantity`/`reservedQuantity`)을 `Σ 매장 재고`로 다시 맞춘다.
+전역 수량은 이제 독립 장부가 아니라 매장 합계의 파생값이므로, 예전에 있던 "전역 vs 매장" 드리프트
+보정 코드는 제거했다.
+
+- 첫 매장 재고 행이 생길 때는 그동안 전역 수량으로만 관리되던 기존 재고를 그 매장으로 귀속시킨다(단일 매장 가정).
+- 매장 재고 행이 하나도 없는 경로(옵션 없는 상품, 순수 단위 테스트)는 기존 `ProductVariant` 직접 증감 메서드를 폴백으로 유지한다.
+
+### LOT / 유통기한 추적
+
+- 입고 시 LOT를 항상 자동 발번한다(`LOT-yyMMdd-###`). 반품 재입고는 `RTN-`, 실사·수기 증가 조정은 `ADJ-`, 매장 이동 입고는 출발 LOT + `-T`.
+- 유통기한이 없는 품목(의류 등)도 LOT 추적 대상이므로 `inventory_lot.expiration_date` 는 nullable, FEFO 정렬은 `NULLS LAST`.
+- 출고·이동·감소 조정은 FEFO(유통기한 임박 순)로 LOT 잔량을 소진한다.
+- 재고 현황 화면은 `Σ LOT 잔량 ≠ 매장 현재재고` 일 때 "LOT 불일치" 배지를 노출한다(원장 통일 이후에는 과거·직접 편집 데이터에서만 나타난다).
+
+### 발주 제안
+
+`InventoryPlanningService.replenishments` 는
+`일평균 = max(0, 30일 출고 − 30일 반품 재입고) / 30`,
+`리드타임 = 그 SKU를 가장 최근 발주한 공급처의 lead_time_days`,
+`공급 = 가용 + 이동 중 + 발주 미입고` 로 발주점과 제안 수량을 계산한다.
+
+### 관련 코드
+
+- `InventoryLedgerService`, `PurchaseOrderService`, `StockCountService`, `SupplierService`
+- `LocationInventoryService`(입고 예정·LOT 잔량·매장 안전재고), `InventoryPlanningService`(발주 제안·LOT)
+- Entity: `Supplier`, `PurchaseOrder`(+Item), `StockCount`(+Line), `InventoryLot`, `StoreVariantInventory.safetyStock`
+- 화면: 공급처 관리 / 발주 관리 / 입고 처리 / 재고 현황 / 재고 실사 / LOT·유통기한 / 발주 제안 / 재고 이동
+- 테스트: `InventoryDomainTest`(원장 프로젝션 정합, 발주 상태 전이·부분입고, 실사 조정 전기)
+
+### 운영 확장 시 고려할 항목
+
+- 공급처 EDI/발주 승인 워크플로, 입고 검수 반려·부분 불량 처리
+- 순환 실사(cycle count) 스케줄러, 실사 중 재고 동결
+- 멀티 매장에서 전역 프로젝션의 의미 재정의(대표 매장 vs 합계), 매장별 원가 분리
+- 발주-입고 리드타임 실측 피드백, 공급처별 정산
+
+---
 
 이 문서는 현재 저장소에 구현된 구조를 기준으로 작성했습니다. 실제 외부 시스템과 운영 인프라가 필요한 항목은 확장 방향으로 분리했습니다.

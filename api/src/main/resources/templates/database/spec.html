@@ -1,76 +1,11 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DB 명세 - Yeni Backoffice</title>
-
-    <link rel="stylesheet" th:href="@{/css/common.css}" />
-    <link rel="stylesheet" th:href="@{/css/layout.css}" />
-    <link rel="stylesheet" th:href="@{/css/scroll-top.css}" />
-    <link rel="stylesheet" th:href="@{/css/components.css}" />
-    <link rel="stylesheet" th:href="@{/css/pages/database-spec.css}" />
-</head>
-
-<body>
-<div class="layout">
-    <div th:replace="~{fragments/sidebar}"></div>
-
-    <main class="main">
-        <div th:replace="~{fragments/topbar :: header}"></div>
-
-        <section class="content db-spec-page">
-            <div class="db-hero">
-                <span class="badge">전체 스키마 자동 명세</span>
-                <h2>PG 결제 운영 DB 명세</h2>
-                <p th:text="${description}">
-                    결제, 취소, 매출 원장, 외부전송, 알림톡, 복구 작업, 정산 테이블의 역할과 컬럼 구조를 확인합니다.
-                </p>
-            </div>
-
-            <div class="db-table-grid">
-                <article class="card db-card" th:each="table : ${tableSpecs}">
-                    <div class="db-card-header">
-                        <h3 th:text="${table.tableName}">table_name</h3>
-                        <p th:text="${table.tableDescription}">description</p>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>컬럼명</th>
-                                <th>데이터 타입</th>
-                                <th>PK</th>
-                                <th>NULL</th>
-                                <th>기본값</th>
-                                <th>설명</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="column : ${table.columns}">
-                                <td th:text="${column.columnName}">id</td>
-                                <td><span class="keyword" th:text="${column.dataType}">PK / BIGINT</span></td>
-                                <td>
-                                    <span class="db-flag pk" th:if="${column.primaryKey}">PK</span>
-                                    <span class="db-muted" th:unless="${column.primaryKey}">-</span>
-                                </td>
-                                <td>
-                                    <span class="db-flag nullable" th:if="${column.nullable}">허용</span>
-                                    <span class="db-flag required" th:unless="${column.nullable}">필수</span>
-                                </td>
-                                <td th:text="${column.defaultValue ?: '-'}">-</td>
-                                <td th:text="${column.columnDescription}">description</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </article>
-            </div>
-        </section>
-    </main>
-</div>
-
-<script th:src="@{/js/common.js}"></script>
-<script th:src="@{/js/scroll-top.js}"></script>
-</body>
-</html>
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DB 명세 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/database-spec.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content db-spec-page"><header class="page-header"><div><span hidden>전체 스키마 자동 명세</span><h3>DB 명세</h3><p>주문·결제·원장·정산 데이터의 테이블과 컬럼 구조를 확인합니다.</p></div></header>
+<div class="db-toolbar"><input id="db-spec-keyword" type="search" placeholder="테이블명 또는 설명 검색"><button class="btn btn-text" id="db-spec-reset" type="button">초기화</button></div>
+<div class="db-summary"><span>전체 테이블</span><strong th:text="${#lists.size(tableSpecs) + '개'}">0개</strong><p>행을 선택하면 컬럼 명세가 펼쳐집니다.</p></div>
+<div class="db-list"><div class="db-list-head"><span>테이블명</span><span>설명</span><span>컬럼 수</span><span></span></div>
+  <article class="db-card" th:each="table : ${tableSpecs}" th:attr="data-search=${table.tableName + ' ' + table.tableDescription}">
+    <button class="db-row" type="button" aria-expanded="false"><strong th:text="${table.tableName}">table_name</strong><span th:text="${table.tableDescription}">description</span><em th:text="${#lists.size(table.columns) + '개'}">0개</em><b>펼치기</b></button>
+    <div class="db-columns" hidden><div class="table-wrap"><table><thead><tr><th>컬럼명</th><th>데이터 타입</th><th>PK</th><th>NULL</th><th>기본값</th><th>설명</th></tr></thead><tbody><tr th:each="column : ${table.columns}"><td th:text="${column.columnName}">id</td><td><span class="keyword" th:text="${column.dataType}">BIGINT</span></td><td><span class="db-flag pk" th:if="${column.primaryKey}">PK</span><span class="db-muted" th:unless="${column.primaryKey}">-</span></td><td><span class="db-flag nullable" th:if="${column.nullable}">허용</span><span class="db-flag required" th:unless="${column.nullable}">필수</span></td><td th:text="${column.defaultValue ?: '-'}">-</td><td th:text="${column.columnDescription}">description</td></tr></tbody></table></div></div>
+  </article>
+</div><div class="data-table-empty" id="db-spec-empty" hidden><strong>조건에 맞는 테이블이 없습니다.</strong><p>검색어를 변경해 주세요.</p></div><div id="db-spec-pagination"></div></section></main></div>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/database-spec.js"></script></body></html>

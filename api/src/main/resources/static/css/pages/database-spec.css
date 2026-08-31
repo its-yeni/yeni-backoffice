@@ -1,104 +1,12 @@
-.db-spec-page {
-    display: grid;
-    gap: 20px;
-}
-
-.db-hero {
-    padding: 26px;
-    border: 1px solid #dbe4f0;
-    border-radius: 18px;
-    background: #ffffff;
-}
-
-.db-hero h2 {
-    margin: 0;
-    color: #111827;
-    font-size: 26px;
-}
-
-.db-hero p {
-    max-width: 860px;
-    margin: 10px 0 0;
-    color: #64748b;
-    line-height: 1.6;
-}
-
-.db-table-grid {
-    display: grid;
-    gap: 18px;
-}
-
-.db-card {
-    padding: 0;
-}
-
-.db-card-header {
-    padding: 20px 22px 12px;
-    border-bottom: 1px solid #eef0f3;
-}
-
-.db-card-header h3 {
-    margin: 0;
-    color: #111827;
-    font-size: 17px;
-}
-
-.db-card-header p {
-    margin: 8px 0 0;
-    color: #64748b;
-    font-size: 13px;
-}
-
-.db-card table {
-    min-width: 980px;
-}
-
-.db-card td:nth-child(6) {
-    white-space: normal;
-    line-height: 1.5;
-}
-
-.db-card th:nth-child(3),
-.db-card th:nth-child(4),
-.db-card td:nth-child(3),
-.db-card td:nth-child(4) {
-    width: 84px;
-    text-align: center;
-}
-
-.db-card th:nth-child(5),
-.db-card td:nth-child(5) {
-    width: 140px;
-}
-
-.db-flag {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 42px;
-    height: 24px;
-    padding: 0 8px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 850;
-}
-
-.db-flag.pk {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.db-flag.nullable {
-    background: #e0f2fe;
-    color: #0369a1;
-}
-
-.db-flag.required {
-    background: #fef3c7;
-    color: #b45309;
-}
-
-.db-muted {
-    color: #94a3b8;
-    font-weight: 800;
-}
+.db-spec-page{display:block;padding:28px var(--content-gutter) 36px;background:var(--page-canvas)}
+.db-spec-page>.page-header{padding-bottom:24px}.db-spec-page>.page-header h1{font-size:29px;letter-spacing:-.035em}.db-spec-page>.page-header p{margin-top:5px;font-size:13px}
+.db-toolbar{display:flex;gap:10px;padding-bottom:18px;border-bottom:1px solid #dfe4eb}.db-toolbar input{width:min(520px,100%);height:42px;padding:0 13px;border:1px solid #d7dde6;border-radius:8px;background:#fff;font-size:12px}.db-toolbar input:focus{outline:3px solid rgba(67,99,216,.1);border-color:#6683df}
+.db-summary{display:flex;align-items:center;gap:8px;height:52px;border-bottom:1px solid #dfe4eb;font-size:12px}.db-summary span{color:#667085}.db-summary strong{font-size:14px}.db-summary p{margin-left:auto;color:#7b8798}
+.db-list{margin-top:14px;border:1px solid #dfe4eb;border-radius:9px;overflow:hidden;background:#fff}
+.db-list-head,.db-row{display:grid;grid-template-columns:minmax(210px,.8fr) minmax(380px,2fr) 100px 70px;align-items:center;gap:12px;width:100%;text-align:left}
+.db-list-head{height:42px;padding:0 16px;background:#f7f8fa;color:#536075;font-size:12px;font-weight:600}
+.db-card{border-top:1px solid #e7ebf0}.db-row{min-height:50px;padding:0 16px;border:0;background:#fff;cursor:pointer}.db-row:hover{background:#fafbfc}.db-row strong{font-size:12px;color:#1e293b;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.db-row span{overflow:hidden;color:#5f6b7d;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.db-row em{color:#5f6b7d;font-size:12px;font-style:normal}.db-row b{color:#496ad2;font-size:11px;font-weight:650}
+.db-columns{padding:0 16px 14px;background:#fafbfc}.db-columns .table-wrap{overflow-x:auto;border:1px solid #e1e6ed;border-radius:7px}.db-columns table{width:100%;min-width:800px;border-collapse:collapse;background:#fff;font-size:11px}.db-columns th{height:34px;padding:0 10px;background:#f7f8fa;color:#5f6b7d;text-align:left}.db-columns td{height:38px;padding:5px 10px;border-top:1px solid #edf0f4;color:#344054}.db-columns th:nth-child(3),.db-columns th:nth-child(4),.db-columns td:nth-child(3),.db-columns td:nth-child(4){width:70px;text-align:center}.db-columns th:nth-child(5),.db-columns td:nth-child(5){width:120px}
+.db-flag{font-size:10px;font-weight:650}.db-flag.pk{color:#16845b}.db-flag.nullable{color:#697588}.db-flag.required{color:#273248}.db-muted{color:#a0a8b5}.db-spec-page #db-spec-pagination{padding:13px 0}
+@media(max-width:900px){.db-list{overflow-x:auto}.db-list-head,.db-row{min-width:760px}.db-summary p{display:none}}
+@media(max-width:600px){.db-spec-page{padding-top:20px}.db-toolbar{display:grid;grid-template-columns:1fr auto}.db-toolbar input{width:100%}}
