@@ -11,5 +11,9 @@ public interface SettlementStatementRepository extends JpaRepository<SettlementS
 
     Optional<SettlementStatement> findBySettlementDateAndMid(LocalDate settlementDate, String mid);
 
+    Optional<SettlementStatement> findBySettlementDateAndMidAndStoreId(LocalDate settlementDate, String mid, Long storeId);
+
     List<SettlementStatement> findBySettlementDateBetweenOrderBySettlementDateDesc(LocalDate startDate, LocalDate endDate);
+
+    List<SettlementStatement> findBySettlementDateBetweenAndStoreIdOrderBySettlementDateDesc(LocalDate startDate, LocalDate endDate, Long storeId);
 }

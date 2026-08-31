@@ -1,0 +1,216 @@
+/* ── 결제·정산 목록 화면 공통 카드화 ──────────────────────────────────────────
+   PG 거래 · 매출 원장 · 미확정 매출 · 매출 분석 · PG 정산 대사 화면을
+   정산 관리(settlements-v2)와 같은 테두리 카드 톤으로 통일한다.
+   기존 클래스(.ops-*, .pg-*)의 마크업/JS는 그대로 두고 스타일만 덮어쓴다. */
+
+.ops-list-page, .pg-transaction-page { padding: 18px var(--content-gutter) 40px; }
+.ops-list-page > .page-header h1, .pg-transaction-page > .page-header h1 { font-size: 23px; letter-spacing: -.02em; }
+.ops-list-page > .page-header, .pg-transaction-page > .page-header { padding-bottom: 8px !important; margin-bottom: 0 !important; min-height: 0; }
+.ops-list-page > .page-header p, .pg-transaction-page > .page-header p { margin-top: 3px; }
+
+/* ── 목록 레이아웃 ──────────────────────────────────────────────────────────────
+   다른 화면(상품·재고)과 동일하게 페이지네이션 바를 브라우저 하단에 고정하고
+   표 본문만 남은 높이 안에서 스크롤한다 (:has(.pagination-footer) 표준 레이아웃 사용).
+   기존 CSS 가 표 래퍼에 overflow:hidden!important 를 걸어 스크롤을 막고 있어 풀어준다. */
+.pg-transaction-page .pg-table-wrap,
+.ops-list-page .ops-table-wrap,
+.ops-list-page .recon-table-wrap,
+.ops-list-page .settlement-table-wrap { overflow: auto !important; max-height: none !important; }
+
+/* 매출 분석은 "목록 한 개"가 아니라 카드·차트가 쌓인 긴 화면 — 하위 집계 표의
+   페이지네이션은 브라우저 하단이 아니라 카드 안에 둔다. */
+section.ops-list-page.sa-page:has(.pagination-footer) {
+  height: auto !important; min-height: calc(100vh - var(--topbar-height));
+  display: block !important; overflow: visible !important; }
+section.ops-list-page.sa-page .pagination-footer {
+  position: static !important; left: auto !important; right: auto !important; z-index: auto !important;
+  margin: 0 !important; padding: 6px 2px !important; min-height: 0 !important; border: 0 !important; background: transparent !important; }
+section.ops-list-page.sa-page .pagination-total { display: none; }
+body:has(section.sa-page) { padding-bottom: 0 !important; }
+
+/* ── 필터 카드 ─────────────────────────────────────────────────────────────── */
+.ops-filter-bar, .pg-filter-bar, .ops-list-page > .filter-bar, .settlement-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px !important;
+  border-radius: var(--radius-container);
+  min-height: 64px;
+  padding: 12px 14px !important;
+  border: 1px solid var(--border-default) !important;
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 5px 12px rgba(16,24,40,.04);
+  backdrop-filter: blur(8px);
+  margin: 0 0 12px !important;
+  grid-template-columns: none !important;
+}
+.ops-filter-bar input, .pg-filter-bar input, .ops-filter-bar select, .pg-filter-bar select,
+.settlement-toolbar input, .settlement-toolbar select { height: 38px !important; }
+.ops-filter-bar > .ops-search, .pg-filter-bar > .pg-search,
+.ops-list-page > .filter-bar > input[type="search"] { flex: 1 1 240px; min-width: 200px; }
+.ops-filter-bar .ops-date-range, .pg-filter-bar .pg-date-range { flex: 0 0 auto; }
+.ops-filter-bar > input, .ops-filter-bar > select,
+.pg-filter-bar > input, .pg-filter-bar > select,
+.ops-list-page > .filter-bar > select, .settlement-toolbar > select { flex: 0 0 auto; width: auto !important; min-width: 140px; }
+.ops-filter-bar .ops-date-range input, .pg-filter-bar .pg-date-range input { width: 150px !important; }
+.ops-date-range, .pg-date-range, .settlement-daterange { display: inline-flex; align-items: center; gap: 6px; }
+.settlement-daterange input { width: 150px !important; }
+@media (max-width: 900px) {
+  .ops-filter-bar, .pg-filter-bar, .ops-list-page > .filter-bar, .settlement-toolbar { position: static; }
+}
+/* 조회·초기화 등 후행 버튼은 오른쪽으로 */
+.ops-filter-bar > .btn, .pg-filter-bar > .btn,
+.ops-list-page > .filter-bar > .btn, .settlement-toolbar > .btn { flex: 0 0 auto; }
+.ops-filter-bar > .btn:first-of-type, .pg-filter-bar > .btn:first-of-type,
+.ops-list-page > .filter-bar > .btn:first-of-type, .settlement-toolbar > .btn:first-of-type { margin-left: auto; }
+
+/* 검색 입력 돋보기 아이콘 (.pg-search 는 이미 있음 → .ops-search 에도 부여) */
+.ops-search { position: relative; }
+.ops-search::after { content: ""; position: absolute; right: 15px; top: 14px; width: 12px; height: 12px;
+  border: 1.6px solid var(--text-muted); border-radius: 50%; pointer-events: none; }
+.ops-search::before { content: ""; position: absolute; right: 12px; top: 26px; width: 6px;
+  border-top: 1.6px solid var(--text-muted); transform: rotate(45deg); pointer-events: none; }
+.ops-search input { padding-right: 40px; }
+
+/* ── KPI 스트립 — 컴팩트, 아이콘 없이, 옅은 배경 (.cmc-kpi 와 동일 톤) ────────────
+   세그먼트: 라벨 + 값을 한 줄 가로로. .k-ico 는 숨긴다. */
+.ops-summary-strip, .pg-status-tabs, .recon-summary {
+  height: auto !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-container);
+  background: var(--bg-subtle);
+  overflow: hidden;
+  margin: 0 0 10px !important;
+}
+.ops-summary-strip { display: flex !important; }
+.ops-summary-strip > div { flex: 1; }
+/* PG 정산 대사: 5개 필터 버튼 + 금액 불일치 합계 1칸 = 6칸 균등 */
+.recon-summary { display: flex !important; }
+.recon-summary > button, .recon-summary > .recon-summary-total { flex: 1; }
+.recon-summary > button { border: 0 !important; border-bottom: 2px solid transparent !important; }
+.recon-summary > button.active { border-bottom-color: var(--primary) !important; }
+.recon-summary > .recon-summary-total { border-left: 1px solid var(--border-default); background: #fff; }
+.ops-summary-strip > div, .pg-status-tabs > button, .recon-summary > button, .recon-summary > .recon-summary-total {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  padding: 7px 16px !important;
+  min-height: 0 !important;
+  text-align: left;
+}
+.k-ico { display: none !important; }
+.k-txt { display: flex !important; flex-direction: row !important; align-items: baseline !important; gap: 8px !important; min-width: 0; }
+.ops-summary-strip .k-txt span, .pg-status-tabs .k-txt span, .recon-summary .k-txt span,
+.ops-summary-strip > div > span:first-child, .recon-summary > button > span:first-child, .pg-status-tabs > button > span:first-child {
+  font-size: 12px !important; font-weight: 600 !important; color: var(--text-secondary) !important; white-space: nowrap; }
+.k-txt strong, .ops-summary-strip strong, .pg-status-tabs strong, .recon-summary strong {
+  font-size: 16px !important; font-weight: 700 !important; color: var(--text-primary) !important;
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.k-txt small { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+/* 세로 구분선 (내부 여백만큼 짧게) */
+.ops-summary-strip > div + div::before, .recon-summary > button + button::before,
+.recon-summary > .recon-summary-total::before {
+  top: 10px !important; height: calc(100% - 20px) !important; }
+.pg-status-tabs > button + button::before { top: 10px !important; height: calc(100% - 20px) !important; }
+/* 탭 하이라이트(활성 하단 바) */
+.pg-status-tabs > button { position: relative; }
+.pg-status-tabs > button::after { content: ""; position: absolute !important;
+  left: 16px !important; right: 16px !important; bottom: 0 !important; height: 2px !important; background: transparent !important; }
+.pg-status-tabs > button.active::after { background: var(--primary) !important; }
+.pg-status-tabs > button.active .k-txt span, .pg-status-tabs > button.active .k-txt strong { color: var(--primary-hover) !important; }
+.pg-status-tabs > button.active .k-ico { background: var(--primary-soft); color: var(--primary); }
+
+/* ── 표 카드 ───────────────────────────────────────────────────────────────── */
+.ops-list-page .data-table-wrap:not(.ops-table-wrap):not(.recon-table-wrap) {
+  border: 1px solid var(--border-default); border-radius: var(--radius-container);
+  overflow: auto; background: #fff; }
+.ops-list-page .data-table-wrap:not(.ops-table-wrap) thead th { background: #f7f8fa; position: sticky; top: 0; z-index: 2; }
+
+/* ── 리스트 푸터 ─────────────────────────────────────────────────────────────────
+   메인 목록 페이지네이션은 브라우저 하단 고정(.pagination-footer 기본값)을 그대로 쓴다.
+   정산 관리의 별도 "총 N건" 라벨은 고정 바가 "총 N개" 를 이미 표시하므로 숨겨 중복 제거. */
+#settlement-total-label { display: none; }
+.settlement-footer { min-height: 0; padding: 0; }
+.sa-table-footer .pagination-total { display: none; }
+.sa-table-footer { border-top: 1px solid var(--border-default); }
+
+/* ── 흐름 스트립: 테두리 카드 (컴팩트) ───────────────────────────────────────── */
+.ops-list-page .payflow-strip, .pg-transaction-page .payflow-strip,
+.settlement-page .payflow-strip {
+  margin: 0 0 10px !important; padding: 7px 12px !important;
+  border: 1px solid var(--border-default); border-radius: var(--radius-container); background: #fff; }
+.payflow-strip .payflow-step { padding: 4px 9px; font-size: 12px; }
+.payflow-strip .payflow-step.current { background: var(--primary); color: #fff; font-weight: 700; }
+.payflow-strip .payflow-arrow { margin: 0 1px; }
+
+/* PG 거래: 메타행·표 컴팩트 */
+.pg-table-meta { min-height: 38px !important; margin-bottom: 4px; }
+.pg-transaction-page .pg-table-wrap .transaction-table td { height: 46px !important; }
+.pg-transaction-page .pg-table-wrap { border: 1px solid var(--border-default) !important; border-radius: var(--radius-container); }
+
+/* ── 미확정 매출: 규칙 안내 ────────────────────────────────────────────────── */
+.ps-rule-note { margin: 0 0 14px; padding: 11px 14px; border: 1px solid var(--border-default);
+  border-radius: var(--radius-container); background: var(--bg-subtle);
+  color: var(--text-secondary); font-size: 12.5px; line-height: 1.6; }
+.ps-rule-note strong { color: var(--text-primary); }
+
+/* ── 매출 분석: 집계 카드 ──────────────────────────────────────────────────── */
+.sa-panel { margin: 0 0 16px; padding: 16px 18px; border: 1px solid var(--border-default);
+  border-radius: var(--radius-container); background: #fff; }
+.sa-panel > h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; }
+.sa-panel .data-table-wrap { border: 1px solid var(--border-default); border-radius: 8px; overflow: hidden; }
+.sa-confirmed-toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.sa-confirmed-toggle input { width: 15px; height: 15px; accent-color: var(--primary); }
+
+/* 상단 지표 스트립 */
+.sa-kpis strong { font-size: 16px !important; }
+
+/* 차트 2단 (막대 + 도넛) */
+.sa-charts { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 16px; margin: 0 0 16px; }
+.sa-charts .sa-panel { margin: 0; }
+@media (max-width: 1000px) { .sa-charts { grid-template-columns: 1fr; } }
+
+.sa-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; }
+.sa-panel-head h2 { margin: 0; }
+.sa-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); }
+.sa-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sa-legend span::before { content: ""; width: 10px; height: 10px; border-radius: 2px; }
+.sa-legend .sa-legend-bar::before { background: var(--primary); }
+.sa-legend .sa-legend-line::before { border-radius: 50%; background: #e0a878; }
+
+.sa-trend { width: 100%; }
+.sa-trend svg { display: block; width: 100%; height: 220px; overflow: visible; }
+.sa-trend canvas { display: block; max-width: 100%; }
+.sa-trend .bar { fill: var(--primary); }
+.sa-trend .bar.neg { fill: #e4a5a0; }
+.sa-trend .axis { stroke: var(--border-default); stroke-width: 1; }
+.sa-trend .grid { stroke: #eef0f3; stroke-width: 1; }
+.sa-trend .tick { fill: var(--text-muted); font-size: 10px; }
+.sa-trend .oline { fill: none; stroke: #d9954f; stroke-width: 1.6; }
+.sa-trend .odot { fill: #fff; stroke: #d9954f; stroke-width: 1.6; }
+.sa-trend-empty, .sa-donut-empty { padding: 40px 10px; color: var(--text-muted); font-size: 13px; text-align: center; }
+
+.sa-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 10px; padding-top: 4px; color: var(--text-secondary); font-size: 13px; }
+.sa-table-footer .cmc-total b { color: var(--text-primary); }
+.sa-table-footer [id$="-pagination"] { border: 0 !important; }
+
+.sa-donut-wrap { display: flex; align-items: center; gap: 18px; }
+.sa-donut-ring { flex: none; width: 128px; height: 128px; border-radius: 50%;
+  -webkit-mask: radial-gradient(circle 40px at 50% 50%, transparent 98%, #000 100%);
+          mask: radial-gradient(circle 40px at 50% 50%, transparent 98%, #000 100%); }
+.sa-donut-legend { display: grid; gap: 7px; min-width: 0; font-size: 12px; }
+.sa-donut-legend > div { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; }
+.sa-donut-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.sa-donut-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+.sa-donut-legend b { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+@media (max-width: 900px) {
+  .ops-summary-strip, .recon-summary { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+  .ops-summary-strip > div + div::before, .recon-summary > button + button::before { display: none; }
+}

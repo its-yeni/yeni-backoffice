@@ -1,8 +1,10 @@
 package com.yeni.backoffice.api.payment.rest;
 
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
+import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementAdjustmentRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementDetailPageResponse;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementStatementResponse;
+import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementPayRequest;
 import com.yeni.backoffice.core.payment.service.SettlementOperationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,8 +43,17 @@ public class SettlementOperationRestController {
     @Operation(summary = "정산 명세 목록 조회", description = "기간 기준 정산 명세 목록을 조회합니다.")
     public ResponseEntity<List<SettlementStatementResponse>> statements(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long storeId) {
+        return ResponseEntity.ok(settlementOperationService.getStatements(startDate, endDate, storeId));
+    }
+
+    @GetMapping("/store-summary")
+    @Operation(summary = "매장별 정산 요약", description = "기간 기준으로 매장이 받은 정산 총액·수수료·지급 완료액을 매장 단위로 집계합니다.")
+    public ResponseEntity<List<com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.StoreSettlementSummary>> storeSummary(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(settlementOperationService.getStatements(startDate, endDate));
+        return ResponseEntity.ok(settlementOperationService.getStoreSummary(startDate, endDate));
     }
 
     @GetMapping("/{statementId}")
@@ -57,9 +68,18 @@ public class SettlementOperationRestController {
         return ResponseEntity.ok(settlementOperationService.confirmStatement(statementId));
     }
 
+    @PostMapping("/{statementId}/adjust")
+    public ResponseEntity<SettlementStatementResponse> adjust(
+            @PathVariable Long statementId,
+            @RequestBody SettlementAdjustmentRequest request) {
+        return ResponseEntity.ok(settlementOperationService.applyAdjustment(statementId, request));
+    }
+
     @PostMapping("/{statementId}/pay")
     @Operation(summary = "정산 지급 처리", description = "CONFIRMED 상태의 정산 명세를 PAID 상태로 변경합니다.")
-    public ResponseEntity<SettlementStatementResponse> pay(@PathVariable Long statementId) {
-        return ResponseEntity.ok(settlementOperationService.markPaid(statementId));
+    public ResponseEntity<SettlementStatementResponse> pay(
+            @PathVariable Long statementId,
+            @RequestBody(required = false) SettlementPayRequest request) {
+        return ResponseEntity.ok(settlementOperationService.markPaid(statementId, request));
     }
 }

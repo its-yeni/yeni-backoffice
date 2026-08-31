@@ -1,419 +1,80 @@
-(function () {
-    let table;
-    let lastPage = null;
+(function(){
+ let data=[],pagination;const $=id=>document.getElementById(id),rows=$('ledger-rows'),drawer=$('ledger-detail'),backdrop=$('ledger-backdrop');
+ function today(offset){const date=new Date();date.setDate(date.getDate()+offset);return date.toISOString().slice(0,10)}
+ $('ledger-start').value=today(-30);$('ledger-end').value=today(0);$('ledger-keyword').value=new URLSearchParams(location.search).get('keyword')||'';
+ pagination=AdminPagination.mount($('ledger-pagination'),{total:0,size:20,onChange:load});$('ledger-search').onclick=resetAndLoad;$('ledger-type').onchange=resetAndLoad;$('ledger-settlement').onchange=resetAndLoad;$('ledger-detail-close').onclick=close;backdrop.onclick=close;
+ const confirmSel=$('ledger-confirmed');if(confirmSel)confirmSel.onchange=resetAndLoad;
+ const resetBtn=$('ledger-reset');if(resetBtn)resetBtn.onclick=()=>{$('ledger-keyword').value='';$('ledger-start').value=today(-30);$('ledger-end').value=today(0);$('ledger-type').value='';$('ledger-settlement').value='';if(confirmSel)confirmSel.value='';resetAndLoad();};
+ const settlementLabel=value=>({NOT_SETTLED:'정산 대기',SETTLEMENT_READY:'정산 준비',CALCULATED:'계산 완료',SETTLED:'정산 확정',PAID:'지급 완료',CARRIED_OVER:'다음 정산 차감',EXCLUDED:'정산 제외'})[value]||value;
 
-    document.addEventListener("DOMContentLoaded", async function () {
-        table = new Tabulator("#salesLedgerTable", {
-            layout: "fitDataStretch",
-            pagination: "local",
-            paginationSize: 15,
-            paginationSizeSelector: [15, 30, 50],
-            placeholder: "조회된 매출 원장 거래가 없습니다.",
-            columns: [
-                {
-                    title: "상세",
-                    field: "id",
-                    width: 78,
-                    hozAlign: "center",
-                    formatter: function () {
-                        return "<button class=\"table-action\" type=\"button\">보기</button>";
-                    },
-                    cellClick: function (event, cell) {
-                        event.stopPropagation();
-                        openDetail(cell.getRow().getData());
-                    }
-                },
-                {title: "번호", field: "id", width: 80, hozAlign: "center"},
-                {title: "영업일", field: "businessDate", width: 120, sorter: "date"},
-                {title: "거래일시", field: "occurredAt", width: 165, formatter: dateTimeFormatter},
-                {title: "주문번호", field: "orderNo", width: 260},
-                {title: "PG 거래번호", field: "pgTransactionId", width: 250},
-                {title: "결제수단", field: "paymentMethod", width: 110, formatter: paymentMethodFormatter},
-                {title: "거래유형", field: "saleType", width: 160, formatter: saleTypeFormatter},
-                {title: "원 SALE ID", field: "originalSalesTransactionId", width: 120, hozAlign: "center", formatter: originalSaleFormatter},
-                {title: "공급가액", field: "supplyAmount", width: 130, hozAlign: "right", formatter: moneyFormatter},
-                {title: "부가세", field: "vatAmount", width: 115, hozAlign: "right", formatter: moneyFormatter},
-                {title: "총액", field: "totalAmount", width: 140, hozAlign: "right", formatter: signedMoneyFormatter},
-                {title: "원장상태", field: "ledgerStatus", width: 130, formatter: ledgerStatusFormatter},
-                {title: "정산상태", field: "settlementStatus", width: 150, formatter: settlementStatusFormatter}
-            ]
-        });
+ // 운영자가 한 행의 현재 위치를 바로 알 수 있게: 구매 확정 여부 → 정산 진행 단계 순으로 판단한다.
+ function stateOf(item){
+   if(item.saleType==='CANCEL')return{label:'취소 매출',tone:'is-danger',hint:'원 승인 매출과 상계되어 정산에서 차감됩니다.'};
+   if(!item.confirmedYn)return{label:'구매 확정 대기',tone:'is-warning',hint:'배송 완료(구매 확정) 전이라 아직 정산 대상이 아닙니다. 미확정 매출 화면에서 확인/처리합니다.'};
+   switch(item.settlementStatus){
+     case'NOT_SETTLED':return{label:'정산 대기',tone:'',hint:'구매 확정됨. 다음 정산 배치에서 집계됩니다.'};
+     case'CALCULATED':return{label:'정산 계산됨',tone:'',hint:'정산 초안(DRAFT)에 포함되어 수수료·VAT가 계산되었습니다.'};
+     case'SETTLED':return{label:'정산 확정',tone:'is-success',hint:'정산서가 확정(CONFIRMED)되었습니다.'};
+     case'PAID':return{label:'지급 완료',tone:'is-success',hint:'정산금 지급이 완료되었습니다.'};
+     case'CARRIED_OVER':return{label:'다음 정산 차감',tone:'is-warning',hint:'정산 확정 후 취소되어 다음 정산에서 차감됩니다.'};
+     case'EXCLUDED':return{label:'정산 제외',tone:'',hint:'정산 대상에서 제외되었습니다.'};
+     default:return{label:settlementLabel(item.settlementStatus),tone:'',hint:''};
+   }
+ }
+ renderLegend();
+ function renderLegend(){
+   const host=$('ledger-legend');if(!host)return;
+   const items=[
+     ['is-warning','구매 확정 대기','배송 완료 전 — 정산 대상 아님'],
+     ['','정산 대기','확정됨 — 다음 배치 집계 예정'],
+     ['','정산 계산됨','정산 초안에 포함, 수수료 계산됨'],
+     ['is-success','정산 확정','정산서 확정'],
+     ['is-success','지급 완료','정산금 지급 완료'],
+     ['is-danger','취소 매출','원 매출과 상계'],
+   ];
+   host.innerHTML=items.map(([t,l,d])=>`<span class="ledger-legend-item"><span class="status-indicator ${t}">${l}</span><small>${d}</small></span>`).join('');
+ }
 
-        table.on("rowClick", function (event, row) {
-            openDetail(row.getData());
-        });
-        bindFilters();
-        bindModal();
-        setDefaultDateRange("salesStartDate", "salesEndDate");
-        applyInitialQuery();
-        await refresh();
-    });
-
-    function bindFilters() {
-        document.getElementById("salesSearchBtn").addEventListener("click", refresh);
-        document.getElementById("salesResetBtn").addEventListener("click", async function () {
-            document.getElementById("salesKeyword").value = "";
-            document.getElementById("salesTypeFilter").value = "";
-            document.getElementById("ledgerStatusFilter").value = "";
-            document.getElementById("settlementStatusFilter").value = "";
-            setQuickFilter("all");
-            setDefaultDateRange("salesStartDate", "salesEndDate");
-            await refresh();
-        });
-        ["salesStartDate", "salesEndDate", "salesTypeFilter", "ledgerStatusFilter", "settlementStatusFilter"].forEach(function (id) {
-            document.getElementById(id).addEventListener("change", refresh);
-        });
-        document.getElementById("salesKeyword").addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                refresh();
-            }
-        });
-        document.querySelectorAll("[data-quick-filter]").forEach(function (button) {
-            button.addEventListener("click", function () {
-                applyQuickFilter(button.dataset.quickFilter);
-            });
-        });
-        setQuickFilter("all");
-    }
-
-    function applyInitialQuery() {
-        const keyword = new URLSearchParams(window.location.search).get("keyword");
-        if (keyword) {
-            document.getElementById("salesKeyword").value = keyword;
-        }
-    }
-
-    function bindModal() {
-        document.getElementById("closeSalesDetailBtn").addEventListener("click", closeDetail);
-        document.getElementById("salesDetailModal").addEventListener("click", function (event) {
-            if (event.target.id === "salesDetailModal") {
-                closeDetail();
-            }
-        });
-    }
-
-    async function refresh() {
-        const params = new URLSearchParams();
-        appendParam(params, "startDate", document.getElementById("salesStartDate").value);
-        appendParam(params, "endDate", document.getElementById("salesEndDate").value);
-        appendParam(params, "transactionType", document.getElementById("salesTypeFilter").value);
-        appendParam(params, "ledgerStatus", document.getElementById("ledgerStatusFilter").value);
-        appendParam(params, "settlementStatus", document.getElementById("settlementStatusFilter").value);
-        appendParam(params, "keyword", document.getElementById("salesKeyword").value.trim());
-        params.append("page", "0");
-        params.append("size", "100");
-
-        const request = fetch("/admin/api/sales-ledger?" + params.toString());
-        const response = window.AppLoading
-            ? await window.AppLoading.track(request, "매출 원장을 정리하고 있어요")
-            : await request;
-        lastPage = await parseApiResponse(response);
-        table.setData(lastPage.data || []);
-        renderSummary(lastPage.summary);
-    }
-
-    function appendParam(params, key, value) {
-        if (value) {
-            params.append(key, value);
-        }
-    }
-
-    async function applyQuickFilter(value) {
-        setQuickFilter(value);
-        document.getElementById("salesTypeFilter").value = "";
-        document.getElementById("settlementStatusFilter").value = "";
-        document.getElementById("ledgerStatusFilter").value = "";
-
-        if (value === "SALE" || value === "CANCEL") {
-            document.getElementById("salesTypeFilter").value = value;
-        } else if (value === "NOT_SETTLED" || value === "SETTLED" || value === "CARRIED_OVER") {
-            document.getElementById("settlementStatusFilter").value = value;
-        } else if (value === "EXCLUDED") {
-            document.getElementById("settlementStatusFilter").value = "EXCLUDED";
-        }
-        await refresh();
-    }
-
-    function setQuickFilter(value) {
-        document.querySelectorAll("[data-quick-filter]").forEach(function (button) {
-            button.classList.toggle("active", button.dataset.quickFilter === value);
-        });
-    }
-
-    function renderSummary(summary) {
-        const safe = summary || {};
-        document.getElementById("totalSaleAmount").textContent = formatMoney(safe.totalSaleAmount);
-        document.getElementById("totalCancelAmount").textContent = formatMoney(safe.totalCancelAmount);
-        document.getElementById("netSalesAmount").textContent = formatMoney(safe.netSalesAmount);
-        document.getElementById("notSettledCount").textContent = Number(safe.notSettledCount || 0).toLocaleString("ko-KR") + "건";
-        document.getElementById("settledCount").textContent = Number(safe.settledCount || 0).toLocaleString("ko-KR") + "건";
-        document.getElementById("carriedOverCount").textContent = Number(safe.carriedOverCount || 0).toLocaleString("ko-KR") + "건";
-    }
-
-    async function openDetail(row) {
-        const request = Promise.all([
-            fetchJson("/admin/api/sales-ledger/" + row.id),
-            fetchJson("/admin/api/sales-ledger/" + row.id + "/links")
-        ]);
-        const [detail, links] = window.AppLoading
-            ? await window.AppLoading.track(request, "거래 상세를 불러오고 있어요")
-            : await request;
-        document.getElementById("salesDetailTitle").textContent = "매출 영수증 #" + detail.id;
-        document.getElementById("salesDetailBody").innerHTML = renderReceipt(detail, links);
-        document.getElementById("salesDetailModal").hidden = false;
-    }
-
-    async function fetchJson(url) {
-        const response = await fetch(url);
-        return parseApiResponse(response);
-    }
-
-    async function parseApiResponse(response) {
-        const text = await response.text();
-        const data = text ? JSON.parse(text) : {};
-        if (!response.ok) {
-            const requestId = data.requestId ? " (requestId: " + data.requestId + ")" : "";
-            throw new Error((data.message || "요청 처리에 실패했습니다.") + requestId);
-        }
-        return data;
-    }
-
-    function closeDetail() {
-        document.getElementById("salesDetailModal").hidden = true;
-    }
-
-    function renderReceipt(detail, links) {
-        const isCancel = detail.saleType === "CANCEL";
-        const originalSaleText = links.originalSale
-            ? "#" + links.originalSale.id + " / " + formatMoney(links.originalSale.totalAmount)
-            : "-";
-
-        return [
-            "<article class=\"ledger-receipt\">",
-            "  <header class=\"receipt-head\">",
-            "    <div>",
-            "      <span class=\"receipt-kicker " + saleTypeClass(detail.saleType) + "\">" + saleTypeLabel(detail.saleType) + "</span>",
-            "      <h4>" + display(detail.orderNo) + "</h4>",
-            "      <p>" + paymentMethodLabel(detail.paymentMethod) + " / PG 거래번호 " + display(detail.pgTransactionId || detail.tid) + "</p>",
-            "    </div>",
-            "    <div class=\"receipt-total " + (isCancel ? "cancel" : "paid") + "\">",
-            "      <span>합계 금액</span>",
-            "      <strong>" + formatMoney(detail.totalAmount) + "</strong>",
-            "    </div>",
-            "  </header>",
-            "  <div class=\"receipt-status-line\">",
-            textSignal("원장상태 " + ledgerStatusLabel(detail.ledgerStatus), ledgerStatusClass(detail.ledgerStatus)),
-            textSignal("정산상태 " + settlementStatusLabel(detail.settlementStatus), settlementStatusClass(detail.settlementStatus)),
-            "    <span>영업일 " + display(detail.businessDate) + "</span>",
-            "    <span>거래일시 " + formatDateTime(detail.occurredAt) + "</span>",
-            "  </div>",
-            receiptSection("결제 정보", [
-                metaGrid([
-                    metaItem("결제수단", paymentMethodLabel(detail.paymentMethod)),
-                    metaItem("PG 코드", display(detail.pgCode)),
-                    metaItem("PG 거래번호", display(detail.pgTransactionId || detail.tid)),
-                    metaItem("거래유형", saleTypeLabel(detail.saleType))
-                ])
-            ]),
-            receiptSection("금액 구성", [
-                receiptRow("공급가액", formatMoney(detail.supplyAmount)),
-                receiptRow("부가세", formatMoney(detail.vatAmount)),
-                receiptRow("합계", formatMoney(detail.totalAmount), "total")
-            ]),
-            receiptSection("거래 연결", [
-                metaGrid([
-                    metaItem("원장 ID", "#" + detail.id),
-                    metaItem("결제 ID", detail.paymentId ? "#" + detail.paymentId : "-"),
-                    metaItem("취소 ID", detail.cancelId ? "#" + detail.cancelId : "-"),
-                    metaItem("원 SALE 거래", originalSaleText)
-                ])
-            ]),
-            receiptSection(isCancel ? "CANCEL 취소매출 정보" : "취소 가능 정보", [
-                metaGrid([
-                    metaItem("누적 취소금액", formatMoney(links.cumulativeCanceledAmount)),
-                    metaItem("취소 가능금액", formatMoney(links.cancelableAmount)),
-                    metaItem("취소 사유", links.cancelReason || "-"),
-                    metaItem("취소 발생일시", formatDateTime(links.canceledAt))
-                ])
-            ]),
-            receiptSection("후속 처리", [
-                linkedList("외부전송", links.externalSends, "sendStatus"),
-                linkedList("알림톡", links.alimtalkQueues, "status"),
-                linkedList("복구 작업", links.recoveryTasks, "status"),
-                settlementList("정산 상세", links.settlementDetails)
-            ]),
-            "</article>"
-        ].join("");
-    }
-
-    function receiptSection(title, children) {
-        return "<section class=\"receipt-section\"><h4>" + title + "</h4>" + children.join("") + "</section>";
-    }
-
-    function receiptRow(label, value, className) {
-        return "<div class=\"receipt-row " + (className || "") + "\"><span>" + label + "</span><strong>" + display(value) + "</strong></div>";
-    }
-
-    function metaGrid(items) {
-        return "<div class=\"receipt-meta-grid\">" + items.join("") + "</div>";
-    }
-
-    function metaItem(label, value) {
-        return "<div><span>" + label + "</span><strong>" + display(value) + "</strong></div>";
-    }
-
-    function linkedList(title, values, statusField) {
-        const items = values && values.length > 0
-            ? values.map(function (value) {
-                return "<li><span>#" + value.id + "</span><strong>" + statusLabel(value[statusField]) + "</strong></li>";
-            }).join("")
-            : "<li class=\"receipt-empty\">처리 이력 없음</li>";
-        return "<div class=\"receipt-link-list\"><p>" + title + "</p><ul>" + items + "</ul></div>";
-    }
-
-    function settlementList(title, values) {
-        const items = values && values.length > 0
-            ? values.map(function (value) {
-                return "<li><span>#" + value.id + " / 원장 #" + value.salesId + "</span><strong>" + formatMoney(value.netAmount) + "</strong></li>";
-            }).join("")
-            : "<li class=\"receipt-empty\">정산 반영 전</li>";
-        return "<div class=\"receipt-link-list\"><p>" + title + "</p><ul>" + items + "</ul></div>";
-    }
-
-    function textSignal(label, className) {
-        return "<span class=\"text-signal " + className + "\">" + label + "</span>";
-    }
-
-    function setDefaultDateRange(startId, endId) {
-        const today = new Date();
-        const start = new Date(today);
-        start.setDate(today.getDate() - 30);
-        document.getElementById(startId).value = toDateInput(start);
-        document.getElementById(endId).value = toDateInput(today);
-    }
-
-    function toDateInput(date) {
-        return date.toISOString().slice(0, 10);
-    }
-
-    function dateTimeFormatter(cell) {
-        return formatDateTime(cell.getValue());
-    }
-
-    function formatDateTime(value) {
-        return value ? String(value).replace("T", " ").slice(0, 19) : "-";
-    }
-
-    function moneyFormatter(cell) {
-        return formatMoney(cell.getValue());
-    }
-
-    function signedMoneyFormatter(cell) {
-        const value = Number(cell.getValue() || 0);
-        const className = value < 0 ? "cancel" : "paid";
-        return "<span class=\"text-signal " + className + "\">" + formatMoney(value) + "</span>";
-    }
-
-    function originalSaleFormatter(cell) {
-        const row = cell.getRow().getData();
-        if (row.saleType !== "CANCEL") {
-            return "-";
-        }
-        return row.originalSalesTransactionId ? "#" + row.originalSalesTransactionId : "연결 필요";
-    }
-
-    function saleTypeFormatter(cell) {
-        return "<span class=\"text-signal " + saleTypeClass(cell.getValue()) + "\">"
-            + saleTypeLabel(cell.getValue()) + "</span>";
-    }
-
-    function ledgerStatusFormatter(cell) {
-        const value = cell.getValue();
-        return "<span class=\"text-signal " + ledgerStatusClass(value) + "\">" + ledgerStatusLabel(value) + "</span>";
-    }
-
-    function settlementStatusFormatter(cell) {
-        const value = cell.getValue();
-        return "<span class=\"text-signal " + settlementStatusClass(value) + "\">" + settlementStatusLabel(value) + "</span>";
-    }
-
-    function paymentMethodFormatter(cell) {
-        return paymentMethodLabel(cell.getValue());
-    }
-
-    function saleTypeClass(value) {
-        return value === "CANCEL" ? "cancel" : value === "ADJUST" ? "unknown" : "paid";
-    }
-
-    function ledgerStatusClass(value) {
-        return value === "ERROR" ? "cancel" : value === "EXCLUDED" ? "unknown" : "paid";
-    }
-
-    function settlementStatusClass(value) {
-        return value === "EXCLUDED" ? "cancel" : "normal";
-    }
-
-    function saleTypeLabel(value) {
-        const labels = {
-            SALE: "SALE 결제매출",
-            CANCEL: "CANCEL 취소매출",
-            ADJUST: "ADJUST 보정매출"
-        };
-        return labels[value] || value || "-";
-    }
-
-    function ledgerStatusLabel(value) {
-        const labels = {
-            POSTED: "반영 완료",
-            EXCLUDED: "제외",
-            ERROR: "오류",
-            ADJUSTED: "보정",
-            CANCELED: "취소됨"
-        };
-        return labels[value] || value || "-";
-    }
-
-    function settlementStatusLabel(value) {
-        const labels = {
-            NOT_SETTLED: "대기",
-            SETTLEMENT_READY: "정산 대기",
-            CALCULATED: "정산 계산 완료",
-            SETTLED: "정산 확정",
-            PAID: "지급 완료",
-            CARRIED_OVER: "다음정산차감",
-            EXCLUDED: "정산 제외"
-        };
-        return labels[value] || value || "-";
-    }
-
-    function statusLabel(value) {
-        const labels = {
-            READY: "대기",
-            SUCCESS: "성공",
-            FAILED: "실패",
-            RETRY_READY: "재시도 대기",
-            PROCESSING: "처리 중",
-            COMPLETED: "완료"
-        };
-        return labels[value] || value || "-";
-    }
-
-    function paymentMethodLabel(value) {
-        const labels = {
-            CARD: "카드",
-            BANK: "계좌이체",
-            VBANK: "가상계좌",
-            MOBILE: "휴대폰결제",
-            POINT: "포인트"
-        };
-        return labels[value] || value || "-";
-    }
-
-    function formatMoney(value) {
-        return Number(value || 0).toLocaleString("ko-KR") + "원";
-    }
-
-    function display(value) {
-        return value === null || value === undefined || value === "" ? "-" : value;
-    }
+ function resetAndLoad(){pagination.setPage(1);load()}
+ async function load(){
+   const params=new URLSearchParams({startDate:$('ledger-start').value,endDate:$('ledger-end').value,page:String(pagination.getPage()-1),size:String(pagination.getSize())});
+   const type=$('ledger-type').value,settlement=$('ledger-settlement').value,keyword=$('ledger-keyword').value.trim();
+   if(type)params.set('transactionType',type);if(settlement)params.set('settlementStatus',settlement);if(keyword)params.set('keyword',keyword);
+   if(confirmSel&&confirmSel.value)params.set('confirmedYn',confirmSel.value);
+   const page=await apiGet('/admin/api/sales-ledger?'+params);data=page.data||[];pagination.setTotal(page.totalCount||0);render(page.summary||{});
+   const requested=Number(new URLSearchParams(location.search).get('ledgerId'));if(requested&&data.some(item=>item.id===requested))open(requested);
+ }
+ function render(summary){
+   const rowStart=(pagination.getPage()-1)*pagination.getSize();
+   rows.innerHTML=data.map((item,i)=>{const st=stateOf(item);return `<tr data-ledger="${item.id}">
+     <td class="row-index">${rowStart+i+1}</td>
+     <td>${formatDate(item.occurredAt)}</td>
+     <td><strong>${escapeHtml(item.orderNo)}</strong></td>
+     <td><span class="status-indicator ${item.saleType==='SALE'?'is-success':'is-danger'}">${item.saleType==='SALE'?'승인':'취소'}</span></td>
+     <td>${item.paymentId?'#'+item.paymentId:'-'}</td>
+     <td class="mono">${escapeHtml(item.pgTransactionId||item.tid||'-')}</td>
+     <td class="amount">${money(item.supplyAmount)}</td>
+     <td class="amount">${money(item.vatAmount)}</td>
+     <td class="amount"><strong>${item.saleType==='CANCEL'?'-':''}${money(Math.abs(Number(item.totalAmount)))}</strong></td>
+     <td><span class="status-indicator ${st.tone}" title="${escapeHtml(st.hint)}">${st.label}</span></td></tr>`}).join('');
+   rows.querySelectorAll('[data-ledger]').forEach(row=>row.onclick=()=>open(Number(row.dataset.ledger)));
+   $('ledger-empty').hidden=data.length>0;
+   $('ledger-sale').textContent=money(summary.totalSaleAmount);$('ledger-cancel').textContent=money(summary.totalCancelAmount);$('ledger-net').textContent=money(summary.netSalesAmount);
+   $('ledger-waiting').textContent=Number(summary.notSettledCount||0).toLocaleString('ko-KR')+'건';
+   if($('ledger-unconfirmed'))$('ledger-unconfirmed').textContent=Number(summary.unconfirmedCount||0).toLocaleString('ko-KR')+'건';
+ }
+ async function open(id){
+   const[detail,links]=await Promise.all([apiGet(`/admin/api/sales-ledger/${id}`),apiGet(`/admin/api/sales-ledger/${id}/links`)]);
+   const st=stateOf(detail);
+   $('ledger-detail-title').textContent=`원장 #${detail.id}`;
+   $('ledger-detail-body').innerHTML=`<section class="drawer-summary"><span class="transaction-status ${detail.saleType==='SALE'?'success':'danger'}">${detail.saleType==='SALE'?'승인':'취소'}</span><strong>${money(detail.totalAmount)}</strong><p>${escapeHtml(detail.orderNo)} · ${formatDate(detail.occurredAt)}</p></section>
+   <section><h3>현재 상태</h3><p><span class="status-indicator ${st.tone}">${st.label}</span></p><p class="inline-message">${escapeHtml(st.hint)}</p></section>
+   <section><h3>금액 구성</h3><dl class="drawer-meta"><div><dt>공급가</dt><dd>${money(detail.supplyAmount)}</dd></div><div><dt>부가세</dt><dd>${money(detail.vatAmount)}</dd></div><div><dt>구매 확정</dt><dd>${detail.confirmedYn?'확정 ('+formatDate(detail.confirmedAt)+')':'미확정'}</dd></div><div><dt>정산 포함</dt><dd>${detail.settlementIncludedYn?'포함됨':'미포함'}</dd></div></dl></section>
+   <section><h3>거래 연결</h3><dl class="drawer-meta"><div><dt>결제 ID</dt><dd>${detail.paymentId?'#'+detail.paymentId:'-'}</dd></div><div><dt>원 승인 거래</dt><dd>${links.originalSale?'#'+links.originalSale.id:'-'}</dd></div><div><dt>누적 취소</dt><dd>${money(links.cumulativeCanceledAmount)}</dd></div><div><dt>취소 가능</dt><dd>${money(links.cancelableAmount)}</dd></div><div><dt>정산 상세</dt><dd>${links.settlementDetails.length}건</dd></div></dl></section>
+   <div class="drawer-actions">${detail.paymentId?`<a class="btn btn-light" href="/admin/payment-operations?paymentId=${detail.paymentId}">PG 거래 보기</a>`:''}${!detail.confirmedYn?`<a class="btn btn-light" href="/admin/payment-operations/pending-sales?keyword=${encodeURIComponent(detail.orderNo)}">미확정 매출에서 처리</a>`:''}${links.settlementDetails.length?`<a class="btn btn-light" href="/admin/payment-operations/settlements?statementId=${links.settlementDetails[0].settlementStatementId}">정산 보기</a>`:'<a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리</a>'}</div>`;
+   backdrop.hidden=false;drawer.classList.add('open');
+ }
+ function close(){drawer.classList.remove('open');backdrop.hidden=true}
+ function formatDate(value){return value?new Date(value).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'-'}
+ load();
 })();

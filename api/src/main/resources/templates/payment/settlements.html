@@ -1,104 +1,48 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>정산 관리 - Yeni Backoffice</title>
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>정산 관리 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/payment-transactions.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"><link rel="stylesheet" href="/css/pages/settlements-v2.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page settlement-page">
+<header class="page-header"><div><h3>정산 관리</h3><p>PG 매출 접계와 외부 PG 대사를 확인하고 정산을 확정합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/payment-operations/settlements/reconciliation">PG 파일 대사</a><button class="btn btn-primary" id="settlement-run">오늘 정산 초안 생성</button></div></header>
 
-    <link rel="stylesheet" th:href="@{/css/common.css}" />
-    <link rel="stylesheet" th:href="@{/css/layout.css}" />
-    <link rel="stylesheet" th:href="@{/css/components.css}" />
-    <link rel="stylesheet" th:href="@{/vendor/tabulator/tabulator.min.css}" />
-    <link rel="stylesheet" th:href="@{/css/pages/payment-operations.css}" />
-    <link rel="stylesheet" th:href="@{/css/scroll-top.css}" />
-</head>
-<body>
-<div class="layout">
-    <div th:replace="~{fragments/sidebar}"></div>
-    <main class="main">
-        <div th:replace="~{fragments/topbar :: header}"></div>
-        <section class="content payment-page">
-            <div class="payment-hero">
-                <div>
-                    <span class="badge">정산 관리</span>
-                    <h2>일별 정산 명세</h2>
-                    <p>매출 원장 화면의 총액은 고객 결제/취소 기준 금액입니다. 실제 정산 예정금액은 SALE/CANCEL 원장을 기준으로 순매출을 계산하고, PG 수수료, 수수료 VAT, 정액 수수료, 조정금, 다음정산차감액을 반영해 산출합니다.</p>
-                </div>
-                <button class="btn btn-primary" id="runSettlementPageBtn" type="button">오늘 정산 초안 생성/재계산</button>
-            </div>
-
-            <section class="operator-note">
-                <h3>오늘 정산 초안 처리 기준</h3>
-                <p>오늘 작성중(DRAFT) 명세가 있으면 새로 들어온 미정산 SALE/CANCEL을 기존 명세에 누적하고 전체 금액을 재계산합니다. 정산확정 또는 지급완료 명세는 변경하지 않으며, 이후 발생한 거래는 다음 정산 대상으로 남깁니다.</p>
-            </section>
-            <div class="settlement-run-feedback" id="settlementRunFeedback" aria-live="polite">
-                결제와 취소를 매출 원장에서 확인한 뒤 실행하면 오늘 정산 초안을 생성하거나 재계산합니다.
-            </div>
-
-            <section class="metric-grid settlement-summary-grid">
-                <div><span>총 SALE 금액</span><strong id="settlementSaleAmount">0원</strong></div>
-                <div><span>총 CANCEL 금액</span><strong id="settlementCancelAmount">0원</strong></div>
-                <div><span>순매출</span><strong id="settlementGrossAmount">0원</strong></div>
-                <div><span>PG 수수료</span><strong id="settlementFeeAmount">0원</strong></div>
-                <div><span>수수료 VAT</span><strong id="settlementVatAmount">0원</strong></div>
-                <div><span>정액 수수료</span><strong id="settlementFixedFeeAmount">0원</strong></div>
-                <div><span>조정금</span><strong id="settlementAdjustmentAmount">0원</strong></div>
-                <div><span>다음정산차감액</span><strong id="settlementCarryOverAmount">0원</strong></div>
-                <div class="metric-highlight"><span>최종 정산 예정금액</span><strong id="settlementNetAmount">0원</strong></div>
-            </section>
-
-            <section class="card table-section">
-                <div class="panel-header">
-                    <div>
-                        <h3>정산 명세</h3>
-                        <p class="table-caption">정산일, 상태, 검색어로 정산 명세를 조회합니다. 행을 선택하면 원장금액, 수수료, VAT, 정산 예정금액, 적용 정책 snapshot을 확인할 수 있습니다.</p>
-                    </div>
-                </div>
-                <div class="table-filter-bar settlement-filter">
-                    <label>시작일 <input id="settlementStartDate" type="date" /></label>
-                    <label>종료일 <input id="settlementEndDate" type="date" /></label>
-                    <label>
-                        상태
-                        <select id="settlementStatusFilter">
-                            <option value="">전체</option>
-                            <option value="DRAFT">작성중</option>
-                            <option value="CONFIRMED">확정</option>
-                            <option value="PAID">지급완료</option>
-                        </select>
-                    </label>
-                    <label class="filter-search">
-                        검색어
-                        <input id="settlementKeyword" type="search" placeholder="가맹점 ID, PG사 검색" />
-                    </label>
-                    <button class="btn btn-primary" id="settlementSearchBtn" type="button">조회</button>
-                    <button class="btn btn-light" id="settlementResetBtn" type="button">초기화</button>
-                </div>
-                <div id="settlementPageTable" class="tabulator-host"></div>
-            </section>
-        </section>
-    </main>
+<div class="settlement-kpis">
+  <div class="kpi-card"><div><span>정산 명세</span><small id="settlement-count-sub">조회 기간 기준</small></div><strong id="settlement-count">0건</strong><span class="kpi-ico">📄</span></div>
+  <div class="kpi-card"><div><span>승인 매출</span></div><strong id="settlement-sale">0원</strong><span class="kpi-ico">📈</span></div>
+  <div class="kpi-card"><div><span>수수료·VAT</span></div><strong id="settlement-fee">0원</strong><span class="kpi-ico">💳</span></div>
+  <div class="kpi-card kpi-card-net"><div><span>최종 정산액</span></div><strong id="settlement-net">0원</strong><span class="kpi-ico">🪙</span></div>
 </div>
 
-<div class="modal-backdrop" id="settlementDetailModal" hidden>
-    <section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="settlementDetailTitle">
-        <div class="detail-modal-header">
-            <div>
-                <span class="badge">정산 상세</span>
-                <h3 id="settlementDetailTitle">정산 명세 상세</h3>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <button class="btn btn-primary" id="confirmStatementBtn" type="button" hidden>정산 확정</button>
-                <button class="btn btn-primary" id="payStatementBtn" type="button" hidden>지급 처리</button>
-                <button class="btn btn-light" id="closeSettlementDetailBtn" type="button">닫기</button>
-            </div>
-        </div>
-        <div id="settlementDetailBody" class="detail-grid"></div>
-    </section>
+<div class="settlement-alert" id="settlement-workflow-alert" hidden></div>
+<span id="workflow-ledger" hidden></span><span id="workflow-import" hidden></span><span id="workflow-reconcile" hidden></span><span id="workflow-confirm" hidden></span><span id="workflow-paid" hidden></span>
+
+<div class="settlement-toolbar">
+  <input id="settlement-keyword" type="search" placeholder="MID, 정산 ID 검색">
+  <div class="settlement-daterange"><input id="settlement-start" type="date"><span>~</span><input id="settlement-end" type="date"></div>
+  <select id="settlement-status"><option value="">정산 상태 전체</option><option value="DRAFT">초안</option><option value="CONFIRMED">확정</option><option value="PAID">지급 완료</option></select>
+  <button class="btn btn-text" id="settlement-reset">초기화</button>
+  <button class="btn btn-primary btn-sm" id="settlement-search">조회</button>
+  <details class="settlement-download"><summary class="btn btn-light btn-sm">다운로드 ▾</summary><div><button type="button" id="download-list-csv">현재 목록 CSV</button><button type="button" id="download-store-csv">매장별 요약 CSV</button></div></details>
 </div>
 
-<script th:src="@{/vendor/tabulator/tabulator.min.js}"></script>
-<script th:src="@{/js/common.js}"></script>
-<script th:src="@{/js/pages/settlements.js}"></script>
-<script th:src="@{/js/scroll-top.js}"></script>
-</body>
-</html>
+<details class="store-settlement-summary" id="store-summary-box"><summary>매장별 정산 요약 <small>정산서(초안·확정·지급)에 잡힌 금액 기준 — 매출 원장 전체가 아닙니다</small></summary><div class="data-table-wrap"><table class="data-table"><thead><tr><th>매장</th><th class="amount">명세</th><th class="amount">정산 대상 매출</th><th class="amount">수수료·VAT</th><th class="amount">최종 정산액</th><th class="amount">지급 완료액</th><th>진행</th></tr></thead><tbody id="store-summary-rows"></tbody></table></div></details>
+
+<div class="data-table-wrap settlement-table-wrap"><table class="data-table settlement-table">
+  <thead><tr>
+    <th class="checkbox-col"><input type="checkbox" id="settlement-select-all"></th>
+    <th class="row-index">#</th>
+    <th class="sortable" data-sort="settlementDate">정산일</th>
+    <th class="sortable" data-sort="id">정산 ID</th>
+    <th class="sortable" data-sort="pgCompany">PG</th>
+    <th>MID</th>
+    <th class="amount sortable" data-sort="saleAmount">승인 매출</th>
+    <th class="amount sortable" data-sort="cancelAmount">취소 금액</th>
+    <th class="amount">수수료·VAT</th>
+    <th class="amount sortable" data-sort="netAmount">최종 정산액</th>
+    <th class="sortable" data-sort="settlementStatus">상태</th>
+    <th class="row-menu-col"></th>
+  </tr></thead>
+  <tbody id="settlement-rows"></tbody>
+</table><div class="data-table-empty" id="settlement-empty" hidden><strong>조회된 정산 명세가 없습니다.</strong><p>기간이나 검색 조건을 변경해 주세요.</p></div></div>
+
+<div class="settlement-footer"><span id="settlement-total-label">총 0건</span><div id="settlement-pagination"></div></div>
+
+</section></main></div>
+<div class="transaction-drawer-backdrop" id="settlement-backdrop" hidden></div>
+<aside class="transaction-drawer settlement-drawer" id="settlement-detail"><header><div><small>정산 명세</small><h2 id="settlement-detail-title">정산 상세</h2></div><button id="settlement-detail-close">×</button></header><div class="transaction-drawer-body" id="settlement-detail-body"></div><footer class="drawer-footer"><button class="btn btn-primary" id="settlement-next" hidden></button></footer></aside>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/settlements.js"></script></body></html>

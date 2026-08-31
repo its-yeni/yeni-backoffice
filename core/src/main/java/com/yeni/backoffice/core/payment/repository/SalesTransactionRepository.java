@@ -16,23 +16,32 @@ import java.util.Optional;
 
 public interface SalesTransactionRepository extends JpaRepository<SalesTransaction, Long> {
 
-    List<SalesTransaction> findByBusinessDateAndSettlementIncludedYnFalseOrderByIdAsc(LocalDate businessDate);
+    List<SalesTransaction> findByBusinessDateAndConfirmedYnTrueAndSettlementIncludedYnFalseOrderByIdAsc(LocalDate businessDate);
+
+    List<SalesTransaction> findByBusinessDateAndStoreIdAndConfirmedYnTrueAndSettlementIncludedYnFalseOrderByIdAsc(LocalDate businessDate, Long storeId);
 
     List<SalesTransaction> findByBusinessDateBetweenOrderByOccurredAtDesc(LocalDate startDate, LocalDate endDate);
 
     Optional<SalesTransaction> findBySourceTypeAndSourceId(String sourceType, Long sourceId);
 
     Optional<SalesTransaction> findFirstByOrderNoAndSaleTypeOrderByIdAsc(String orderNo, SaleType saleType);
+    Optional<SalesTransaction> findFirstByTidOrderByIdAsc(String tid);
+
+    Optional<SalesTransaction> findFirstByTidAndSaleTypeOrderByIdAsc(String tid, SaleType saleType);
 
     List<SalesTransaction> findByPaymentIdOrderByIdAsc(Long paymentId);
+
+    List<SalesTransaction> findByOrderNoOrderByIdAsc(String orderNo);
 
     @Query("""
             select s
             from SalesTransaction s
             where s.businessDate between :startDate and :endDate
+              and (:storeId is null or s.storeId = :storeId)
               and (:saleType is null or s.saleType = :saleType)
               and (:ledgerStatus is null or s.ledgerStatus = :ledgerStatus)
               and (:settlementStatus is null or s.settlementStatus = :settlementStatus)
+              and (:confirmedYn is null or s.confirmedYn = :confirmedYn)
               and (
                     :keyword is null
                     or lower(s.orderNo) like lower(concat('%', :keyword, '%'))
@@ -46,9 +55,11 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
     Page<SalesTransaction> searchLedger(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
+            @Param("storeId") Long storeId,
             @Param("saleType") SaleType saleType,
             @Param("ledgerStatus") LedgerStatus ledgerStatus,
             @Param("settlementStatus") SalesSettlementStatus settlementStatus,
+            @Param("confirmedYn") Boolean confirmedYn,
             @Param("keyword") String keyword,
             Pageable pageable
     );
@@ -63,13 +74,17 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
               count(case when s.settlementStatus = com.yeni.backoffice.core.payment.enums.SalesSettlementStatus.SETTLED then 1 else null end),
               count(case when s.settlementStatus = com.yeni.backoffice.core.payment.enums.SalesSettlementStatus.PAID then 1 else null end),
               count(case when s.settlementStatus = com.yeni.backoffice.core.payment.enums.SalesSettlementStatus.CARRIED_OVER then 1 else null end),
-              count(case when s.settlementStatus = com.yeni.backoffice.core.payment.enums.SalesSettlementStatus.EXCLUDED then 1 else null end)
+              count(case when s.settlementStatus = com.yeni.backoffice.core.payment.enums.SalesSettlementStatus.EXCLUDED then 1 else null end),
+              count(case when s.confirmedYn = true then 1 else null end),
+              count(case when s.confirmedYn = false then 1 else null end)
             )
             from SalesTransaction s
             where s.businessDate between :startDate and :endDate
+              and (:storeId is null or s.storeId = :storeId)
               and (:saleType is null or s.saleType = :saleType)
               and (:ledgerStatus is null or s.ledgerStatus = :ledgerStatus)
               and (:settlementStatus is null or s.settlementStatus = :settlementStatus)
+              and (:confirmedYn is null or s.confirmedYn = :confirmedYn)
               and (
                     :keyword is null
                     or lower(s.orderNo) like lower(concat('%', :keyword, '%'))
@@ -83,9 +98,11 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
     com.yeni.backoffice.core.payment.dto.PaymentDtos.SalesLedgerSummaryResponse summarizeLedger(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
+            @Param("storeId") Long storeId,
             @Param("saleType") SaleType saleType,
             @Param("ledgerStatus") LedgerStatus ledgerStatus,
             @Param("settlementStatus") SalesSettlementStatus settlementStatus,
+            @Param("confirmedYn") Boolean confirmedYn,
             @Param("keyword") String keyword
     );
 }

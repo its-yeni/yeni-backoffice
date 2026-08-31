@@ -38,6 +38,8 @@ public class SalesTransaction extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long storeId;
+
     @Column(nullable = false, length = 20)
     private String sourceType;
 
@@ -111,6 +113,18 @@ public class SalesTransaction extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean settlementIncludedYn = false;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean confirmedYn = false;
+
+    private LocalDateTime confirmedAt;
+
+    public void confirm(LocalDateTime confirmedAt) {
+        if (Boolean.TRUE.equals(this.confirmedYn)) return;
+        this.confirmedYn = true;
+        this.confirmedAt = confirmedAt == null ? LocalDateTime.now() : confirmedAt;
+    }
+
     public void markIncludedInSettlement() {
         this.settlementIncludedYn = true;
         this.settlementStatus = SalesSettlementStatus.CALCULATED;
@@ -128,4 +142,6 @@ public class SalesTransaction extends BaseTimeEntity {
     public void markCarriedOver() {
         this.settlementStatus = SalesSettlementStatus.CARRIED_OVER;
     }
+
+    public void assignStore(Long storeId) { this.storeId = storeId; }
 }

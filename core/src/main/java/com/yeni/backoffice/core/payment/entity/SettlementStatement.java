@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -26,13 +27,15 @@ import java.time.LocalDate;
 @Entity
 @Table(
         name = "settlement_statement",
-        uniqueConstraints = @UniqueConstraint(name = "uk_settlement_statement_date_mid", columnNames = {"settlementDate", "mid"})
+        uniqueConstraints = @UniqueConstraint(name = "uk_settlement_statement_date_mid_store", columnNames = {"settlementDate", "mid", "storeId"})
 )
 public class SettlementStatement extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private Long storeId;
 
     @Column(nullable = false)
     private LocalDate settlementDate;
@@ -55,6 +58,24 @@ public class SettlementStatement extends BaseTimeEntity {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal netAmount;
 
+    @Column(nullable = false, precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal adjustmentAmount = BigDecimal.ZERO;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal holdAmount = BigDecimal.ZERO;
+
+    private LocalDate scheduledPayoutDate;
+
+    private LocalDateTime paidAt;
+
+    @Column(length = 80)
+    private String payoutReference;
+
+    @Column(length = 80)
+    private String payoutAccountMasked;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private SettlementStatus settlementStatus;
@@ -63,8 +84,22 @@ public class SettlementStatement extends BaseTimeEntity {
         this.settlementStatus = SettlementStatus.CONFIRMED;
     }
 
-    public void markPaid() {
+    public void markPaid(String payoutReference, String payoutAccountMasked, LocalDateTime paidAt) {
         this.settlementStatus = SettlementStatus.PAID;
+        this.payoutReference = payoutReference;
+        this.payoutAccountMasked = payoutAccountMasked;
+        this.paidAt = paidAt;
+    }
+
+    public void applyAdjustment(
+            BigDecimal adjustmentAmount,
+            BigDecimal holdAmount,
+            LocalDate scheduledPayoutDate) {
+        this.adjustmentAmount = adjustmentAmount == null ? BigDecimal.ZERO : adjustmentAmount;
+        this.holdAmount = holdAmount == null ? BigDecimal.ZERO : holdAmount;
+        this.scheduledPayoutDate = scheduledPayoutDate;
+        this.netAmount = grossAmount.subtract(feeAmount).subtract(vatAmount)
+                .add(this.adjustmentAmount).subtract(this.holdAmount);
     }
 
     public void recalculate(
@@ -75,6 +110,8 @@ public class SettlementStatement extends BaseTimeEntity {
         this.grossAmount = grossAmount;
         this.feeAmount = feeAmount;
         this.vatAmount = vatAmount;
-        this.netAmount = netAmount;
+        this.netAmount = netAmount
+                .add(adjustmentAmount == null ? BigDecimal.ZERO : adjustmentAmount)
+                .subtract(holdAmount == null ? BigDecimal.ZERO : holdAmount);
     }
 }

@@ -1,5 +1,14 @@
 package com.yeni.backoffice.core.payment.service;
 
+import com.yeni.backoffice.core.commerce.entity.CommerceDelivery;
+import com.yeni.backoffice.core.commerce.entity.CommerceOrder;
+import com.yeni.backoffice.core.commerce.entity.CommerceOrderItem;
+import com.yeni.backoffice.core.commerce.entity.Product;
+import com.yeni.backoffice.core.commerce.enums.DeliveryStatus;
+import com.yeni.backoffice.core.commerce.repository.CommerceDeliveryRepository;
+import com.yeni.backoffice.core.commerce.repository.CommerceOrderItemRepository;
+import com.yeni.backoffice.core.commerce.repository.CommerceOrderRepository;
+import com.yeni.backoffice.core.commerce.repository.ProductRepository;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.common.exception.NotFoundException;
 import com.yeni.backoffice.core.common.exception.ValidationBusinessException;
@@ -17,6 +26,7 @@ import com.yeni.backoffice.core.payment.entity.AuditLog;
 import com.yeni.backoffice.core.payment.entity.PaymentCancel;
 import com.yeni.backoffice.core.payment.entity.PaymentTransaction;
 import com.yeni.backoffice.core.payment.entity.SalesTransaction;
+import com.yeni.backoffice.core.payment.entity.SalesTransactionLine;
 import com.yeni.backoffice.core.payment.entity.SettlementAdjustment;
 import com.yeni.backoffice.core.payment.enums.LedgerStatus;
 import com.yeni.backoffice.core.payment.enums.SaleStatus;
@@ -28,6 +38,7 @@ import com.yeni.backoffice.core.payment.repository.ExternalSendRequestRepository
 import com.yeni.backoffice.core.payment.repository.PaymentCancelRepository;
 import com.yeni.backoffice.core.payment.repository.PaymentRecoveryTaskRepository;
 import com.yeni.backoffice.core.payment.repository.PaymentTransactionRepository;
+import com.yeni.backoffice.core.payment.repository.SalesTransactionLineRepository;
 import com.yeni.backoffice.core.payment.repository.SalesTransactionRepository;
 import com.yeni.backoffice.core.payment.repository.SettlementAdjustmentRepository;
 import com.yeni.backoffice.core.payment.repository.SettlementDetailRepository;
@@ -45,7 +56,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class SalesLedgerService {
@@ -59,6 +74,11 @@ public class SalesLedgerService {
     private final SettlementAdjustmentRepository adjustmentRepository;
     private final SettlementDetailRepository settlementDetailRepository;
     private final AuditLogRepository auditLogRepository;
+    private final CommerceOrderRepository commerceOrderRepository;
+    private final CommerceOrderItemRepository commerceOrderItemRepository;
+    private final ProductRepository productRepository;
+    private final SalesTransactionLineRepository salesLineRepository;
+    private final CommerceDeliveryRepository commerceDeliveryRepository;
 
     public SalesLedgerService(
             SalesTransactionRepository salesRepository,
@@ -69,8 +89,14 @@ public class SalesLedgerService {
             PaymentRecoveryTaskRepository recoveryTaskRepository,
             SettlementAdjustmentRepository adjustmentRepository,
             SettlementDetailRepository settlementDetailRepository,
-            AuditLogRepository auditLogRepository) {
+            AuditLogRepository auditLogRepository,
+            CommerceOrderRepository commerceOrderRepository,
+            CommerceOrderItemRepository commerceOrderItemRepository,
+            ProductRepository productRepository,
+            SalesTransactionLineRepository salesLineRepository,
+            CommerceDeliveryRepository commerceDeliveryRepository) {
         this.salesRepository = salesRepository;
+        this.commerceDeliveryRepository = commerceDeliveryRepository;
         this.paymentRepository = paymentRepository;
         this.cancelRepository = cancelRepository;
         this.externalSendRequestRepository = externalSendRequestRepository;
@@ -79,6 +105,10 @@ public class SalesLedgerService {
         this.adjustmentRepository = adjustmentRepository;
         this.settlementDetailRepository = settlementDetailRepository;
         this.auditLogRepository = auditLogRepository;
+        this.commerceOrderRepository = commerceOrderRepository;
+        this.commerceOrderItemRepository = commerceOrderItemRepository;
+        this.productRepository = productRepository;
+        this.salesLineRepository = salesLineRepository;
     }
 
     @Transactional
@@ -98,6 +128,99 @@ public class SalesLedgerService {
             String keyword,
             int page,
             int size) {
+        return getSalesLedger(startDate, endDate, transactionType, ledgerStatus, settlementStatus, keyword, page, size, null);
+    }
+
+    /**
+     * 미확정 매출 목록 — 배송 완료(구매 확정) 전이라 아직 정산 대상이 아닌 SALE 매출.
+     * 각 행에 매출 명세 라인에서 뽑은 분류명·상품 요약을 붙인다.
+     */
+    @Transactional(readOnly = true)
+    public com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesResponse getPendingSales(
+            LocalDate startDate, LocalDate endDate, Long storeId, String keyword) {
+        LocalDate start = startDate == null ? LocalDate.now().minusDays(30) : startDate;
+        LocalDate end = endDate == null ? LocalDate.now() : endDate;
+        var pageable = PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "occurredAt", "id"));
+        List<SalesTransaction> headers = salesRepository.searchLedger(
+                start, end, storeId, SaleType.SALE, null, null, Boolean.FALSE,
+                normalizeKeyword(keyword), pageable).getContent().stream()
+                // 이미 정산에 포함된 매출은 "미확정 대기"가 아니다(과거 데이터의 confirmedYn 누락분 방어).
+                .filter(h -> !Boolean.TRUE.equals(h.getSettlementIncludedYn()))
+                .toList();
+
+        Map<Long, List<SalesTransactionLine>> linesByHeader = salesLineRepository
+                .findBySalesTransactionIdInOrderByIdAsc(headers.stream().map(SalesTransaction::getId).toList())
+                .stream().collect(Collectors.groupingBy(SalesTransactionLine::getSalesTransactionId));
+
+        // 주문번호 → 배송 상태 매핑 (배송이 모두 완료돼야 확정 가능)
+        List<String> orderNos = headers.stream().map(SalesTransaction::getOrderNo).distinct().toList();
+        Map<Long, String> orderIdToNo = commerceOrderRepository.findByOrderNoIn(orderNos).stream()
+                .collect(Collectors.toMap(CommerceOrder::getId, CommerceOrder::getOrderNo));
+        Map<String, List<CommerceDelivery>> deliveriesByOrderNo = new java.util.HashMap<>();
+        if (!orderIdToNo.isEmpty()) {
+            commerceDeliveryRepository.findByOrderIdIn(orderIdToNo.keySet()).forEach(d ->
+                    deliveriesByOrderNo.computeIfAbsent(orderIdToNo.get(d.getOrderId()), k -> new ArrayList<>()).add(d));
+        }
+
+        List<com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow> rows = headers.stream().map(header -> {
+            List<SalesTransactionLine> lines = linesByHeader.getOrDefault(header.getId(), List.of());
+            List<String> categories = lines.stream().map(SalesTransactionLine::getCategoryName).distinct().toList();
+            List<String> names = lines.stream().map(SalesTransactionLine::getProductName)
+                    .filter(java.util.Objects::nonNull).distinct().toList();
+            String productSummary = names.isEmpty() ? "-"
+                    : names.size() == 1 ? names.get(0) : names.get(0) + " 외 " + (names.size() - 1) + "건";
+            List<CommerceDelivery> ds = deliveriesByOrderNo.getOrDefault(header.getOrderNo(), List.of());
+            String deliveryStatus = deliverySummary(ds);
+            boolean confirmable = !ds.isEmpty()
+                    && ds.stream().allMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED || d.getStatus() == DeliveryStatus.RETURNED)
+                    && ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED);
+            return new com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow(
+                    header.getId(), header.getOrderNo(), header.getOccurredAt(), header.getPaymentId(), header.getTid(),
+                    categories.isEmpty() ? "미분류" : String.join(", ", categories),
+                    productSummary, lines.isEmpty() ? 0 : lines.size(),
+                    header.getSaleAmount(), header.getSettlementStatus().name(), deliveryStatus, confirmable);
+        }).toList();
+
+        java.math.BigDecimal total = rows.stream().map(com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow::saleAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        return new com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesResponse(start, end, total, rows.size(), rows);
+    }
+
+    private String deliverySummary(List<CommerceDelivery> ds) {
+        if (ds.isEmpty()) return "배송 정보 없음";
+        if (ds.stream().allMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED)) return "배송 완료";
+        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.PREPARING)) return "배송 준비";
+        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.IN_TRANSIT)) return "배송 중";
+        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.RETURNED)) return "일부 반송";
+        return "진행 중";
+    }
+
+    /** Converts approved ledger rows into settlement candidates after purchase confirmation. */
+    @Transactional
+    public int confirmOrderSales(String orderNo, LocalDateTime confirmedAt) {
+        List<SalesTransaction> rows = salesRepository.findByOrderNoOrderByIdAsc(orderNo);
+        rows.forEach(row -> row.confirm(confirmedAt));
+        if (!rows.isEmpty()) {
+            salesLineRepository.findBySalesTransactionIdInOrderByIdAsc(
+                    rows.stream().map(SalesTransaction::getId).toList()).forEach(SalesTransactionLine::confirm);
+        }
+        return rows.size();
+    }
+
+    @Transactional(readOnly = true)
+    public SalesLedgerPageResponse getSalesLedger(
+            LocalDate startDate, LocalDate endDate, String transactionType,
+            String ledgerStatus, String settlementStatus, String keyword,
+            int page, int size, Long storeId) {
+        return getSalesLedger(startDate, endDate, transactionType, ledgerStatus, settlementStatus,
+                keyword, page, size, storeId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public SalesLedgerPageResponse getSalesLedger(
+            LocalDate startDate, LocalDate endDate, String transactionType,
+            String ledgerStatus, String settlementStatus, String keyword,
+            int page, int size, Long storeId, Boolean confirmedYn) {
         LocalDate start = startDate == null ? LocalDate.now().minusDays(30) : startDate;
         LocalDate end = endDate == null ? LocalDate.now() : endDate;
         int normalizedSize = size <= 0 ? 15 : Math.min(size, 100);
@@ -106,9 +229,11 @@ public class SalesLedgerService {
         Page<SalesTransaction> result = salesRepository.searchLedger(
                 start,
                 end,
+                storeId,
                 parseSaleType(transactionType),
                 parseLedgerStatus(ledgerStatus),
                 parseSettlementStatus(settlementStatus),
+                confirmedYn,
                 normalizeKeyword(keyword),
                 pageable
         );
@@ -117,7 +242,7 @@ public class SalesLedgerService {
                 result.getTotalElements(),
                 normalizedPage,
                 normalizedSize,
-                summarizeSalesLedger(start, end, transactionType, ledgerStatus, settlementStatus, keyword)
+                summarizeSalesLedger(start, end, transactionType, ledgerStatus, settlementStatus, keyword, storeId, confirmedYn)
         );
     }
 
@@ -129,9 +254,16 @@ public class SalesLedgerService {
             String ledgerStatus,
             String settlementStatus,
             String keyword) {
+        return getSalesLedgerSummary(startDate, endDate, transactionType, ledgerStatus, settlementStatus, keyword, null);
+    }
+
+    @Transactional(readOnly = true)
+    public SalesLedgerSummaryResponse getSalesLedgerSummary(
+            LocalDate startDate, LocalDate endDate, String transactionType,
+            String ledgerStatus, String settlementStatus, String keyword, Long storeId) {
         LocalDate start = startDate == null ? LocalDate.now().minusDays(30) : startDate;
         LocalDate end = endDate == null ? LocalDate.now() : endDate;
-        return summarizeSalesLedger(start, end, transactionType, ledgerStatus, settlementStatus, keyword);
+        return summarizeSalesLedger(start, end, transactionType, ledgerStatus, settlementStatus, keyword, storeId);
     }
 
     @Transactional(readOnly = true)
@@ -210,7 +342,12 @@ public class SalesLedgerService {
         BigDecimal vatAmount = totalAmount.subtract(supplyAmount);
         Long cancelId = SaleType.CANCEL.equals(saleType) ? sourceId : null;
         Long originalSalesTransactionId = SaleType.CANCEL.equals(saleType) ? findOriginalSaleId(payment.getOrderNo()) : null;
+        boolean confirmed = SaleType.CANCEL.equals(saleType)
+                ? salesRepository.findFirstByOrderNoAndSaleTypeOrderByIdAsc(payment.getOrderNo(), SaleType.SALE)
+                        .map(row -> Boolean.TRUE.equals(row.getConfirmedYn())).orElse(true)
+                : commerceOrderRepository.findByOrderNo(payment.getOrderNo()).isEmpty();
         SalesTransaction sales = SalesTransaction.builder()
+                .storeId(payment.getStoreId())
                 .sourceType(saleType.name())
                 .sourceId(sourceId)
                 .paymentId(payment.getId())
@@ -233,13 +370,102 @@ public class SalesLedgerService {
                 .paymentMethod(PaymentDefaults.PAYMENT_METHOD_CARD)
                 .externalSendRequired(true)
                 .settlementIncludedYn(false)
+                .confirmedYn(confirmed)
+                .confirmedAt(confirmed ? occurredAt : null)
                 .build();
+        SalesTransaction saved;
         try {
-            return salesRepository.save(sales);
+            saved = salesRepository.save(sales);
         } catch (DataIntegrityViolationException duplicate) {
             return salesRepository.findBySourceTypeAndSourceId(saleType.name(), sourceId)
                     .orElseThrow(() -> duplicate);
         }
+        createLines(saved, saleType, occurredAt);
+        return saved;
+    }
+
+    /**
+     * 매출 헤더를 상품 단위 라인으로 분해한다. 주문이 없으면(순수 결제) 라인을 만들지 않는다.
+     * SALE: 주문 상품별로 한 라인. CANCEL: 원 SALE 라인들에 취소액을 금액 비중대로 안분(음수).
+     * 어느 경우든 마지막 라인이 반올림 잔액을 흡수해 라인 합계 = 헤더 saleAmount 가 정확히 성립한다.
+     */
+    private void createLines(SalesTransaction header, SaleType saleType, LocalDateTime occurredAt) {
+        if (salesLineRepository.existsBySalesTransactionId(header.getId())) return;
+        CommerceOrder order = commerceOrderRepository.findByOrderNo(header.getOrderNo()).orElse(null);
+        if (order == null) return;
+
+        List<LineSeed> seeds = SaleType.CANCEL.equals(saleType)
+                ? cancelSeeds(order, header.getSaleAmount())
+                : saleSeeds(order);
+        if (seeds.isEmpty()) return;
+
+        BigDecimal target = header.getSaleAmount();
+        BigDecimal weightTotal = seeds.stream().map(LineSeed::weight).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<SalesTransactionLine> lines = new ArrayList<>();
+        BigDecimal allocated = BigDecimal.ZERO;
+        for (int i = 0; i < seeds.size(); i++) {
+            LineSeed seed = seeds.get(i);
+            BigDecimal lineAmount = (i == seeds.size() - 1 || weightTotal.signum() == 0)
+                    ? target.subtract(allocated)
+                    : target.multiply(seed.weight()).divide(weightTotal, 0, RoundingMode.HALF_UP);
+            allocated = allocated.add(lineAmount);
+            BigDecimal supply = calculateSupplyAmount(lineAmount.abs());
+            if (lineAmount.signum() < 0) supply = supply.negate();
+            lines.add(SalesTransactionLine.builder()
+                    .salesTransactionId(header.getId())
+                    .storeId(header.getStoreId())
+                    .orderId(order.getId())
+                    .orderItemId(seed.orderItemId())
+                    .productId(seed.productId())
+                    .productName(seed.productName())
+                    .categoryName(seed.categoryName())
+                    .sku(seed.sku())
+                    .quantity(seed.quantity())
+                    .saleType(saleType)
+                    .lineAmount(lineAmount)
+                    .supplyAmount(supply)
+                    .vatAmount(lineAmount.subtract(supply))
+                    .businessDate(header.getBusinessDate())
+                    .occurredAt(occurredAt)
+                    .confirmedYn(Boolean.TRUE.equals(header.getConfirmedYn()))
+                    .build());
+        }
+        salesLineRepository.saveAll(lines);
+    }
+
+    private List<LineSeed> saleSeeds(CommerceOrder order) {
+        List<CommerceOrderItem> items = commerceOrderItemRepository.findByOrderIdOrderByIdAsc(order.getId());
+        if (items.isEmpty()) return List.of();
+        Map<Long, Product> products = productRepository.findAllById(items.stream()
+                        .map(CommerceOrderItem::getProductId).filter(java.util.Objects::nonNull).distinct().toList()).stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+        List<LineSeed> seeds = new ArrayList<>();
+        for (CommerceOrderItem item : items) {
+            Product product = item.getProductId() == null ? null : products.get(item.getProductId());
+            seeds.add(new LineSeed(
+                    item.getId(), item.getProductId(), item.getProductName(),
+                    product == null || !StringUtils.hasText(product.getCategory()) ? "미분류" : product.getCategory().trim(),
+                    item.getProductCode(), item.getQuantity(),
+                    item.getItemAmount() == null ? BigDecimal.ZERO : item.getItemAmount().max(BigDecimal.ZERO)));
+        }
+        return seeds;
+    }
+
+    /** 취소 라인의 씨앗은 원 SALE 라인 — 그 금액 비중대로 취소액을 나눈다(수량은 원 라인 그대로 표기). */
+    private List<LineSeed> cancelSeeds(CommerceOrder order, BigDecimal signedCancelAmount) {
+        List<SalesTransactionLine> saleLines = salesLineRepository.findBySalesTransactionIdInOrderByIdAsc(
+                salesRepository.findByOrderNoOrderByIdAsc(order.getOrderNo()).stream()
+                        .filter(s -> SaleType.SALE.equals(s.getSaleType()))
+                        .map(SalesTransaction::getId).toList());
+        if (saleLines.isEmpty()) return List.of();
+        return saleLines.stream()
+                .map(l -> new LineSeed(l.getOrderItemId(), l.getProductId(), l.getProductName(),
+                        l.getCategoryName(), l.getSku(), l.getQuantity(), l.getLineAmount().abs()))
+                .toList();
+    }
+
+    private record LineSeed(Long orderItemId, Long productId, String productName, String categoryName,
+                            String sku, int quantity, BigDecimal weight) {
     }
 
     private SalesLedgerSummaryResponse summarizeSalesLedger(
@@ -248,13 +474,28 @@ public class SalesLedgerService {
             String transactionType,
             String ledgerStatus,
             String settlementStatus,
-            String keyword) {
+            String keyword,
+            Long storeId) {
+        return summarizeSalesLedger(start, end, transactionType, ledgerStatus, settlementStatus, keyword, storeId, null);
+    }
+
+    private SalesLedgerSummaryResponse summarizeSalesLedger(
+            LocalDate start,
+            LocalDate end,
+            String transactionType,
+            String ledgerStatus,
+            String settlementStatus,
+            String keyword,
+            Long storeId,
+            Boolean confirmedYn) {
         return salesRepository.summarizeLedger(
                 start,
                 end,
+                storeId,
                 parseSaleType(transactionType),
                 parseLedgerStatus(ledgerStatus),
                 parseSettlementStatus(settlementStatus),
+                confirmedYn,
                 normalizeKeyword(keyword)
         );
     }

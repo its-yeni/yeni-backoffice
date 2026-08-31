@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>매출 분석 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page sa-page">
+<header class="page-header"><div><h3>매출 분석</h3><p>매출 명세 라인(상품 단위, 주문 시점 분류명 snapshot) 기반의 분류별·상품별 매출 집계와, 주문 → 매출 헤더 → 매출 명세 → 정산서 금액 정합성 검산입니다.</p></div><a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리</a></header>
+
+<div class="ops-filter-bar">
+  <div class="ops-date-range"><input id="sa-start" type="date"><span>~</span><input id="sa-end" type="date"></div>
+  <label class="sa-confirmed-toggle"><input type="checkbox" id="sa-confirmed"> 확정(정산 대상) 매출만</label>
+  <button class="btn btn-primary btn-sm" id="sa-search">조회</button>
+</div>
+
+<div class="ops-summary-strip sa-kpis">
+  <div><div class="k-txt"><span>총 순매출</span><strong id="sa-kpi-net">0원</strong></div><i class="k-ico">₩</i></div>
+  <div><div class="k-txt"><span>총 주문건수</span><strong id="sa-kpi-orders">0건</strong></div><i class="k-ico is-info">🛒</i></div>
+  <div><div class="k-txt"><span>평균 주문 금액</span><strong id="sa-kpi-avg">0원</strong></div><i class="k-ico">🧾</i></div>
+  <div><div class="k-txt"><span>취소율</span><strong id="sa-kpi-cancel">0%</strong></div><i class="k-ico is-danger">%</i></div>
+</div>
+
+<div class="sa-charts">
+  <div class="sa-panel"><div class="sa-panel-head"><h2>일별 매출 추이</h2><div class="sa-legend"><span class="sa-legend-bar">순매출(원)</span><span class="sa-legend-line">주문건수(건)</span></div></div><div id="sa-trend" class="sa-trend"></div></div>
+  <div class="sa-panel"><h2>분류별 매출 (상위 5)</h2><div id="sa-donut"></div></div>
+</div>
+
+<div class="sa-panel"><h2>금액 정합성 검산</h2><p id="sa-consistency-summary" class="inline-message">확인 중…</p><div class="data-table-wrap" id="sa-consistency-wrap" hidden><table class="data-table"><thead><tr><th>범위</th><th>대상</th><th>내용</th><th class="amount">기대값</th><th class="amount">실제값</th><th class="amount">차이</th></tr></thead><tbody id="sa-consistency-rows"></tbody></table></div></div>
+
+<div class="sa-panel"><h2>분류별 매출</h2><div class="data-table-wrap"><table class="data-table"><thead><tr><th>분류</th><th class="amount">판매수량</th><th class="amount">순매출</th><th class="amount">비중</th><th class="amount">라인수</th></tr></thead><tbody id="sa-category-rows"></tbody></table><div class="data-table-empty" id="sa-category-empty" hidden><strong>집계할 매출이 없습니다.</strong></div></div><div class="sa-table-footer"><span class="cmc-total">총 <b id="sa-category-total">0</b>개</span><div id="sa-category-pagination"></div></div></div>
+
+<div class="sa-panel"><h2>상품별 매출 (상위 20)</h2><div class="data-table-wrap"><table class="data-table"><thead><tr><th>상품</th><th class="amount">판매수량</th><th class="amount">순매출</th><th class="amount">라인수</th></tr></thead><tbody id="sa-product-rows"></tbody></table><div class="data-table-empty" id="sa-product-empty" hidden><strong>집계할 매출이 없습니다.</strong></div></div><div class="sa-table-footer"><span class="cmc-total">총 <b id="sa-product-total">0</b>개</span><div id="sa-product-pagination"></div></div></div>
+
+</section></main></div><script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/canvas-charts.js"></script><script src="/js/pages/sales-analytics.js"></script></body></html>

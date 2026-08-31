@@ -62,7 +62,15 @@ public class SettlementBatchProcessor {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SettlementStatementResponse process(LocalDate targetDate, String mid, SettlementStatement existingStatement) {
-        List<SalesTransaction> sales = salesRepository.findByBusinessDateAndSettlementIncludedYnFalseOrderByIdAsc(targetDate);
+        return process(targetDate, mid, existingStatement, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public SettlementStatementResponse process(
+            LocalDate targetDate, String mid, SettlementStatement existingStatement, Long storeId) {
+        List<SalesTransaction> sales = storeId == null
+                ? salesRepository.findByBusinessDateAndConfirmedYnTrueAndSettlementIncludedYnFalseOrderByIdAsc(targetDate)
+                : salesRepository.findByBusinessDateAndStoreIdAndConfirmedYnTrueAndSettlementIncludedYnFalseOrderByIdAsc(targetDate, storeId);
         if (existingStatement != null && sales.isEmpty()) {
             return statementResponse(existingStatement);
         }
@@ -90,6 +98,7 @@ public class SettlementBatchProcessor {
         SettlementStatement statement;
         if (existingStatement == null) {
             statement = settlementStatementRepository.saveAndFlush(SettlementStatement.builder()
+                    .storeId(storeId)
                     .settlementDate(targetDate)
                     .pgCompany("INICIS")
                     .mid(mid)
