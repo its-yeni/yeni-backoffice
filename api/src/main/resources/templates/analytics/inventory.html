@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>재고 분석 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css">
+  <link rel="stylesheet" href="/css/pages/analytics.css">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content analytics-page">
+  <header class="page-header"><div><h3>재고 분석</h3><p>SKU 재고 현황과 최근 30일 판매량, 재고 부족 상품을 확인합니다. (입고 처리는 재고 메뉴에서)</p></div></header>
+  <div th:replace="~{analytics/_parts :: meta}"></div>
+  <nav th:replace="~{analytics/_parts :: tabs('inventory')}"></nav>
+  <div th:replace="~{analytics/_parts :: filter(false)}"></div>
+
+  <div class="an-kpis" id="an-kpis"></div>
+
+  <div class="an-grid g-2">
+    <div class="an-panel"><h4>카테고리별 현재재고</h4><div class="an-chart" id="an-category-chart"></div></div>
+    <div class="an-panel"><h4>최근 30일 판매량 상위 10</h4><div class="an-chart" id="an-sold-chart"></div></div>
+  </div>
+
+  <div class="an-panel">
+    <div class="an-panel-head"><h4>재고 부족 / 품절 상품</h4><span id="an-low-summary" style="font-size:12px;color:var(--text-muted)"></span></div>
+    <table class="an-table" id="an-low-table"><thead><tr>
+      <th>상품명</th><th>옵션</th><th>SKU</th><th>카테고리</th><th>매장</th>
+      <th class="num">현재재고</th><th class="num">안전재고</th><th class="num">최근30일 판매</th><th class="num">이동중</th>
+    </tr></thead><tbody></tbody></table>
+    <div id="an-low-pagination" class="an-pagination"></div>
+  </div>
+</section></main></div>
+<script src="/js/common.js"></script><script src="/js/canvas-charts.js"></script><script src="/js/pages/analytics-common.js"></script><script src="/js/pages/analytics-canvas.js"></script><script src="/js/pages/analytics-inventory.js"></script>
+</body></html>

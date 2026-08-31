@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="meta" class="an-meta">
+  <span><b>BI Tool</b>Microsoft Power BI</span>
+  <span><b>Data Source</b>Yeni Analytics API (<code>/api/analytics</code>)</span>
+  <span><b>Last Refresh</b><time id="an-refresh">-</time></span>
+</div>
+
+<nav th:fragment="tabs(active)" class="an-tabs">
+  <a href="/admin/analytics" th:classappend="${active == 'overview'} ? 'active'">운영 개요</a>
+  <a href="/admin/analytics/orders" th:classappend="${active == 'orders'} ? 'active'">주문 분석</a>
+  <a href="/admin/analytics/payments" th:classappend="${active == 'payments'} ? 'active'">결제 분석</a>
+  <a href="/admin/analytics/settlements" th:classappend="${active == 'settlements'} ? 'active'">정산 분석</a>
+  <a href="/admin/analytics/inventory" th:classappend="${active == 'inventory'} ? 'active'">재고 분석</a>
+</nav>
+
+<div th:fragment="filter(showMethod)" class="an-filter">
+  <label>기간
+    <span class="an-daterange"><input type="date" id="an-start"> ~ <input type="date" id="an-end"></span>
+  </label>
+  <label>채널
+    <select id="an-channel"><option value="">전체</option><option value="자사몰">자사몰</option><option value="매장">매장</option></select>
+  </label>
+  <label>매장
+    <select id="an-store"><option value="">전체 매장</option></select>
+  </label>
+  <label th:if="${showMethod}">결제수단
+    <select id="an-method"><option value="">전체</option><option value="카드">카드</option><option value="간편결제">간편결제</option><option value="현금">현금</option><option value="계좌이체">계좌이체</option></select>
+  </label>
+  <div class="an-quick-ranges" aria-label="빠른 기간 선택">
+    <button type="button" data-an-days="0">오늘</button>
+    <button type="button" data-an-days="6">7일</button>
+    <button type="button" data-an-days="29">30일</button>
+    <button type="button" data-an-range="month">이번 달</button>
+  </div>
+  <button type="button" class="btn btn-primary an-filter-apply" id="an-filter-apply">조회</button>
+  <button type="button" class="btn btn-light an-filter-reset" id="an-filter-reset">필터 초기화</button>
+</div>
+
+</body>
+</html>

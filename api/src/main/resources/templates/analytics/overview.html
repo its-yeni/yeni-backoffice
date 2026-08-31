@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>운영 분석 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css">
+  <link rel="stylesheet" href="/css/pages/analytics.css">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content analytics-page">
+  <header class="page-header"><div><h3>운영 분석</h3><p>주문·결제·정산·재고 데이터를 기반으로 주요 운영 지표를 확인합니다.</p></div>
+    <div class="page-header-actions"><a class="btn btn-light" href="/admin/operations-dashboard">운영 대시보드</a></div></header>
+
+  <div th:replace="~{analytics/_parts :: meta}"></div>
+  <nav th:replace="~{analytics/_parts :: tabs('overview')}"></nav>
+  <div th:replace="~{analytics/_parts :: filter(true)}"></div>
+
+  <div class="an-kpis" id="an-kpis"></div>
+
+  <div class="an-grid g-2">
+    <div class="an-panel">
+      <div class="an-panel-head"><h4>일별 주문 / 주문금액 추이</h4>
+        <div class="an-legend"><span><i class="bar"></i>주문금액(원)</span><span><i class="line"></i>주문건수(건)</span></div></div>
+      <div class="an-chart" id="an-trend"></div>
+    </div>
+    <div class="an-panel"><h4>채널별 주문금액</h4><div class="an-chart" id="an-channel-chart"></div></div>
+  </div>
+
+  <div class="an-panel" style="margin-bottom:16px">
+    <h4>결제수단별 승인 현황</h4>
+    <table class="an-table" id="an-method-table"><thead><tr>
+      <th>결제수단</th><th class="num">결제건수</th><th class="num">승인건수</th><th class="num">취소건수</th><th class="num">승인율</th><th class="num">승인금액</th>
+    </tr></thead><tbody></tbody><tfoot></tfoot></table>
+  </div>
+
+  <div class="an-grid g-2">
+    <div class="an-panel">
+      <div class="an-section-head"><h4>정산 불일치 최근 5건</h4><a href="/admin/analytics/settlements">전체보기</a></div>
+      <table class="an-table" id="an-mismatch-table"><thead><tr>
+        <th>주문번호</th><th>매장</th><th class="num">결제금액</th><th class="num">정산금액</th><th class="num">차이금액</th><th>발생일</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <div class="an-panel">
+      <div class="an-section-head"><h4>재고 부족 상품 최근 5건</h4><a href="/admin/analytics/inventory">전체보기</a></div>
+      <table class="an-table" id="an-lowstock-table"><thead><tr>
+        <th>상품명</th><th class="num">현재재고</th><th class="num">안전재고</th><th class="num">최근30일 판매</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section></main></div>
+<script src="/js/common.js"></script><script src="/js/canvas-charts.js"></script><script src="/js/pages/analytics-common.js"></script><script src="/js/pages/analytics-canvas.js"></script><script src="/js/pages/analytics-overview.js"></script>
+</body></html>

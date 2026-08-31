@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>운영 대시보드 - Yeni Backoffice</title>
+  <link rel="stylesheet" th:href="@{/css/common.css}"><link rel="stylesheet" th:href="@{/css/layout.css}">
+  <link rel="stylesheet" th:href="@{/css/components.css}"><link rel="stylesheet" th:href="@{/css/commerce-admin.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/operations-dashboard.css}">
+</head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main">
+  <div th:replace="~{fragments/topbar :: header}"></div>
+  <section class="content operations-dashboard">
+    <header class="page-header ops-titlebar">
+      <div><h3>운영 대시보드</h3><p>상품 등록부터 지급 근거까지, 지금 확인할 상태와 다음 업무를 한 화면에서 봅니다.</p></div>
+      <div class="page-header-actions"><span class="ops-updated">기준 <span th:text="${#temporals.format(operations.computedAt, 'HH:mm')}">--:--</span></span><button type="button" class="btn btn-light" id="ops-refresh-btn">새로고침</button><a class="btn btn-primary" href="/admin/commerce/preview?demo=1">3분 운영 데모 시작</a></div>
+    </header>
+    <nav class="ops-flow" aria-label="커머스 운영 흐름">
+      <a href="/admin/commerce/products"><b>01</b><span>상품·SKU<small>판매 기준 구성</small></span><strong th:text="${operations.soldOutSkuCount + operations.lowStockSkuCount} + '개 확인'">0개 확인</strong></a>
+      <a href="/admin/commerce/inventory"><b>02</b><span>위치별 재고<small>가용·예약·이동</small></span><strong th:text="${operations.inventoryIssueCount} + '개 주의'">0개 주의</strong></a>
+      <a href="/admin/commerce/orders"><b>03</b><span>주문<small>가격 검증·예약</small></span><strong th:text="${operations.todayOrderCount} + '건 오늘'">0건 오늘</strong></a>
+      <a href="/admin/payment-operations"><b>04</b><span>결제<small>승인·복구</small></span><strong th:text="${operations.paymentIssueCount} + '건 예외'">0건 예외</strong></a>
+      <a href="/admin/payment-operations/sales-ledger"><b>05</b><span>매출 원장<small>SALE·CANCEL</small></span><strong th:text="${#numbers.formatInteger(operations.todayRevenue,0,'COMMA')} + '원'">0원</strong></a>
+      <a href="/admin/payment-operations/settlements/reconciliation"><b>06</b><span>PG 대사<small>외부 CSV 비교</small></span><strong>파일 확인</strong></a>
+      <a href="/admin/payment-operations/settlements"><b>07</b><span>정산·지급<small>확정 조건 검증</small></span><strong th:text="${operations.draftSettlementCount} + '건 대기'">0건 대기</strong></a>
+    </nav>
+    <div class="ops-axes" aria-hidden="true">
+      <span><b>주문·결제·정산</b> 상품 → 주문 → 결제 → 매출원장 → 정산</span>
+      <span><b>재고 아웃바운드</b> 예약 → 출고 → 배송 → 반품</span>
+      <span><b>재고 인바운드</b> 공급처 → 발주 → 입고 검수</span>
+    </div>
+    <div class="ops-columns">
+    <section class="ops-attention" aria-label="오늘 확인할 작업">
+      <header><div><h2>오늘 확인할 작업</h2><p>정상 수치보다 고객·재고·정산에 영향을 주는 예외를 먼저 정렬했습니다.</p></div><strong th:text="${operations.actionRequiredCount} + '건'">0건</strong></header>
+      <div class="ops-queue-table"><div class="ops-queue-head"><span>우선순위</span><span>영역</span><span>확인 항목</span><span>건수</span><span>다음 작업</span></div><div class="ops-queue-rows" id="ops-queue-rows"></div></div>
+    </section>
+    <section class="ops-store-summary" aria-label="매장별 운영 집계">
+      <header><div><h2>매장별 운영 집계</h2><p>선택 기간의 주문과 배송완료로 확정된 매출을 함께 비교합니다.</p></div><small>확정매출은 정산 집계 대상입니다.</small></header>
+      <div class="ops-store-table"><div class="ops-store-head"><span>매장</span><span>주문</span><span>확정매출</span></div><div class="ops-store-row" th:each="row : ${operations.storePerformance}"><strong th:text="${row.storeName}">매장</strong><span th:text="${row.orderCount + '건'}">0건</span><b th:text="${#numbers.formatInteger(row.confirmedRevenue,0,'COMMA') + '원'}">0원</b></div><p class="ops-store-empty" th:if="${#lists.isEmpty(operations.storePerformance)}">집계할 매장 주문이 없습니다.</p></div>
+    </section>
+    </div>
+    <section class="ops-lower">
+      <article class="ops-trend-panel"><header><div><h2>최근 매출 흐름</h2><p>승인 매출에서 취소 원장을 차감한 금액입니다.</p></div><select id="ops-trend-range"><option value="7" th:selected="${operations.salesTrendDays == 7}">7일</option><option value="14" th:selected="${operations.salesTrendDays == 14}">14일</option><option value="30" th:selected="${operations.salesTrendDays == 30}">30일</option></select></header><div id="ops-sales-chart" class="ops-sales-chart"></div></article>
+      <aside class="ops-demo-panel"><small>PORTFOLIO WALKTHROUGH</small><h2>메뉴를 몰라도<br>전체 흐름을 확인하세요.</h2><ol><li>상품과 옵션 선택</li><li>Mock 주문·결제 실행</li><li>재고와 원장 생성 확인</li><li>PG CSV 대사 후 정산 검증</li></ol><a class="btn btn-primary" href="/admin/commerce/preview?demo=1">3분 데모 시작 →</a><p>실제 PG 승인 대신 Mock Adapter를 사용합니다.</p></aside>
+    </section>
+  </section>
+</main></div>
+<script th:inline="javascript">window.opsSalesTrend=/*[[${operations.salesTrend}]]*/[];window.opsQueueItems=/*[[${operations.queueItems}]]*/[];</script>
+<script th:src="@{/js/common.js}"></script><script th:src="@{/js/canvas-charts.js}"></script><script th:src="@{/js/pages/operations-dashboard.js}"></script>
+</body></html>

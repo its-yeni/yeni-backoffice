@@ -18,9 +18,9 @@ public class DashboardService {
         ResumeSummaryDto resumeSummary = new ResumeSummaryDto(
                 "Ye Eun Kwon",
                 "Backoffice / API Developer",
-                "C#, .NET, MSSQL",
-                "Java, Spring Boot, JPA",
-                "POS, Payment, Commerce Admin"
+                "C#, .NET, MS-SQL, Dapper",
+                "Java 17, Spring Boot 3, JPA",
+                "Backoffice, API, POS/KIOSK, Commerce"
         );
 
         List<DashboardStatDto> stats = Arrays.asList(

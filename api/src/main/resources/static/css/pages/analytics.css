@@ -1,0 +1,94 @@
+/* ── 분석 화면 공통 ────────────────────────────────────────────────────────────
+   업무 화면과 달리 "현황·추이·이상 데이터 확인" 전용. 얇고 단순하게.
+   포인트=오렌지(var(--primary)), 비교=gray, 주의(정산차이·재고부족)=red 만 제한적으로. */
+
+.analytics-page { min-height: calc(100vh - var(--topbar-height)); padding: 18px var(--content-gutter) 40px;
+  background: var(--page-canvas); color: var(--text-primary); }
+.analytics-page > .page-header { min-height: 0; margin-bottom: 6px; align-items: flex-start; }
+.analytics-page > .page-header h3 { font-size: 20px; }
+.analytics-page > .page-header p { margin-top: 3px; font-size: 12.5px; }
+
+/* BI 메타 (과하게 강조하지 않음) */
+.an-meta { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 14px; padding: 8px 0;
+  border-bottom: 1px solid var(--border-default); color: var(--text-muted); font-size: 11.5px; }
+.an-meta b { margin-right: 6px; color: var(--text-secondary); font-weight: 600; }
+.an-meta a { color: var(--primary); text-decoration: none; }
+
+/* 탭 (운영 개요 / 주문 / 결제 / 정산 / 재고) */
+.an-tabs { position: sticky; top: -1px; z-index: 8; display: flex; gap: 20px; min-height: 42px; margin: 0; padding: 0 2px; border-bottom: 1px solid var(--border-default); background: var(--page-canvas); }
+.an-tabs a { position: relative; padding: 8px 1px; color: var(--text-secondary); font-size: 13px; text-decoration: none; }
+.an-tabs a.active { color: var(--text-primary); font-weight: 700; }
+.an-tabs a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--primary); }
+
+/* 필터 바 */
+.an-filter { position: sticky; top: 40px; z-index: 7; display: flex; flex-wrap: wrap; align-items: end; gap: 8px; min-height: 64px; margin: 0 0 14px;
+  padding: 10px 12px; border: 1px solid var(--border-default); border-top: 0; border-radius: 0 0 var(--radius-container) var(--radius-container); background: rgba(255,255,255,.97); box-shadow: 0 5px 12px rgba(16,24,40,.04); backdrop-filter: blur(8px); }
+.an-filter label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.an-filter select, .an-filter input[type="date"] { height: 36px; min-width: 130px; font-size: 12.5px; }
+.an-filter .an-daterange { display: flex; align-items: center; gap: 6px; }
+.an-filter .an-daterange input { min-width: 140px; }
+.an-filter .an-filter-reset { height: 36px; }
+.an-filter .an-filter-apply { height: 36px; }
+.an-quick-ranges { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.an-quick-ranges button { height: 36px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-control); background: #fff; color: var(--text-secondary); font-size: 12px; }
+.an-quick-ranges button:hover { border-color: var(--primary); color: var(--primary-hover); }
+@media (max-width: 900px) { .an-filter { position: static; } .an-tabs { overflow-x: auto; white-space: nowrap; } }
+
+/* KPI 스트립 — 얇고 단순, 아이콘 없음 */
+.an-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0 0 16px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-surface); overflow: hidden; }
+.an-kpis.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.an-kpis.cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.an-kpi { padding: 12px 16px; }
+.an-kpi + .an-kpi { border-left: 1px solid var(--border-default); }
+.an-kpi span { display: block; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
+.an-kpi strong { display: block; margin-top: 5px; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.an-kpi small { display: block; margin-top: 3px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.an-kpi small.up { color: #067647; }
+.an-kpi small.down { color: var(--danger); }
+@media (max-width: 1100px) { .an-kpis, .an-kpis.cols-4, .an-kpis.cols-6 { grid-template-columns: repeat(2, 1fr); }
+  .an-kpi:nth-child(odd) { border-left: 0; } .an-kpi:nth-child(n+3) { border-top: 1px solid var(--border-default); } }
+
+/* 차트 / 표 패널 */
+.an-grid { display: grid; gap: 16px; margin: 0 0 16px; }
+.an-grid.g-2 { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.an-grid.g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .an-grid.g-2, .an-grid.g-3 { grid-template-columns: 1fr; } }
+.an-panel { padding: 14px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-surface); }
+.an-panel > h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; }
+.an-panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+.an-panel-head h4 { margin: 0; font-size: 13px; font-weight: 700; }
+.an-legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-secondary); }
+.an-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.an-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.an-legend i.bar { background: var(--primary); }
+.an-legend i.line { border-radius: 50%; background: #98a2b3; }
+
+/* 인라인 SVG 차트 */
+.an-chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
+.an-chart canvas { display: block; max-width: 100%; }
+.an-chart .bar { fill: var(--primary); }
+.an-chart .bar.cmp { fill: #cbd2dc; }
+.an-chart .grid { stroke: #eef0f3; stroke-width: 1; }
+.an-chart .axis { stroke: var(--border-default); stroke-width: 1; }
+.an-chart .tick { fill: var(--text-muted); font-size: 10px; }
+.an-chart .oline { fill: none; stroke: #667085; stroke-width: 1.4; }
+.an-chart .odot { fill: #fff; stroke: #667085; stroke-width: 1.4; }
+.an-chart .hbar-label { fill: var(--text-secondary); font-size: 11px; }
+.an-chart .hbar-value { fill: var(--text-primary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.an-empty { padding: 40px 10px; color: var(--text-muted); font-size: 12.5px; text-align: center; }
+
+/* 표 */
+.an-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.an-table th { height: 36px; padding: 0 10px; border-bottom: 1px solid var(--border-default); background: #f7f8fa;
+  color: var(--text-secondary); text-align: left; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.an-table td { height: 40px; padding: 6px 10px; border-bottom: 1px solid #eef0f3; color: #344054; }
+.an-table tbody tr:last-child td { border-bottom: 0; }
+.an-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.an-table .neg { color: var(--danger); }
+.an-table .warn { color: var(--danger); font-weight: 600; }
+.an-table tfoot td { height: 38px; border-top: 1px solid var(--border-default); font-weight: 700; }
+
+.an-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.an-section-head h4 { margin: 0; font-size: 13px; font-weight: 700; }
+.an-section-head a { color: var(--primary); font-size: 12px; text-decoration: none; }

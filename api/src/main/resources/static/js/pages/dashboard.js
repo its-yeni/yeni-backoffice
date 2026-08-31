@@ -1,5 +1,13 @@
 ﻿const rawProjects = Array.isArray(window.portfolioProjects) ? window.portfolioProjects : [];
 
+document.addEventListener("DOMContentLoaded", function () {
+    const navLinks = document.querySelectorAll(".site-nav-links .nav-link");
+    const items = [["경력", "#career-summary"], ["포트폴리오", "#featured-build"], ["구현 상세", "#operations"], ["프로젝트 기록", "#table-wrap"]];
+    navLinks.forEach(function (link, index) { if (items[index]) { link.textContent = items[index][0]; link.href = items[index][1]; } });
+    const cta = document.querySelector(".site-nav-cta");
+    if (cta) { cta.textContent = "구현 화면 보기 →"; cta.href = "/admin/commerce/preview"; }
+});
+
 function toArray(value) {
     if (Array.isArray(value)) {
         return value;
@@ -199,11 +207,44 @@ function tagListMarkup(tags) {
     }).join("");
 }
 
+function renderPortfolioArchive(items) {
+    if (!projectTableEl) return;
+    if (!items.length) {
+        projectTableEl.innerHTML = '<div class="archive-empty">조건에 맞는 프로젝트가 없습니다.</div>';
+        return;
+    }
+
+    projectTableEl.innerHTML = items.map(function (project, index) {
+        const tech = toArray(project.tech).slice(0, 4).map(function (item) {
+            return '<span>' + escapeHtml(item) + '</span>';
+        }).join("");
+        return '<button type="button" class="archive-record" data-project-key="' + escapeHtml(project.key) + '">' +
+            '<b class="archive-index">' + String(index + 1).padStart(2, "0") + '</b>' +
+            '<time>' + escapeHtml(project.period) + '</time>' +
+            '<div class="archive-project"><strong>' + escapeHtml(project.title) + '</strong><p>' + escapeHtml(project.desc) + '</p></div>' +
+            '<div class="archive-role"><span>' + escapeHtml(project.company) + '</span><small>' + escapeHtml(project.role) + '</small></div>' +
+            '<div class="archive-tech">' + tech + '</div>' +
+            '<i aria-hidden="true">↗</i>' +
+        '</button>';
+    }).join("");
+
+    Array.prototype.forEach.call(projectTableEl.querySelectorAll(".archive-record"), function (record) {
+        record.addEventListener("click", function () { openProject(record.dataset.projectKey); });
+    });
+}
+
 function initProjectTable() {
     if (!projectTableEl) {
         console.warn("projectTable 요소가 없습니다.");
         return;
     }
+
+    projectTable = {
+        setData: function (data) { renderPortfolioArchive(data); },
+        redraw: function () {}
+    };
+    renderPortfolioArchive(projects);
+    return;
 
     if (typeof Tabulator === "undefined") {
         console.error("Tabulator library is not loaded.");
@@ -502,44 +543,6 @@ function closeModal() {
     document.body.classList.remove("modal-open");
 }
 
-function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-
-    if (!sidebar) {
-        return;
-    }
-
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-    if (isMobile) {
-        sidebar.classList.toggle("open");
-        return;
-    }
-
-    const collapsed = document.body.classList.toggle("sidebar-collapsed");
-    localStorage.setItem("sidebar-collapsed", collapsed ? "Y" : "N");
-}
-
-window.toggleSidebar = toggleSidebar;
-
-function restoreSidebarState() {
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-    if (!isMobile && localStorage.getItem("sidebar-collapsed") === "Y") {
-        document.body.classList.add("sidebar-collapsed");
-    }
-}
-
-function setupSidebarTooltips() {
-    Array.prototype.forEach.call(document.querySelectorAll(".nav-link"), function (link) {
-        const text = link.querySelector(".nav-text");
-
-        if (text && !link.dataset.tooltip) {
-            link.dataset.tooltip = text.textContent.trim();
-        }
-    });
-}
-
 function animateCounters() {
     Array.prototype.forEach.call(document.querySelectorAll(".count-value"), function (counter) {
         const target = Number(counter.dataset.count || "0");
@@ -593,26 +596,44 @@ function setupScrollSpy() {
     });
 }
 
-function bindEvents() {
-    Array.prototype.forEach.call(document.querySelectorAll(".nav-toggle"), function (button) {
-        button.addEventListener("click", function () {
-            const group = button.closest(".nav-group");
+function setupLandingMotion() {
+    const targets = Array.prototype.slice.call(document.querySelectorAll(
+        ".boundary-v3, .career-v3, .product-story, .operations-v3, .architecture-v3, .projects-v3, .project-list-v3, .closing-v3"
+    ));
 
-            if (!group) {
-                return;
-            }
+    if (!targets.length || location.hash || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        targets.forEach(function (target) { target.classList.add("motion-visible"); });
+        return;
+    }
 
-            const collapsed = group.classList.toggle("collapsed");
-            button.setAttribute("aria-expanded", String(!collapsed));
-
-            const arrow = button.querySelector(".nav-arrow");
-
-            if (arrow) {
-                arrow.textContent = collapsed ? "▸" : "▾";
-            }
+    document.documentElement.classList.add("motion-ready");
+    const observer = new IntersectionObserver(function (entries, currentObserver) {
+        entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("motion-visible");
+            currentObserver.unobserve(entry.target);
         });
-    });
+    }, { threshold: 0.08, rootMargin: "0px 0px -48px 0px" });
 
+    targets.forEach(function (target) { observer.observe(target); });
+}
+
+function setupProductStory() {
+    const buttons = Array.prototype.slice.call(document.querySelectorAll(".story-steps button"));
+    const panels = Array.prototype.slice.call(document.querySelectorAll(".story-panel"));
+    if (!buttons.length || !panels.length) return;
+
+    function activate(key) {
+        buttons.forEach(function (button) { button.classList.toggle("active", button.dataset.story === key); });
+        panels.forEach(function (panel) { panel.classList.toggle("active", panel.dataset.panel === key); });
+    }
+
+    buttons.forEach(function (button) {
+        button.addEventListener("click", function () { activate(button.dataset.story); });
+    });
+}
+
+function bindEvents() {
     Array.prototype.forEach.call(document.querySelectorAll('.nav-link[href^="#"]'), function (link) {
         link.addEventListener("click", function () {
             Array.prototype.forEach.call(document.querySelectorAll(".nav-link"), function (item) {
@@ -620,14 +641,6 @@ function bindEvents() {
             });
 
             link.classList.add("active");
-
-            if (window.matchMedia("(max-width: 768px)").matches) {
-                const sidebar = document.getElementById("sidebar");
-
-                if (sidebar) {
-                    sidebar.classList.remove("open");
-                }
-            }
         });
     });
 
@@ -706,8 +719,6 @@ function setupAccordion() {
     });
 }
 
-setupSidebarTooltips();
-restoreSidebarState();
 showDashboardLoading("프로젝트 목록을 준비하고 있어요");
 function initializeRevealSections() {
     const sections = document.querySelectorAll(".reveal-section");
@@ -745,6 +756,8 @@ initializeRevealSections();
 initProjectTable();
 animateCounters();
 setupScrollSpy();
+setupLandingMotion();
+setupProductStory();
 setupAccordion();
 bindEvents();
 
