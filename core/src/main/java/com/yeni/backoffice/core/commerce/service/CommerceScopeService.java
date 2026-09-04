@@ -8,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -47,8 +50,13 @@ public class CommerceScopeService {
 
     public List<StoreProductSetting> getStoreProducts(Long storeId) {
         CommerceStore store = requireStore(storeId);
-        return storeProducts.findByStoreIdOrderByIdAsc(storeId).stream().map(setting -> {
-            Product product = requireProduct(setting.getProductId());
+        List<StoreProduct> settings = storeProducts.findByStoreIdOrderByIdAsc(storeId);
+        Map<Long, Product> productById = products.findAllById(
+                        settings.stream().map(StoreProduct::getProductId).distinct().toList())
+                .stream().collect(Collectors.toMap(Product::getId, Function.identity()));
+        return settings.stream().map(setting -> {
+            Product product = productById.get(setting.getProductId());
+            if (product == null) throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
             requireSameBrand(store, product);
             return new StoreProductSetting(setting, product);
         }).toList();
