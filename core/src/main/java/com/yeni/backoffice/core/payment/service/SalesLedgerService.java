@@ -1,11 +1,8 @@
 package com.yeni.backoffice.core.payment.service;
 
-import com.yeni.backoffice.core.commerce.entity.CommerceDelivery;
 import com.yeni.backoffice.core.commerce.entity.CommerceOrder;
 import com.yeni.backoffice.core.commerce.entity.CommerceOrderItem;
 import com.yeni.backoffice.core.commerce.entity.Product;
-import com.yeni.backoffice.core.commerce.enums.DeliveryStatus;
-import com.yeni.backoffice.core.commerce.repository.CommerceDeliveryRepository;
 import com.yeni.backoffice.core.commerce.repository.CommerceOrderItemRepository;
 import com.yeni.backoffice.core.commerce.repository.CommerceOrderRepository;
 import com.yeni.backoffice.core.commerce.repository.ProductRepository;
@@ -78,7 +75,7 @@ public class SalesLedgerService {
     private final CommerceOrderItemRepository commerceOrderItemRepository;
     private final ProductRepository productRepository;
     private final SalesTransactionLineRepository salesLineRepository;
-    private final CommerceDeliveryRepository commerceDeliveryRepository;
+    private final PendingSalesQueryService pendingSalesQueryService;
 
     public SalesLedgerService(
             SalesTransactionRepository salesRepository,
@@ -94,9 +91,9 @@ public class SalesLedgerService {
             CommerceOrderItemRepository commerceOrderItemRepository,
             ProductRepository productRepository,
             SalesTransactionLineRepository salesLineRepository,
-            CommerceDeliveryRepository commerceDeliveryRepository) {
+            PendingSalesQueryService pendingSalesQueryService) {
         this.salesRepository = salesRepository;
-        this.commerceDeliveryRepository = commerceDeliveryRepository;
+        this.pendingSalesQueryService = pendingSalesQueryService;
         this.paymentRepository = paymentRepository;
         this.cancelRepository = cancelRepository;
         this.externalSendRequestRepository = externalSendRequestRepository;
@@ -138,61 +135,7 @@ public class SalesLedgerService {
     @Transactional(readOnly = true)
     public com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesResponse getPendingSales(
             LocalDate startDate, LocalDate endDate, Long storeId, String keyword) {
-        LocalDate start = startDate == null ? LocalDate.now().minusDays(30) : startDate;
-        LocalDate end = endDate == null ? LocalDate.now() : endDate;
-        var pageable = PageRequest.of(0, 500, Sort.by(Sort.Direction.DESC, "occurredAt", "id"));
-        List<SalesTransaction> headers = salesRepository.searchLedger(
-                start, end, storeId, SaleType.SALE, null, null, Boolean.FALSE,
-                normalizeKeyword(keyword), pageable).getContent().stream()
-                // 이미 정산에 포함된 매출은 "미확정 대기"가 아니다(과거 데이터의 confirmedYn 누락분 방어).
-                .filter(h -> !Boolean.TRUE.equals(h.getSettlementIncludedYn()))
-                .toList();
-
-        Map<Long, List<SalesTransactionLine>> linesByHeader = salesLineRepository
-                .findBySalesTransactionIdInOrderByIdAsc(headers.stream().map(SalesTransaction::getId).toList())
-                .stream().collect(Collectors.groupingBy(SalesTransactionLine::getSalesTransactionId));
-
-        // 주문번호 → 배송 상태 매핑 (배송이 모두 완료돼야 확정 가능)
-        List<String> orderNos = headers.stream().map(SalesTransaction::getOrderNo).distinct().toList();
-        Map<Long, String> orderIdToNo = commerceOrderRepository.findByOrderNoIn(orderNos).stream()
-                .collect(Collectors.toMap(CommerceOrder::getId, CommerceOrder::getOrderNo));
-        Map<String, List<CommerceDelivery>> deliveriesByOrderNo = new java.util.HashMap<>();
-        if (!orderIdToNo.isEmpty()) {
-            commerceDeliveryRepository.findByOrderIdIn(orderIdToNo.keySet()).forEach(d ->
-                    deliveriesByOrderNo.computeIfAbsent(orderIdToNo.get(d.getOrderId()), k -> new ArrayList<>()).add(d));
-        }
-
-        List<com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow> rows = headers.stream().map(header -> {
-            List<SalesTransactionLine> lines = linesByHeader.getOrDefault(header.getId(), List.of());
-            List<String> categories = lines.stream().map(SalesTransactionLine::getCategoryName).distinct().toList();
-            List<String> names = lines.stream().map(SalesTransactionLine::getProductName)
-                    .filter(java.util.Objects::nonNull).distinct().toList();
-            String productSummary = names.isEmpty() ? "-"
-                    : names.size() == 1 ? names.get(0) : names.get(0) + " 외 " + (names.size() - 1) + "건";
-            List<CommerceDelivery> ds = deliveriesByOrderNo.getOrDefault(header.getOrderNo(), List.of());
-            String deliveryStatus = deliverySummary(ds);
-            boolean confirmable = !ds.isEmpty()
-                    && ds.stream().allMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED || d.getStatus() == DeliveryStatus.RETURNED)
-                    && ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED);
-            return new com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow(
-                    header.getId(), header.getOrderNo(), header.getOccurredAt(), header.getPaymentId(), header.getTid(),
-                    categories.isEmpty() ? "미분류" : String.join(", ", categories),
-                    productSummary, lines.isEmpty() ? 0 : lines.size(),
-                    header.getSaleAmount(), header.getSettlementStatus().name(), deliveryStatus, confirmable);
-        }).toList();
-
-        java.math.BigDecimal total = rows.stream().map(com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesRow::saleAmount)
-                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-        return new com.yeni.backoffice.core.payment.dto.SalesAnalyticsDtos.PendingSalesResponse(start, end, total, rows.size(), rows);
-    }
-
-    private String deliverySummary(List<CommerceDelivery> ds) {
-        if (ds.isEmpty()) return "배송 정보 없음";
-        if (ds.stream().allMatch(d -> d.getStatus() == DeliveryStatus.DELIVERED)) return "배송 완료";
-        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.PREPARING)) return "배송 준비";
-        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.IN_TRANSIT)) return "배송 중";
-        if (ds.stream().anyMatch(d -> d.getStatus() == DeliveryStatus.RETURNED)) return "일부 반송";
-        return "진행 중";
+        return pendingSalesQueryService.getPendingSales(startDate, endDate, storeId, keyword);
     }
 
     /** Converts approved ledger rows into settlement candidates after purchase confirmation. */
