@@ -1,57 +1,14 @@
 (function () {
   const $ = id => document.getElementById(id);
-
-  const PAYMENT_LABEL = { READY: "결제 대기", APPROVED: "결제 승인", APPROVE_UNKNOWN: "결과 불명", FAILED: "결제 실패" };
-  const PAYMENT_CLASS = { READY: "ready", APPROVED: "paid", APPROVE_UNKNOWN: "unknown", FAILED: "failed" };
-  const ORDER_LABEL = {
-    PENDING_PAYMENT: "주문 생성", CREATED: "주문 생성", PAID: "결제 완료", PURCHASE_CONFIRMED: "구매 확정",
-    PAYMENT_FAILED: "결제 실패", PARTIALLY_CANCELLED: "부분취소", CANCELLED: "취소완료"
-  };
-  // 주문 목록 위 요약 칩(전체/결제대기/결제승인/결제실패/취소) — 결제상태만으로는 "취소"를 표현할 수 없어서
-  // (취소는 결제 승인 이후 주문 상태가 바뀌는 것이라 paymentStatus는 그대로 APPROVED로 남는다)
-  // 결제상태 기반 3개 + 주문상태 기반 취소 1개를 섞은, 화면에 보여줄 것 기준의 상호배타적 그룹이다.
-  // 칩으로 노출할 상태(QUICK_FILTERS)와, 상단 "결제상태" 드롭다운에서만 고를 수 있는 상태(EXTRA_FILTERS) —
-  // 드롭다운은 원래 paymentStatus 값 그대로를 옵션으로 갖고 있어서 칩에 없는 값도 선택될 수 있다.
-  const QUICK_FILTERS = [
-    { key: "", label: "전체", match: () => true },
-    { key: "READY", label: "결제 대기", match: o => o.paymentStatus === "READY" },
-    { key: "APPROVED", label: "결제 승인", match: o => o.paymentStatus === "APPROVED" && !isCancelledOrder(o) },
-    { key: "FAILED", label: "결제 실패", match: o => o.paymentStatus === "FAILED" },
-    { key: "CANCELLED", label: "취소", match: o => isCancelledOrder(o) }
-  ];
-  const EXTRA_FILTERS = [
-    { key: "APPROVE_UNKNOWN", match: o => o.paymentStatus === "APPROVE_UNKNOWN" }
-  ];
-  function isCancelledOrder(order) { return order.orderStatus === "CANCELLED" || order.orderStatus === "CANCELED" || order.orderStatus === "PARTIALLY_CANCELLED"; }
-  // 배송 단계는 실제 CommerceDelivery.status(PREPARING→IN_TRANSIT→DELIVERED→RETURNED)를 반영한다.
-  // 출고(재고가 창고에서 빠지는 shippedYn)와 배송(택배사 이동)은 별개 단계다.
-  function fulfillmentStatus(order) {
-    if (order.orderStatus === "PENDING_PAYMENT" || order.orderStatus === "CREATED") return { label: "주문 생성", tone: "ready" };
-    if (order.orderStatus === "PAYMENT_FAILED") return { label: "결제 실패", tone: "failed" };
-    if (isCancelledOrder(order)) return { label: order.orderStatus === "PARTIALLY_CANCELLED" ? "부분취소" : "취소완료", tone: "ready" };
-    if (order.orderStatus === "PURCHASE_CONFIRMED") return { label: "구매 확정", tone: "paid" };
-    if (order.orderStatus === "PAID") {
-      const shippable = (order.items || []).filter(item => item.productVariantId);
-      const delivery = order.delivery;
-      if (delivery) {
-        if (delivery.status === "DELIVERED") return { label: "배송 완료", tone: "paid" };
-        if (delivery.status === "IN_TRANSIT") return { label: "배송 중", tone: "unknown" };
-        if (delivery.status === "RETURNED") return { label: "반송", tone: "failed" };
-      }
-      if (!shippable.length) return { label: "결제 완료", tone: "paid" };
-      if (shippable.every(item => item.shippedYn)) return { label: delivery ? "배송 준비" : "출고 완료", tone: "unknown" };
-      return { label: "출고 대기", tone: "unknown" };
-    }
-    return { label: ORDER_LABEL[order.orderStatus] || order.orderStatus, tone: "ready" };
-  }
-  const SCENARIOS = [
-    { value: "NORMAL", label: "정상 승인", recommend: true },
-    { value: "RESULT_UNKNOWN", label: "결과 불명 (응답 딜레이)" },
-    { value: "INTERNAL_FAIL", label: "승인 후 내부 처리 실패 (망취소)" },
-    { value: "PAYMENT_METHOD_ERROR", label: "결제 수단 오류" },
-    { value: "CARD_LIMIT_EXCEEDED", label: "카드 한도 부족" },
-    { value: "DUPLICATE_REQUEST", label: "듀플리케이션 테스트 (중복 요청)" }
-  ];
+  const {
+    paymentLabels: PAYMENT_LABEL,
+    paymentClasses: PAYMENT_CLASS,
+    quickFilters: QUICK_FILTERS,
+    extraFilters: EXTRA_FILTERS,
+    scenarios: SCENARIOS,
+    isCancelled: isCancelledOrder,
+    fulfillmentStatus
+  } = CommerceOrderModel;
 
   let pagination, sorter, filteredOrders = [], products = [], allOrders = [], activeStatus = "", selectedScenario = "NORMAL", mockReadyPromise = null;
 
