@@ -1,0 +1,21 @@
+# 로컬 개발용 PostgreSQL. `docker compose up -d` 후 `--spring.profiles.active=local,demo` 로 앱 실행.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yeni-postgres
+    environment:
+      POSTGRES_DB: yeni
+      POSTGRES_USER: yeni
+      POSTGRES_PASSWORD: yeni
+    ports:
+      - "5432:5432"
+    volumes:
+      - yeni-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yeni -d yeni"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  yeni-pgdata:

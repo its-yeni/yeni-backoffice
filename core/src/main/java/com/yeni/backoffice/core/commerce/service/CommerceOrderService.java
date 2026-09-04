@@ -6,6 +6,7 @@ import com.yeni.backoffice.core.commerce.entity.*;
 import com.yeni.backoffice.core.commerce.enums.*;
 import com.yeni.backoffice.core.commerce.repository.*;
 import com.yeni.backoffice.core.common.exception.*;
+import com.yeni.backoffice.core.commerce.scope.OperationalScope;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentApproveRequest;
 import com.yeni.backoffice.core.payment.enums.PgProvider;
 import com.yeni.backoffice.core.payment.service.PaymentApproveService;
@@ -182,12 +183,16 @@ public class CommerceOrderService {
     }
     @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrders(){return getOrders(null);}
     @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrders(Long storeId){
-        List<CommerceOrder> orders=storeId==null?orderRepository.findAllByOrderByIdDesc():orderRepository.findByStoreIdOrderByIdDesc(storeId);
+        return getOrdersInScope(storeId == null ? OperationalScope.all() : OperationalScope.stores(null, storeId, Set.of(storeId)));
+    }
+    @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrdersInScope(OperationalScope scope){
+        List<CommerceOrder> orders=scope.unrestricted()?orderRepository.findAllByOrderByIdDesc():orderRepository.findByStoreIdInOrderByIdDesc(scope.storeIds());
         return orders.stream().map(o->CommerceOrderResponse.from(o,orderItemRepository.findByOrderIdOrderByIdAsc(o.getId()),deliveryService.findByOrderId(o.getId()))).toList();
     }
     @Transactional(readOnly=true) public CommerceOrderResponse getOrder(Long orderId){CommerceOrder order=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));return CommerceOrderResponse.from(order,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));}
     @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(){return getSummary(null);}
     @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(Long storeId){return CommerceOrderSummaryResponse.from(storeId==null?orderRepository.findAll():orderRepository.findByStoreIdOrderByIdDesc(storeId));}
+    @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummaryInScope(OperationalScope scope){return CommerceOrderSummaryResponse.from(scope.unrestricted()?orderRepository.findAll():orderRepository.findByStoreIdInOrderByIdDesc(scope.storeIds()));}
     @Transactional public CommerceOrderResponse assignStore(Long orderId,Long storeId){if(storeId==null)return getOrder(orderId);CommerceOrder order=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));CommerceStore store=storeRepository.findById(storeId).orElseThrow(()->new NotFoundException(ErrorCode.NOT_FOUND,"매장을 찾을 수 없습니다."));order.assignStore(store.getId(),store.getStoreCode(),store.getStoreName());return CommerceOrderResponse.from(order,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));}
     private void validateCreateRequest(CommerceOrderCreateRequest r){
         if(r==null||!StringUtils.hasText(r.buyerName()))throw validation("구매자명은 필수입니다.");

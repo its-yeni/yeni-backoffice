@@ -43,13 +43,13 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
               and (:settlementStatus is null or s.settlementStatus = :settlementStatus)
               and (:confirmedYn is null or s.confirmedYn = :confirmedYn)
               and (
-                    :keyword is null
-                    or lower(s.orderNo) like lower(concat('%', :keyword, '%'))
-                    or lower(s.tid) like lower(concat('%', :keyword, '%'))
-                    or lower(s.pgTransactionId) like lower(concat('%', :keyword, '%'))
-                    or str(s.paymentId) like concat('%', :keyword, '%')
-                    or str(s.cancelId) like concat('%', :keyword, '%')
-                    or str(s.originalSalesTransactionId) like concat('%', :keyword, '%')
+                    cast(:keyword as string) is null
+                    or lower(s.orderNo) like lower(concat('%', cast(:keyword as string), '%'))
+                    or lower(s.tid) like lower(concat('%', cast(:keyword as string), '%'))
+                    or lower(s.pgTransactionId) like lower(concat('%', cast(:keyword as string), '%'))
+                    or str(s.paymentId) like concat('%', cast(:keyword as string), '%')
+                    or str(s.cancelId) like concat('%', cast(:keyword as string), '%')
+                    or str(s.originalSalesTransactionId) like concat('%', cast(:keyword as string), '%')
               )
             """)
     Page<SalesTransaction> searchLedger(
@@ -86,13 +86,13 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
               and (:settlementStatus is null or s.settlementStatus = :settlementStatus)
               and (:confirmedYn is null or s.confirmedYn = :confirmedYn)
               and (
-                    :keyword is null
-                    or lower(s.orderNo) like lower(concat('%', :keyword, '%'))
-                    or lower(s.tid) like lower(concat('%', :keyword, '%'))
-                    or lower(s.pgTransactionId) like lower(concat('%', :keyword, '%'))
-                    or str(s.paymentId) like concat('%', :keyword, '%')
-                    or str(s.cancelId) like concat('%', :keyword, '%')
-                    or str(s.originalSalesTransactionId) like concat('%', :keyword, '%')
+                    cast(:keyword as string) is null
+                    or lower(s.orderNo) like lower(concat('%', cast(:keyword as string), '%'))
+                    or lower(s.tid) like lower(concat('%', cast(:keyword as string), '%'))
+                    or lower(s.pgTransactionId) like lower(concat('%', cast(:keyword as string), '%'))
+                    or str(s.paymentId) like concat('%', cast(:keyword as string), '%')
+                    or str(s.cancelId) like concat('%', cast(:keyword as string), '%')
+                    or str(s.originalSalesTransactionId) like concat('%', cast(:keyword as string), '%')
               )
             """)
     com.yeni.backoffice.core.payment.dto.PaymentDtos.SalesLedgerSummaryResponse summarizeLedger(

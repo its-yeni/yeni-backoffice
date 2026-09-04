@@ -53,11 +53,22 @@
     { value: "DUPLICATE_REQUEST", label: "듀플리케이션 테스트 (중복 요청)" }
   ];
 
-  let pagination, sorter, filteredOrders = [], products = [], allOrders = [], activeStatus = "", selectedScenario = "NORMAL";
+  let pagination, sorter, filteredOrders = [], products = [], allOrders = [], activeStatus = "", selectedScenario = "NORMAL", mockReadyPromise = null;
 
   document.addEventListener("DOMContentLoaded", async () => {
-    const requestedKeyword = new URLSearchParams(location.search).get('keyword');
+    const query = new URLSearchParams(location.search);
+    const requestedKeyword = query.get('keyword');
     if (requestedKeyword && $("orderKeyword")) $("orderKeyword").value = requestedKeyword;
+    if (query.get('period') === 'today') {
+      const now = new Date();
+      const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+      $("filterDateFrom").value = today;
+      $("filterDateTo").value = today;
+    }
+    if (query.get('status')) {
+      activeStatus = query.get('status');
+      $("filterPaymentStatus").value = activeStatus;
+    }
     setupTable();
     bindTabs();
     bindListControls();
@@ -65,21 +76,37 @@
     bindMockForm();
     document.querySelectorAll("[data-close-detail]").forEach(el => el.onclick = event => { event.preventDefault(); closeDetail(); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") closeDetail(); });
-    await loadProducts();
     if ($("storeInput")) $("storeInput").value = activeStoreCode() || "현재 선택 매장";
-    await addRow();
+    // The list is the primary job. Mock-order products and option groups are
+    // intentionally deferred until the user opens that tab.
     await refresh();
-    const requestedOrderId = Number(new URLSearchParams(location.search).get('orderId'));
+    const requestedOrderId = Number(query.get('orderId'));
     if (requestedOrderId) await openDetail(requestedOrderId);
   });
 
   function bindTabs() {
-    document.querySelectorAll(".page-tabs button").forEach(btn => btn.onclick = () => {
+    document.querySelectorAll(".page-tabs button").forEach(btn => btn.onclick = async () => {
       document.querySelectorAll(".page-tabs button").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".page-tab-panel").forEach(p => p.classList.remove("active"));
       btn.classList.add("active");
       $("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "mock") await ensureMockReady();
     });
+  }
+
+  function ensureMockReady() {
+    if (mockReadyPromise) return mockReadyPromise;
+    const panel = $("tab-mock");
+    panel?.setAttribute("aria-busy", "true");
+    mockReadyPromise = (async () => {
+      await loadProducts();
+      if (!$("orderItemBody").children.length) await addRow();
+    })().catch(error => {
+      mockReadyPromise = null;
+      $("mockMessage").textContent = error.message || "Mock 주문 데이터를 불러오지 못했습니다.";
+      throw error;
+    }).finally(() => panel?.removeAttribute("aria-busy"));
+    return mockReadyPromise;
   }
 
   function setupTable() {
@@ -105,6 +132,7 @@
         <td><strong>${escapeHtml(order.orderNo || "-")}</strong></td>
         <td><small>${escapeHtml((order.createdAt || "").replace("T", " ").slice(0, 16))}</small></td>
         <td>${escapeHtml(order.buyerName || "-")}</td>
+        <td><span class="store-scope-cell">${escapeHtml(operationalStoreLabel(order.storeId))}</span></td>
         <td><span class="order-product-name">${escapeHtml(order.productName || "-")}</span></td>
         <td class="amount">${money(order.payableAmount)}</td>
         <td>${badge(order.paymentStatus)}</td>
@@ -356,9 +384,10 @@
     products = data.items || [];
   }
   function bindMockForm() {
-    $("addOrderItemBtn").onclick = addRow;
-    $("mockCreateBtn").onclick = createScenarioOrder;
+    $("addOrderItemBtn").onclick = async () => { await ensureMockReady(); await addRow(); };
+    $("mockCreateBtn").onclick = async () => { await ensureMockReady(); await createScenarioOrder(); };
     $("mockResetBtn").onclick = async () => {
+      await ensureMockReady();
       $("orderItemBody").innerHTML = "";
       await addRow();
       selectedScenario = "NORMAL";

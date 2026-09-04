@@ -37,6 +37,7 @@ class FailureInsightResultValidatorTest {
         assertThat(validated.items()).hasSize(2);
         assertThat(validated.items().get(0).relatedRefKeys()).containsExactly("REQ-1");
         assertThat(validated.items().get(0).affectedCount()).isEqualTo(1);
+        assertThat(validated.items().get(0).relatedSources()).containsExactly("PG_API_LOG");
         assertThat(validated.items().get(1).relatedRefKeys()).containsExactly("REQ-2");
         assertThat(validated.items().get(1).affectedCount()).isEqualTo(1);
     }
@@ -59,6 +60,6 @@ class FailureInsightResultValidatorTest {
     private FailureInsightItem item(int count, List<String> refKeys) {
         return new FailureInsightItem(
                 InsightCategory.EXTERNAL_SYSTEM_ERROR, "외부 시스템 오류", count,
-                InsightSeverity.HIGH, "로그를 확인하세요.", refKeys);
+                InsightSeverity.HIGH, "로그를 확인하세요.", refKeys, List.of());
     }
 }

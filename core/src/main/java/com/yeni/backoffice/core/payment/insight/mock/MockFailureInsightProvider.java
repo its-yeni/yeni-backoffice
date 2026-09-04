@@ -110,6 +110,11 @@ public class MockFailureInsightProvider implements FailureInsightProvider {
                 .filter(key -> key != null && !key.isBlank())
                 .distinct()
                 .toList();
+        List<String> sources = entries.stream()
+                .map(FailureLogEntry::source)
+                .filter(source -> source != null && !source.isBlank())
+                .distinct()
+                .toList();
 
         return new FailureInsightItem(
                 category,
@@ -117,7 +122,8 @@ public class MockFailureInsightProvider implements FailureInsightProvider {
                 count,
                 severity,
                 suggestAction(category),
-                refKeys
+                refKeys,
+                sources
         );
     }
 

@@ -66,7 +66,8 @@ public final class InsightDtos {
             int affectedCount,
             String severity,
             String suggestedAction,
-            List<String> relatedRefKeys
+            List<String> relatedRefKeys,
+            List<String> relatedSources
     ) {
         public static FailureInsightItemResponse from(FailureInsightItem item) {
             return new FailureInsightItemResponse(
@@ -75,7 +76,8 @@ public final class InsightDtos {
                     item.affectedCount(),
                     item.severity().name(),
                     item.suggestedAction(),
-                    item.relatedRefKeys()
+                    item.relatedRefKeys(),
+                    item.relatedSources() == null ? List.of() : item.relatedSources()
             );
         }
     }

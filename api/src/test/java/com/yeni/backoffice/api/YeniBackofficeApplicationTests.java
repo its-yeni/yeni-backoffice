@@ -95,9 +95,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
-		"spring.datasource.url=jdbc:h2:mem:yeni-backoffice-test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE",
+		"spring.datasource.url=jdbc:h2:mem:yeni-backoffice-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE",
 		"spring.datasource.driver-class-name=org.h2.Driver",
 		"spring.jpa.hibernate.ddl-auto=create-drop",
+		"spring.flyway.enabled=false",
 		"spring.h2.console.enabled=false",
 		"commerce.product-image-dir=./build/test-product-images"
 })
@@ -232,6 +233,40 @@ class YeniBackofficeApplicationTests {
 	}
 
 	@Test
+	void operationsDashboardRendersFailureInsightCard() throws Exception {
+		mockMvc.perform(get("/admin/operations-dashboard"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("실패 로그 AI 원인 요약")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"ops-insight-fab\"")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"ops-insight-drawer\"")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"ops-insight-run-btn\"")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"ops-insight-body\"")));
+	}
+
+	@Test
+	void failureInsightApiReturnsRuleBasedSummaryWhenProviderNotConfigured() throws Exception {
+		mockMvc.perform(get("/admin/api/insight/failure-summary"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.provider").value("MOCK"))
+				.andExpect(jsonPath("$.configuredProvider").value("MOCK"))
+				.andExpect(jsonPath("$.connectionStatus").value("MOCK"))
+				.andExpect(jsonPath("$.apiKeyConfigured").value(false))
+				.andExpect(jsonPath("$.fallbackUsed").value(false))
+				.andExpect(jsonPath("$.items").isArray());
+	}
+
+	@Test
+	void recoveryTaskPageAndApiLoad() throws Exception {
+		mockMvc.perform(get("/admin/payment-operations/recovery-tasks"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("복구 작업")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"rt-rows\"")));
+		mockMvc.perform(get("/admin/api/recovery/tasks"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data").isArray());
+	}
+
+	@Test
 	void databaseSpecDescriptionsCoverEveryTableAndColumn() {
 		List<DatabaseSpecService.TableSpec> tableSpecs = databaseSpecService.getTableSpecs();
 
@@ -342,6 +377,54 @@ class YeniBackofficeApplicationTests {
 		assertThat(trace.get("sales").get(0).get("totalAmount").decimalValue()).isEqualByComparingTo("58000");
 		assertThat(trace.get("externalSends")).hasSize(1);
 		assertThat(trace.get("alimtalkQueues")).hasSize(1);
+	}
+
+	@Test
+	void generalLedgerPostingProducesBalancedTrialBalanceAndIsIdempotent() throws Exception {
+		var product = productService.create(new ProductSaveRequest(unique("GL-FLOW"), "회계 흐름 검증 상품", "TEST",
+				BigDecimal.valueOf(11000), 10, "ON_SALE"));
+		MvcResult orderResult = mockMvc.perform(post("/admin/api/commerce/orders")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(("""
+								{ "orderNo": "ORDER-GL-TEST-001", "buyerName": "회계 고객",
+								  "items": [ { "productId": %d, "unitPrice": 1, "quantity": 1 } ] }
+								""").formatted(product.id())))
+				.andExpect(status().isOk())
+				.andReturn();
+		Long orderId = objectMapper.readTree(orderResult.getResponse().getContentAsString()).get("id").asLong();
+		mockMvc.perform(post("/admin/api/commerce/orders/{orderId}/pay", orderId)).andExpect(status().isOk());
+
+		mockMvc.perform(post("/admin/api/gl/post-pending"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.createdFromSales", org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+
+		// 시산표: 총 차변 = 총 대변
+		mockMvc.perform(get("/admin/api/gl/trial-balance"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.balanced").value(true))
+				.andExpect(jsonPath("$.totalDebit").value(org.hamcrest.Matchers.greaterThan(0.0)));
+
+		mockMvc.perform(get("/admin/api/gl/journal-entries"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].balanced").value(true))
+				.andExpect(jsonPath("$.data[0].storeName").exists());
+
+		// 매장별 손익: 매장 차원으로 쪼개도 전사 합계와 일치
+		mockMvc.perform(get("/admin/api/gl/income-by-store"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.stores").isArray())
+				.andExpect(jsonPath("$.totalNetIncome").exists());
+
+		// 재실행해도 같은 원천은 다시 전기되지 않는다 (멱등)
+		mockMvc.perform(post("/admin/api/gl/post-pending"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.createdFromSales").value(0))
+				.andExpect(jsonPath("$.alreadyPosted", org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+
+		mockMvc.perform(get("/admin/payment-operations/accounting"))
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("회계 · 분개장")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"ac-post\"")));
 	}
 
 	@Test
@@ -1409,8 +1492,8 @@ class YeniBackofficeApplicationTests {
 	@Test
 	void portfolioEndToEndJourneyAndOperationalScreensStayConnected() throws Exception {
 		mockMvc.perform(get("/"))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(header().string("Location", "/admin/operations-dashboard"));
+				.andExpect(status().isOk())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("상품 등록에서 지급 근거까지")));
 		mockMvc.perform(get("/dashboard"))
 				.andExpect(status().isOk())
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("상품 등록에서 지급 근거까지")))

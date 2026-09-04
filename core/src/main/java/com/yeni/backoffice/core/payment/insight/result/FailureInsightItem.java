@@ -11,6 +11,8 @@ public record FailureInsightItem(
         int affectedCount,
         InsightSeverity severity,
         String suggestedAction,
-        List<String> relatedRefKeys
+        List<String> relatedRefKeys,
+        /** 이 그룹에 포함된 refKey들의 출처 (PG_API_LOG / RECOVERY_TASK). 검증 단계에서 입력 표본과 대조해 채운다. */
+        List<String> relatedSources
 ) {
 }

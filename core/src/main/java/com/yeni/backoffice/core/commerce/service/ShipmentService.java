@@ -77,7 +77,8 @@ public class ShipmentService {
             CommerceOrder order = orders.get(item.getOrderId());
             return new ShipmentPendingResponse(item.getId(), item.getOrderId(), order == null ? "-" : order.getOrderNo(),
                     order == null ? "-" : order.getBuyerName(), item.getProductName(), item.getProductCode(),
-                    item.getOptionSummary(), item.getQuantity(), item.getItemAmount(), order == null ? null : order.getUpdatedAt());
+                    item.getOptionSummary(), item.getQuantity(), item.getItemAmount(), order == null ? null : order.getUpdatedAt(),
+                    order == null ? null : order.getStoreId());
         }).toList();
     }
 

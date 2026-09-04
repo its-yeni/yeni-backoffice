@@ -84,6 +84,7 @@
     $('delivery-rows').innerHTML = pagination.slice(list).map(row => `<tr${focusDeliveryId && row.id === focusDeliveryId ? ' class="row-focus"' : ''}>
       <td><a class="text-link" href="/admin/commerce/orders?orderId=${row.orderId}">${escapeHtml(row.orderNo)}</a><br><small>배송 #${row.id}</small></td>
       <td>${escapeHtml(row.buyerName)}</td>
+      <td>${escapeHtml(operationalStoreLabel(row.storeId))}</td>
       <td><strong>${escapeHtml(row.receiverName)}</strong><br><small>${escapeHtml(row.receiverPhone)}</small></td>
       <td><small>${row.zipCode ? '(' + escapeHtml(row.zipCode) + ') ' : ''}${escapeHtml(row.address1)}${row.address2 ? ' ' + escapeHtml(row.address2) : ''}</small>${row.deliveryRequest ? `<br><small class="delivery-request">"${escapeHtml(row.deliveryRequest)}"</small>` : ''}</td>
       <td>${row.carrier ? `${escapeHtml(row.carrier)}<br><small>${escapeHtml(row.trackingNumber)}</small>` : '<small>미발급</small>'}</td>

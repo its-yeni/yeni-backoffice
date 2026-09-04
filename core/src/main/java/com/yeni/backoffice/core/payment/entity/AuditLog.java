@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,7 +35,7 @@ public class AuditLog extends BaseTimeEntity {
     @Column(length = 80)
     private String referenceKey;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String description;
 
     @Column(length = 60)
@@ -50,10 +49,10 @@ public class AuditLog extends BaseTimeEntity {
     @Column(length = 80)
     private String requestId;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String beforeValue;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String afterValue;
 
     @Column(nullable = false)

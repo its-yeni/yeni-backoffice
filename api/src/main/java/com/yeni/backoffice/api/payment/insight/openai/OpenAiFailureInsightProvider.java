@@ -108,7 +108,8 @@ public class OpenAiFailureInsightProvider implements FailureInsightProvider {
                         itemNode.path("affectedCount").asInt(0),
                         parseEnum(InsightSeverity.class, itemNode.path("severity").asText(), InsightSeverity.MEDIUM),
                         itemNode.path("suggestedAction").asText(""),
-                        toStringList(itemNode.path("relatedRefKeys"))
+                        toStringList(itemNode.path("relatedRefKeys")),
+                        List.of()
                 ));
             }
 

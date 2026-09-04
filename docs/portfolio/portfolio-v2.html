@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>권예은 · Yeni Backoffice Portfolio</title>
+<style>
+  :root{
+    --ink:#1c2433;--muted:#5f6b7e;--line:#dde2ea;--paper:#fff;--soft:#f6f3ef;
+    --brand:#b15230;--brand-dark:#7c3a20;--navy:#26374f;--green:#356b58;--amber:#9a6a1c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#d7d7d7;
+    font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif;
+    color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact;line-height:1.6}
+  @page{size:A4 landscape;margin:0}
+  .page{position:relative;width:297mm;height:210mm;padding:14mm 17mm 12mm;background:var(--paper);
+    page-break-after:always;overflow:hidden}
+  .page:last-child{page-break-after:auto}
+  .head{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:3.5mm;
+    border-bottom:1px solid var(--line);font-size:8.5px;letter-spacing:.16em;color:var(--brand)}
+  .head b{color:#909aa9;font-weight:700}
+  h2.title{margin:7mm 0 5mm;font-size:23px;line-height:1.32;letter-spacing:-.035em}
+  h2.title small{display:block;margin-top:2mm;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
+  .foot{position:absolute;left:17mm;right:17mm;bottom:5.5mm;display:flex;justify-content:space-between;
+    color:#98a1b0;font-size:8px;letter-spacing:.1em}
+  p{margin:0 0 2.5mm}
+  .dim{color:var(--muted)}
+
+  /* cover */
+  .cover{background:linear-gradient(118deg,#faf7f3 0 56%,#9c4826 56% 100%)}
+  .cover .mark{position:absolute;right:40mm;top:44mm;color:#fff;font-size:96px;font-weight:900;opacity:.9}
+  .cover:after{content:"";position:absolute;width:82mm;height:82mm;border:1px solid rgba(255,255,255,.2);
+    border-radius:50%;right:19mm;top:20mm}
+  .cover .copy{margin:26mm 0 0 16mm;max-width:158mm}
+  .cover .kick{color:var(--brand);font-size:9.5px;font-weight:800;letter-spacing:.2em}
+  .cover h1{margin:7mm 0 5mm;font-size:58px;line-height:.95;letter-spacing:-.06em}
+  .cover .sub{font-size:16px;font-weight:600;line-height:1.6}
+  .cover .who{margin-top:11mm;font-size:12px;color:#59493f}
+  .cover .who b{color:var(--brand-dark)}
+  .cover .links{position:absolute;right:19mm;bottom:16mm;text-align:right;color:#fff;display:grid;gap:2mm;font-size:10px}
+  .cover .links b{font-size:12px}
+
+  /* generic blocks */
+  .lead{font-size:13.5px;line-height:1.8;letter-spacing:-.015em}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+  .grid2 > *, .grid3 > *{min-width:0}
+  .card{padding:4mm 5mm;border:1px solid var(--line);border-radius:7px}
+  .card em{font-style:normal;color:var(--brand);font-size:9px;font-weight:800;letter-spacing:.06em}
+  .card h3{margin:2mm 0 1.5mm;font-size:12px}
+  .card p{font-size:9.5px;color:var(--muted);margin:0;line-height:1.6}
+
+  table.map{width:100%;border-collapse:collapse;font-size:9.3px;margin-top:2mm}
+  table.map th{background:var(--navy);color:#fff;text-align:left;padding:2.8mm 3.5mm;font-weight:600;font-size:9px}
+  table.map td{padding:2.8mm 3.5mm;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.55}
+  table.map tr:nth-child(even) td{background:#faf9f7}
+  table.map .k{color:var(--brand-dark);font-weight:700;width:36%}
+
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:3mm;margin-top:5mm}
+  .metrics div{padding:4mm;background:var(--ink);color:#fff;border-radius:7px}
+  .metrics b{display:block;color:#e59a78;font-size:18px;letter-spacing:-.02em}
+  .metrics span{font-size:8.5px;color:#c8cfdb;line-height:1.5;display:block;margin-top:1mm}
+
+  /* architecture */
+  .arch{width:78%;margin:4mm auto 0}
+  .layer{padding:3mm 5mm;border-radius:7px;color:#fff;display:flex;justify-content:space-between;align-items:center}
+  .layer b{font-size:12.5px}.layer span{font-size:8.5px;opacity:.92}
+  .layer.web{background:#647085}.layer.api{background:var(--brand)}.layer.core{background:var(--navy)}
+  .layer.db{background:var(--green)}.layer.ext{background:#7f6250}
+  .arw{text-align:center;color:#9aa3af;font-size:9px;padding:1.2mm}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+  .note{display:flex;gap:5mm;margin-top:5mm;padding:3.5mm 5mm;background:var(--soft);border-radius:7px}
+  .note b{flex:none;color:var(--brand);font-size:9px;font-weight:800}
+  .note p{margin:0;font-size:9.5px;line-height:1.65}
+
+  /* flow diagram */
+  .flows{margin-top:5mm}
+  .flow{display:flex;align-items:center;gap:3mm;padding:3mm 4.5mm;border-radius:7px;color:#fff;margin-bottom:2.5mm;flex-wrap:wrap}
+  .flow b{width:22mm;flex:none;font-size:10.5px}
+  .flow span{font-size:9px;opacity:.95}
+  .flow.main{background:var(--ink)}.flow.fail{background:var(--brand)}.flow.acct{background:var(--green)}
+
+  /* issue pages — single column, readable width */
+  .issue{max-width:216mm}
+  .issue h4{margin:4mm 0 1.5mm;font-size:10px;color:var(--brand);letter-spacing:.06em}
+  .issue h4.first{margin-top:1mm}
+  .issue p{font-size:10.5px;margin:0 0 1.5mm;line-height:1.75}
+  .issue ul{margin:0 0 1mm;padding-left:4.5mm;font-size:10.5px;line-height:1.75}
+  .issue ul li{margin-bottom:.8mm}
+  .issue .real{margin:2.5mm 0;padding:3mm 4mm;background:var(--soft);border-left:3px solid var(--amber);font-size:10px;line-height:1.7}
+  .issue .real b{color:var(--amber)}
+  .issue .sub2{display:grid;grid-template-columns:1fr 1fr;gap:6mm;margin:1mm 0}
+  .issue .sub2 h4{margin:0 0 1mm}
+  .issue code{background:#eef0f3;border-radius:3px;padding:.4mm 1.2mm;font-size:9px;font-family:"SFMono-Regular",Consolas,monospace}
+  .issue pre{margin:2mm 0;padding:3mm 4mm;background:#1e2635;color:#dde3ee;border-radius:5px;
+    font-size:8.6px;line-height:1.6;font-family:"SFMono-Regular",Consolas,monospace;white-space:pre-wrap}
+  .result{margin-top:3.5mm;padding:3.5mm 4.5mm;border:1px solid var(--green);border-radius:6px;font-size:10px;line-height:1.7}
+  .result b{color:var(--green)}
+  .fixlist{margin:2mm 0;font-size:10px;line-height:1.8}
+  .fixlist p{margin:0 0 2mm;padding-left:4.5mm;text-indent:-4.5mm}
+  .seq{width:100%;margin:4mm 0 3mm}
+  .seq text{font-family:"Pretendard","Noto Sans KR","Malgun Gothic",sans-serif}
+
+  /* screen gallery pages */
+  .gallery1 img{display:block;width:100%;max-height:128mm;object-fit:contain;object-position:top;
+    border:1px solid #d9dee6;border-radius:5px;box-shadow:0 4px 14px rgba(24,32,51,.1)}
+  .gallery2{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:2mm}
+  .gallery3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm;margin-top:2mm}
+  .gallery2 figure,.gallery3 figure{margin:0}
+  .gallery2 img,.gallery3 img{display:block;width:100%;height:122mm;object-fit:cover;object-position:top;
+    border:1px solid #d9dee6;border-radius:5px}
+  .gallery3 img{height:110mm}
+  .gallery2 figcaption,.gallery3 figcaption{margin-top:2mm;font-size:9px;line-height:1.6}
+  .gallery2 figcaption b,.gallery3 figcaption b{color:var(--brand);display:block;font-size:9.5px;margin-bottom:.5mm}
+  .gcap{margin-top:3mm;font-size:9px;color:#5a6474;line-height:1.65}
+  .shot{display:block;width:100%;height:88mm;object-fit:cover;object-position:top;margin-top:3.5mm;
+    border:1px solid #d9dee6;border-radius:5px;box-shadow:0 4px 14px rgba(24,32,51,.1)}
+  .cap{margin-top:2mm;font-size:9px;color:#5a6474;line-height:1.6}
+
+  /* erd */
+  .erd{display:grid;grid-template-columns:repeat(4,1fr);gap:3.5mm;margin-top:3mm}
+  .ent{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .ent > b{display:block;background:var(--navy);color:#fff;padding:2mm 3mm;font-size:9px}
+  .ent ul{margin:0;padding:2.2mm 3mm;list-style:none;font-size:8px;color:#4b5567;line-height:1.75}
+  .ent li.pk{color:var(--brand-dark);font-weight:700}
+  .ent li.uk::after{content:" ·uk";color:var(--green);font-size:7px}
+  .erd-note{margin-top:4mm;font-size:9px;color:var(--muted);line-height:1.65}
+
+  /* checklist / quality+ops */
+  .checks{display:grid;row-gap:1.8mm;margin-top:2mm;font-size:9.6px;line-height:1.55}
+  .checks span{padding-left:5mm;text-indent:-5mm}
+  .checks span::before{content:"✓ ";color:var(--green);font-weight:800}
+  .limit{margin-top:4mm;padding:3.5mm 4mm;background:var(--soft);border-radius:7px;font-size:9.3px;line-height:1.7}
+  .limit b{color:var(--brand);display:block;margin-bottom:1mm}
+  .opsgrid{display:grid;gap:3.5mm;align-content:start}
+  .opsgrid .card p{font-size:9.3px}
+
+  /* scope + end merged */
+  .scope{width:100%;border-collapse:collapse;font-size:10px;margin-top:4mm}
+  .scope td{padding:4.6mm 3mm;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.7}
+  .scope td:first-child{color:var(--brand-dark);font-weight:700;width:24%}
+  .endband{margin-top:16mm;padding:12mm 12mm;border-radius:9px;background:linear-gradient(135deg,var(--ink),#2b3c56);
+    color:#fff;display:flex;justify-content:space-between;align-items:flex-end;gap:10mm}
+  .endband .kick{color:#df8c67;font-size:9px;font-weight:800;letter-spacing:.18em}
+  .endband h3{margin:4mm 0;font-size:22px;line-height:1.3;letter-spacing:-.04em;color:#fff}
+  .endband p{font-size:10px;color:#c9d0da;line-height:1.75;margin:0}
+  .endband aside{text-align:right;display:grid;gap:1.5mm;flex:none}
+  .endband aside b{color:#df8c67;font-size:12px}
+  .endband aside span{font-size:9px;color:#dce3eb}
+</style>
+</head>
+<body>
+
+<!-- 1. COVER -->
+<section class="page cover">
+  <div class="mark">Y</div>
+  <div class="copy">
+    <p class="kick">COMMERCE OPERATIONS · BACKEND PORTFOLIO</p>
+    <h1>Yeni<br>Backoffice</h1>
+    <p class="sub">실무에서 다뤄온 커머스 주문·결제·정산·POS 도메인을<br>Java / Spring으로 다시 설계한 운영 백오피스</p>
+    <p class="who"><b>권예은</b> · 백오피스/API 서버 개발자 (경력 6년 10개월) · 2026.09</p>
+  </div>
+  <div class="links">
+    <b>yeni-demo.fly.dev</b>
+    <span>github.com/Yeni924/yeni-backoffice</span>
+    <span>docs/implementation-notes.md · /swagger-ui</span>
+  </div>
+</section>
+
+<!-- 2. OVERVIEW -->
+<section class="page">
+  <div class="head"><span>01 · OVERVIEW</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">실무에서 겪은 운영 문제를 Java / Spring으로 다시 설계했습니다
+    <small>개인 프로젝트 · 설계 · 구현 · 테스트 · 배포 단독 수행</small></h2>
+  <p class="lead">티쿤글로벌에서 100여 개 해외 쇼핑몰의 주문·결제·배송·정산을, KG이니시스에서 POS/KIOSK 운영
+    백오피스와 매출·SAP 연동·마스터 데이터를 담당했습니다. 이 프로젝트에서는 해당 경험을 바탕으로 결제 결과불명 처리,
+    중복 요청과 동시성, 외부 연동 실패 복구, 매출원장과 정산 연결처럼 당시 담당 범위를 넘어 더 깊게 다뤄보고 싶었던
+    문제를 Java/Spring으로 다시 설계하고 검증했습니다.</p>
+
+  <table class="map">
+    <tr><th>실무에서 담당한 것</th><th>이 프로젝트에서 다룬 것</th></tr>
+    <tr><td class="k">티쿤 — PG 완료 요청을 신뢰하지 않고 재조회로 주문번호·금액·통화·상태 대조</td>
+        <td><code>APPROVE_UNKNOWN</code> / <code>CANCEL_UNKNOWN</code> 상태와 RecoveryTask로 확장. 결과 확정 전에는 매출원장·정산·후속 처리를 생성하지 않도록 구성</td></tr>
+    <tr><td class="k">티쿤 — Stripe·Paymentwall 전체/부분취소 API 분리 개발</td>
+        <td>중복 요청은 idempotency key + DB unique 제약, 동시 부분취소는 결제 row 잠금 후 최신 잔액 재검증</td></tr>
+    <tr><td class="k">KG — POS 매출·반품·취소를 영수증 단위로 SAP 전송, 응답값 기준 성공/실패 처리</td>
+        <td>매출원장을 기준 데이터로 분리하고 정산·회계 데이터를 후속 단계로 연결</td></tr>
+    <tr><td class="k">KG — 알림톡 대량발송 Agent 개발 (DB Polling, 최대 10스레드, 실패 재처리)</td>
+        <td>알림톡·외부전송을 Queue + Worker 방식으로 분리해 한 건의 외부 처리 실패가 핵심 업무 흐름을 막지 않도록 구성</td></tr>
+    <tr><td class="k">KG — MS-SQL → MySQL/MariaDB 전환, 실데이터 이관 후 조회 성능 점검·개선 및 스키마 생성 보조도구 제작</td>
+        <td>H2 → PostgreSQL + Flyway 이관 과정에서 DBMS별 타입·쿼리·배포 환경 차이를 직접 확인하고 수정</td></tr>
+  </table>
+
+  <div class="metrics">
+    <div><b>2</b><span>Gradle 멀티모듈 (api · core)</span></div>
+    <div><b>51</b><span>PostgreSQL 테이블 · Flyway baseline</span></div>
+    <div><b>517s → 12s</b><span>앱·DB 리전 조정 후 기동시간</span></div>
+    <div><b>0</b><span>동일 source 재전기 시 분개 중복</span></div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>2</span></div>
+</section>
+
+<!-- 3. ARCHITECTURE + DOMAIN FLOW + ERD -->
+<section class="page">
+  <div class="head"><span>02 · ARCHITECTURE</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">결제·정산 규칙과 화면·외부 연동을 분리했습니다
+    <small>핵심 업무 규칙은 core에, 화면과 외부 요청은 api에 두고 실패 가능한 외부 처리는 별도로 관리</small></h2>
+
+  <div class="grid2" style="gap:7mm;align-items:start">
+    <div class="arch">
+      <div class="layer web"><b>Operator Browser</b><span>Thymeleaf · htmx · JS</span></div>
+      <div class="arw">↓ HTTP / JSON</div>
+      <div class="layer api"><b>api module</b><span>View · REST Controller · 표준 오류 응답</span></div>
+      <div class="arw">↓ use case</div>
+      <div class="layer core"><b>core module</b><span>Entity · Repository · 도메인 서비스 · 상태 관리</span></div>
+      <div class="arw">↓ JPA　　　　↓ Gateway</div>
+      <div class="split">
+        <div class="layer db"><b>PostgreSQL</b><span>Flyway · 매출원장</span></div>
+        <div class="layer ext"><b>External</b><span>Mock PG · 알림톡</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="note" style="margin-top:0"><b>설계 원칙</b>
+        <p>결제 승인과 매출 확정 같은 핵심 업무 규칙은 core에 두고, 화면·REST API·외부 전송은 api에서 처리했습니다.
+          PG나 알림톡처럼 실패할 수 있는 외부 시스템은 핵심 트랜잭션과 분리하고, 결과를 확정할 수 없는 경우에는
+          재조회·재처리가 가능하도록 상태를 남겼습니다.</p></div>
+      <div class="flows" style="margin-top:4mm">
+        <div class="flow main"><b>정상</b><span>주문 → 재고 예약 → PG 승인 → SALE 원장 → 정산</span></div>
+        <div class="flow fail"><b>결과불명</b><span>PG timeout → APPROVE_UNKNOWN → RecoveryTask → 재조회 → 확정</span></div>
+        <div class="flow acct"><b>취소</b><span>부분취소 → 결제 row 잠금 → 잔액 재검증 → CANCEL 원장 → 차기 정산</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="erd">
+    <div class="ent"><b>payment_transaction</b><ul><li class="pk">id</li><li class="uk">order_no, tid</li><li>approved / canceled_amount</li><li>payment_status</li></ul></div>
+    <div class="ent"><b>payment_cancel</b><ul><li class="pk">id</li><li>payment_id</li><li class="uk">cancel_request_key</li><li>cancel_amount · status</li></ul></div>
+    <div class="ent"><b>sales_transaction</b><ul><li class="pk">id</li><li class="uk">source_type, source_id</li><li>sale_type (SALE/CANCEL)</li><li>supply / vat · ledger_status</li></ul></div>
+    <div class="ent"><b>payment_recovery_task</b><ul><li class="pk">id</li><li class="uk">task_key</li><li>recovery_type · status</li><li>retry_count / max</li></ul></div>
+    <div class="ent"><b>settlement_statement</b><ul><li class="pk">id</li><li class="uk">settlement_date, mid</li><li>gross / fee / vat / net</li><li>settlement_status</li></ul></div>
+    <div class="ent"><b>settlement_detail</b><ul><li class="pk">id</li><li>settlement_statement_id</li><li>sales_id</li><li>net_amount</li></ul></div>
+    <div class="ent"><b>journal_entry</b><ul><li class="pk">id</li><li class="uk">source_type, source_id</li><li>entry_date</li><li>store_id</li></ul></div>
+    <div class="ent"><b>journal_line</b><ul><li class="pk">id</li><li>journal_entry_id</li><li>account_code</li><li>debit / credit</li></ul></div>
+  </div>
+  <p class="erd-note">중복 생성은 서비스 사전 조회와 DB unique 제약을 함께 적용해 방어했습니다. 현재 데모에서 일부
+    참조 관계의 FK는 생략했으며, 운영 환경 적용 시 삭제 정책과 데이터 정합성을 기준으로 FK 적용 범위를 재검토할 항목입니다.</p>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>3</span></div>
+</section>
+
+<!-- 4. ISSUE 1 -->
+<section class="page">
+  <div class="head"><span>03 · ISSUE ① 결과불명 · 복구</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">성공도 실패도 아닌 '결과불명'을 운영 상태로</h2>
+  <div class="issue">
+    <p>PG 승인 요청 중 timeout이나 응답 유실이 발생하면 실제 승인 여부를 즉시 확정할 수 없습니다. 실패로 단정하면
+      승인된 결제를 취소할 수 있고, 성공으로 처리하면 미결제 주문이 처리될 수 있어 승인/실패 이외의 '확정 대기' 상태가 필요했습니다.</p>
+    <div class="real"><b>실무 연결</b> — 티쿤글로벌에서 Stripe·Paymentwall 연동 시 결제 완료 요청을 그대로 신뢰하지 않고
+      PG API를 재조회해 주문번호·금액·통화·상태를 검증했습니다. 이 프로젝트에서는 해당 경험을 UNKNOWN 상태와 복구 작업으로 확장했습니다.</div>
+
+    <svg class="seq" viewBox="0 0 1000 336" role="img" aria-label="결과불명 결제 복구 시퀀스">
+      <g font-size="14" fill="#26374f" font-weight="700" text-anchor="middle">
+        <text x="95" y="20">주문 · 결제 API</text><text x="360" y="20">ApproveService</text>
+        <text x="620" y="20">Mock PG</text><text x="885" y="20">DB · RecoveryTask</text>
+      </g>
+      <g stroke="#c7cdd8" stroke-width="1.5">
+        <line x1="95" y1="30" x2="95" y2="322"/><line x1="360" y1="30" x2="360" y2="322"/>
+        <line x1="620" y1="30" x2="620" y2="322"/><line x1="885" y1="30" x2="885" y2="322"/>
+      </g>
+      <defs><marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 Z" fill="#455066"/></marker></defs>
+      <g font-size="12.5" stroke="#455066" stroke-width="1.4">
+        <line x1="95" y1="55" x2="356" y2="55" marker-end="url(#a)"/><text x="225" y="49" stroke="none" fill="#37415a" text-anchor="middle">승인 요청</text>
+        <line x1="360" y1="88" x2="616" y2="88" marker-end="url(#a)"/><text x="488" y="82" stroke="none" fill="#37415a" text-anchor="middle">approve()</text>
+        <line x1="620" y1="121" x2="364" y2="121" marker-end="url(#a)" stroke="#b15230" stroke-dasharray="5 4"/>
+        <text x="492" y="115" stroke="none" fill="#b15230" text-anchor="middle">✕ timeout / 응답 유실</text>
+        <line x1="360" y1="154" x2="881" y2="154" marker-end="url(#a)"/>
+        <text x="620" y="148" stroke="none" fill="#37415a" text-anchor="middle">status = APPROVE_UNKNOWN · RecoveryTask 생성</text>
+      </g>
+      <rect x="120" y="168" width="760" height="26" rx="4" fill="#f6f3ef" stroke="#e3d8cf"/>
+      <text x="500" y="185" font-size="12" fill="#7c3a20" text-anchor="middle">이 상태에서는 SALE 원장 · 정산 · 후속 처리를 생성하지 않는다</text>
+      <line x1="40" y1="214" x2="960" y2="214" stroke="#c7cdd8" stroke-dasharray="3 4"/>
+      <text x="40" y="209" font-size="11" fill="#8a93a3">이후 (스케줄러 / 수동 재시도)</text>
+      <g font-size="12.5" stroke="#356b58" stroke-width="1.4">
+        <line x1="360" y1="242" x2="616" y2="242" marker-end="url(#a)"/><text x="488" y="236" stroke="none" fill="#356b58" text-anchor="middle">retryQuery()</text>
+        <line x1="620" y1="270" x2="364" y2="270" marker-end="url(#a)"/><text x="492" y="264" stroke="none" fill="#356b58" text-anchor="middle">승인 확인</text>
+        <line x1="360" y1="302" x2="881" y2="302" marker-end="url(#a)"/>
+        <text x="620" y="296" stroke="none" fill="#356b58" text-anchor="middle">SALE 원장 + 외부전송 + 알림톡 생성 (unique 제약으로 1회) · APPROVED</text>
+      </g>
+    </svg>
+
+    <div class="result"><b>결과 / 배움</b> — 재조회가 반복돼도 SALE 원장과 후속 Queue가 중복 생성되지 않도록 구성했습니다.
+      복구 작업은 조건부 claim으로 중복 실행을 방지했고, 외부 시스템 연동에서는 성공/실패 외에 '아직 결과를 확정할 수
+      없는 상태' 자체를 업무 상태로 관리해야 한다는 점을 설계에 반영했습니다.</div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>4</span></div>
+</section>
+
+<!-- 5. ISSUE 2 -->
+<section class="page">
+  <div class="head"><span>04 · ISSUE ② 중복 · 동시성</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">중복 클릭·네트워크 재시도·동시 부분취소를 막다</h2>
+  <div class="issue">
+    <p>승인·취소 요청은 중복 클릭이나 네트워크 재시도로 반복될 수 있습니다. 또 승인금액 10,000원에 8,000원 부분취소
+      2건이 동시에 들어오면 각 요청이 이전 취소금액을 기준으로 판단해 승인금액을 초과할 수 있습니다.</p>
+    <div class="real"><b>실무 연결</b> — 티쿤글로벌에서 전체취소·부분취소 API를 분리 개발했고, 여러 쇼핑몰이 공용으로
+      사용하는 PG API 서버를 운영하며 중복 요청에 대한 방어 필요성을 경험했습니다.</div>
+
+    <div class="sub2">
+      <div>
+        <h4>중복 요청</h4>
+        <ul>
+          <li><code>idempotencyKey</code> / <code>cancelRequestKey</code>로 기존 처리 결과를 먼저 조회</li>
+          <li>DB unique 제약으로 동시에 들어온 중복 요청 최종 방어 (<code>order_no,tid</code> · <code>cancel_request_key</code> · <code>source_type,source_id</code>)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>동시 부분취소</h4>
+        <ul>
+          <li>대상 결제 row를 <code>PESSIMISTIC_WRITE</code>로 조회</li>
+          <li>lock 획득 후 최신 누적 취소금액으로 잔액을 다시 계산</li>
+          <li>최신 잔액 기준으로 취소 가능 금액 검증</li>
+          <li>서로 다른 <code>paymentId</code>는 서로 다른 row를 사용하므로 불필요한 전역 잠금은 사용하지 않음</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="result"><b>결과 / 배움</b> — 중복 요청은 idempotency key와 DB unique 제약으로 방어하고, 동시 부분취소는
+      결제 row를 잠근 뒤 최신 잔액을 재검증하도록 분리했습니다. 현재 동시성 통합 테스트는 H2 기반이며, PostgreSQL의
+      실제 lock/isolation 동작은 Testcontainers 전환 후 추가 검증할 계획입니다.</div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>5</span></div>
+</section>
+
+<!-- 6. ISSUE 3 -->
+<section class="page">
+  <div class="head"><span>05 · ISSUE ③ 매출원장 · 정산</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">취소 이력을 보존하면서 매출원장과 정산으로 연결했습니다</h2>
+  <div class="issue">
+    <p>결제 상태만 변경하는 방식으로는 취소가 발생했을 때 특정 시점의 매출과 취소 이력을 정확히 재구성하기 어렵습니다.
+      특히 원 거래를 직접 수정하면 이후 정산이나 장애 추적에서 기준 데이터가 달라질 수 있어 매출원장을 별도로 두었습니다.</p>
+    <ul>
+      <li>승인 거래는 SALE 원장 생성, 취소는 기존 SALE을 수정하지 않고 음수 CANCEL 원장을 추가</li>
+      <li><code>source_type + source_id</code> unique로 동일 원천 거래의 원장 중복 생성 방지</li>
+      <li>정산은 <code>payment_transaction</code>이 아니라 미정산 SALE/CANCEL 원장을 기준으로 집계</li>
+      <li>회계 분개는 원장·정산 데이터를 읽어 생성하는 별도 후속 데이터로 구성</li>
+    </ul>
+    <div class="real"><b>실무 연결</b> — KG이니시스에서 POS 매출·반품·취소를 영수증 단위로 SAP에 전송하고 응답 결과를
+      관리했던 경험을 바탕으로, 이 프로젝트에서는 내부 매출원장과 정산까지 연결했습니다.</div>
+    <img class="shot" src="screenshots/accounting.png" alt="회계 분개장">
+    <p class="cap"><b>회계·분개장</b> — 매출원장과 정산 결과를 기준으로 분개를 생성하고, 차변·대변 합계와 중복 전기 여부를
+      검증합니다. 회계 기능은 결제·정산 데이터가 이후 업무로 어떻게 연결되는지 확인하기 위한 확장 구현입니다.</p>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>6</span></div>
+</section>
+
+<!-- 7. ISSUE 4 -->
+<section class="page">
+  <div class="head"><span>06 · ISSUE ④ 후속 처리 분리</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">알림톡·외부 전송 실패가 결제 저장을 막지 않도록 분리했습니다</h2>
+  <div class="issue">
+    <p>결제 트랜잭션 안에서 외부 API나 알림톡을 직접 호출하면 외부 시스템의 지연이나 장애가 결제 저장까지 지연시키거나
+      실패시킬 수 있습니다.</p>
+    <div class="real"><b>실무 연결</b> — KG이니시스에서 DB Polling 방식의 알림톡 Agent를 개발하고 최대 10개 스레드
+      병렬 처리와 실패 건 재처리를 적용했습니다. 테스트 기준 5만 건을 약 19분에 처리했고 평균 CPU 사용률은 10~20% 수준이었습니다.</div>
+    <h4>해결</h4>
+    <ul>
+      <li>결제/매출 트랜잭션에서는 <code>external_send_request</code>, <code>alimtalk_queue</code>에 대기 데이터만 생성 (Outbox 형태의 DB Queue)</li>
+      <li>Worker가 조건부 update로 처리 대상을 claim한 뒤 성공한 요청만 실행</li>
+      <li>각 건의 성공/실패와 retry count, 오류 원인을 기록</li>
+      <li>한 건의 실패가 다른 작업을 막지 않도록 개별 처리 단위로 분리</li>
+    </ul>
+    <pre>UPDATE external_send_request SET status = 'SENDING'
+WHERE id = ? AND status IN ('READY','FAILED')      -- 조건부 claim, 성공한 요청만 실행</pre>
+    <div class="result"><b>결과 / 배움</b> — 외부 전송을 결제 저장 흐름에서 분리해, 한 건의 실패나 지연이 핵심 업무 흐름과
+      다른 대기 작업에 영향을 주지 않도록 했습니다. 재시도 한계에 도달한 건은 처리 대상 조회에서 제외됩니다.</div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>7</span></div>
+</section>
+
+<!-- 8. ISSUE 5 -->
+<section class="page">
+  <div class="head"><span>07 · ISSUE ⑤ PostgreSQL 이관</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">H2에서 잘 되던 것이 실제 PostgreSQL에서 달라졌습니다</h2>
+  <div class="issue">
+    <div class="real"><b>실무 연결</b> — KG이니시스에서 MS-SQL → MySQL/MariaDB 전환 시 DBMS별 함수·문법과 데이터
+      적재 방식 차이에 대응했고, 실데이터 이관 후 다수 조회 화면의 성능을 점검·수정했습니다. 반복적인 테이블 생성 작업을
+      줄이기 위해 데이터타입·PK·FK를 변환해 MySQL용 CREATE TABLE 문을 생성하는 C# 보조도구도 만들어 사용했습니다.</div>
+    <h4>배경 · baseline</h4>
+    <p>데모가 H2 인메모리라 재시작마다 데이터가 사라지고, 스키마도 <code>ddl-auto</code>로 관리돼 엔티티와의 차이를
+      확인하기 어려웠습니다. 기존 마이그레이션 SQL은 MySQL 문법 + 버전 중복이라 정리하고, 엔티티에서
+      <code>PostgreSQLDialect</code>로 스키마를 뽑아 <code>V1__baseline.sql</code>(51 테이블)을 만든 뒤
+      <code>ddl-auto=validate</code>로 엔티티와 스키마 정합성을 확인하도록 바꿨습니다.</p>
+    <h4>확인한 차이 → 수정</h4>
+    <div class="fixlist">
+      <p>· <code>@Lob String</code> → PostgreSQL <code>oid</code> 매핑 문제 → <code>text</code> 타입 명시</p>
+      <p>· <code>lower(bytea)</code>, parameter type 오류 → PostgreSQL의 파라미터 타입 추론 차이에 맞게 쿼리 수정</p>
+      <p>· <code>/database-spec</code> 응답 지연 → JDBC metadata 반복 조회 제거 및 캐시 적용</p>
+      <p>· 앱 Tokyo / DB Virginia → 네트워크 왕복으로 기동 517초 → 앱을 DB와 동일한 iad 리전으로 이동 후 약 12초</p>
+    </div>
+    <div class="result"><b>결과 / 배움</b> — H2에서는 드러나지 않던 타입·쿼리·DBMS 동작 차이가 실제 PostgreSQL 배포
+      과정에서 확인됐습니다. 이 경험을 통해 통합 테스트 역시 운영 DB와 동일한 PostgreSQL 환경에서 검증할 필요성을 확인했습니다.</div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>8</span></div>
+</section>
+
+<!-- 9. SCREEN 1 -->
+<section class="page">
+  <div class="head"><span>08 · SCREENS · 운영 대시보드</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">전체 수치보다 '지금 확인할 예외'와 '다음 작업'을 먼저
+    <small>운영자가 문제를 발견한 뒤 원본 화면까지 바로 추적할 수 있도록 구성</small></h2>
+  <div class="gallery1"><img src="screenshots/dashboard.png" alt="운영 대시보드"></div>
+  <p class="gcap">결과불명 결제, 복구 대기, 안전재고 미달, 정산 초안처럼 운영자가 지금 확인해야 할 항목을 한 화면에
+    모았습니다. 각 항목에서는 필터가 적용된 원본 관리 화면으로 바로 이동할 수 있도록 구성했습니다. 실패 로그와 복구
+    작업을 요약하는 AI 분석은 운영 판단을 돕는 보조 기능으로 추가했습니다.</p>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>9</span></div>
+</section>
+
+<!-- 10. SCREEN 2 -->
+<section class="page">
+  <div class="head"><span>09 · SCREENS · 결제 · 복구</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">결제 예외를 추적하고, 복구 작업으로 이어지게 했습니다</h2>
+  <div class="gallery2">
+    <figure><img src="screenshots/payments.png" alt="PG 거래">
+      <figcaption><b>PG 거래</b>승인·부분취소·결과불명 거래를 상태별로 조회합니다. 상세에서는 주문 → 승인 → 매출원장 → 정산 흐름과 PG 로그·복구 작업·외부전송·알림톡 상태를 함께 확인할 수 있습니다.</figcaption></figure>
+    <figure><img src="screenshots/recovery-tasks.png" alt="복구 작업">
+      <figcaption><b>복구 작업</b><code>APPROVE_UNKNOWN_CHECK</code>, <code>NETWORK_CANCEL</code> 등 처리가 필요한 RecoveryTask를 상태·유형·키워드로 조회합니다. 상세 화면에서 재시도하거나 성공·실패 결과를 직접 반영할 수 있습니다.</figcaption></figure>
+  </div>
+  <p class="gcap">운영 대시보드의 복구 대기 항목에서 해당 상태로 필터링된 복구 작업 화면으로 바로 이동하도록 연결했습니다.</p>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>10</span></div>
+</section>
+
+<!-- 11. SCREEN 3 -->
+<section class="page">
+  <div class="head"><span>10 · SCREENS · 원장 · 정산 · 대사</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">확정된 매출만 정산하고, 불일치는 지급 전에 확인합니다</h2>
+  <div class="gallery3">
+    <figure><img src="screenshots/sales-ledger.png" alt="매출 원장">
+      <figcaption><b>매출 원장</b>SALE/CANCEL 이력을 누적해 원 거래를 덮어쓰지 않고, 공급가·부가세와 정산 상태를 함께 조회합니다.</figcaption></figure>
+    <figure><img src="screenshots/settlements.png" alt="정산 관리">
+      <figcaption><b>정산 관리</b>미정산 SALE/CANCEL 원장을 집계해 <code>DRAFT → CONFIRMED → PAID</code> 단계로 관리합니다.</figcaption></figure>
+    <figure><img src="screenshots/pg-reconciliation.png" alt="PG 대사">
+      <figcaption><b>PG 대사</b>외부 정산 데이터와 내부 매출원장을 거래 단위로 비교해 누락·외부 단독·금액 차이를 구분합니다.</figcaption></figure>
+  </div>
+  <p class="gcap">대사 불일치가 남아 있는 정산 명세는 확정할 수 없도록 해 잘못된 정산이 지급 단계로 넘어가지 않도록 구성했습니다.</p>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>11</span></div>
+</section>
+
+<!-- 12. QUALITY + DEPLOY & OPS -->
+<section class="page">
+  <div class="head"><span>11 · QUALITY & OPS</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">실패 시나리오를 검증하고 실제 환경에 배포했습니다</h2>
+  <div class="grid2">
+    <div>
+      <h4 style="margin:0 0 1mm;font-size:10px;color:var(--brand);letter-spacing:.06em">검증한 시나리오</h4>
+      <div class="checks">
+        <span>동일 승인 재요청 시 기존 결제 반환 + SALE 원장 중복 생성 방지</span>
+        <span>동시 부분취소 시 승인금액 초과 방지</span>
+        <span>승인 결과불명 시 SALE 미생성 + RecoveryTask 생성</span>
+        <span>재조회 성공 시 누락된 원장·후속 Queue 1회 생성</span>
+        <span>외부전송·알림톡 Worker 성공/실패/retry 검증</span>
+        <span>주문 → 결제 → 원장 → 배송 → 정산 주요 업무 흐름 E2E 검증</span>
+      </div>
+      <div class="limit"><b>한계</b>일부 통합 테스트는 아직 H2(PostgreSQL 호환 모드) 기반입니다. 실제 PostgreSQL의
+        lock wait·isolation·deadlock 특성까지 검증하기 위해 Testcontainers 기반 PostgreSQL 통합 테스트 전환을 다음 작업으로 두고 있습니다.</div>
+      <p class="dim" style="margin-top:4mm;font-size:9.3px;line-height:1.7">JUnit 5 · Spring Boot Test · MockMvc로
+        도메인 단위·통합 테스트를 작성하고, 주문부터 정산까지 이어지는 운영 흐름은 Playwright E2E로 확인합니다.
+        push마다 GitHub Actions에서 전체 테스트가 실행됩니다.</p>
+    </div>
+    <div class="opsgrid">
+      <div class="card"><em>INFRA</em><h3>Docker → fly.io</h3><p>멀티스테이지 빌드 후 애플리케이션 배포. PostgreSQL과 애플리케이션을 동일 리전에 배치.</p></div>
+      <div class="card"><em>SCHEMA</em><h3>Flyway</h3><p>V1 baseline 이후 마이그레이션 이력을 관리하고 <code>ddl-auto=validate</code>로 엔티티와 스키마 정합성 확인.</p></div>
+      <div class="card"><em>CI</em><h3>GitHub Actions</h3><p>push 시 Gradle build와 전체 테스트 수행.</p></div>
+      <div class="card"><em>SCHEDULER</em><h3>운영 배치</h3><p>구매확정·정산 초안·회계 전기 배치를 구성하고 개별 처리 실패가 다음 실행 전체를 막지 않도록 예외를 분리.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>12</span></div>
+</section>
+
+<!-- 13. OUT OF SCOPE + END -->
+<section class="page">
+  <div class="head"><span>12 · SCOPE</span><b>YENI BACKOFFICE</b></div>
+  <h2 class="title">현재 구현 범위와 다음 개선</h2>
+  <table class="scope">
+    <tr><td>인증·권한</td><td>현재 데모는 오픈 상태. 운영 적용 시 Spring Security 기반 RBAC와 사용자별 감사로그 추가</td></tr>
+    <tr><td>실 PG</td><td>현재 Mock Adapter 사용. 실제 적용 시 sandbox PG 연동 및 webhook signature 검증</td></tr>
+    <tr><td>통합 테스트</td><td>H2 기반 일부 테스트를 Testcontainers PostgreSQL로 전환해 실제 DB의 lock/isolation 동작까지 검증</td></tr>
+    <tr><td>운영 확장</td><td>다중 Worker, 장기 처리 상태 복구, dead-letter, 구조화 로그와 핵심 운영 메트릭 추가</td></tr>
+  </table>
+  <div class="endband">
+    <div>
+      <p class="kick">권예은 · BACKEND / API SERVER</p>
+      <h3>운영을 이해하고,<br>실패 이후까지 설계하는 개발자</h3>
+      <p>C#/.NET 기반으로 주문·결제·POS/KIOSK 운영 시스템을 개발해왔습니다.<br>
+        실무에서 경험한 문제를 Java/Spring으로 다시 설계하며 백엔드 기술 스택을 확장하고 있습니다.</p>
+    </div>
+    <aside>
+      <b>YENI BACKOFFICE</b>
+      <span>yeni-demo.fly.dev</span>
+      <span>github.com/Yeni924/yeni-backoffice</span>
+      <span>kte****@gmail.com</span>
+    </aside>
+  </div>
+  <div class="foot"><span>Yeni Backoffice · 권예은</span><span>13</span></div>
+</section>
+
+</body>
+</html>

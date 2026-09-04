@@ -292,7 +292,7 @@ public class CommerceDeliveryService {
                 .filter(item -> d.getId().equals(item.getDeliveryId()) && !item.isShippedYn())
                 .count();
         return DeliveryResponse.from(d, order == null ? "-" : order.getOrderNo(), order == null ? "-" : order.getBuyerName(),
-                unshippedItemCount);
+                unshippedItemCount, order == null ? null : order.getStoreId());
     }
 
     private String trimToNull(String value) { return StringUtils.hasText(value) ? value.trim() : null; }

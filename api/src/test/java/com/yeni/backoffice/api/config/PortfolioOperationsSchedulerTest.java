@@ -2,6 +2,7 @@ package com.yeni.backoffice.api.config;
 
 import com.yeni.backoffice.core.commerce.service.CommerceDeliveryService;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
+import com.yeni.backoffice.core.payment.gl.GlPostingService;
 import com.yeni.backoffice.core.payment.service.SettlementOperationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,9 +22,10 @@ class PortfolioOperationsSchedulerTest {
 
     private final CommerceDeliveryService deliveryService = mock(CommerceDeliveryService.class);
     private final SettlementOperationService settlementService = mock(SettlementOperationService.class);
+    private final GlPostingService glPostingService = mock(GlPostingService.class);
 
     private PortfolioOperationsScheduler scheduler(boolean confirm, int grace, boolean draft) {
-        return new PortfolioOperationsScheduler(deliveryService, settlementService, confirm, grace, draft);
+        return new PortfolioOperationsScheduler(deliveryService, settlementService, glPostingService, confirm, grace, draft, false);
     }
 
     @Test

@@ -27,7 +27,7 @@
     const list = sorter ? sorter.apply(filtered()) : filtered();
     pagination.setTotal(list.length);
     $('empty-shipment').hidden = list.length > 0;
-    $('shipment-rows').innerHTML = pagination.slice(list).map(row => `<tr data-item="${row.orderItemId}"><td>${escapeHtml(row.orderNo)}</td><td>${escapeHtml(row.buyerName)}</td><td>${escapeHtml(row.productName)}</td><td>${escapeHtml(row.sku)}</td><td>${escapeHtml(row.optionSummary || '-')}</td><td class="number">${Number(row.quantity).toLocaleString('ko-KR')}</td><td class="amount">${money(row.itemAmount)}</td><td class="actions"><button type="button" class="row-icon-btn" data-complete="${row.orderItemId}">출고 완료</button></td></tr>`).join('');
+    $('shipment-rows').innerHTML = pagination.slice(list).map(row => `<tr data-item="${row.orderItemId}"><td>${escapeHtml(row.orderNo)}</td><td>${escapeHtml(row.buyerName)}</td><td>${escapeHtml(operationalStoreLabel(row.storeId))}</td><td>${escapeHtml(row.productName)}</td><td>${escapeHtml(row.sku)}</td><td>${escapeHtml(row.optionSummary || '-')}</td><td class="number">${Number(row.quantity).toLocaleString('ko-KR')}</td><td class="amount">${money(row.itemAmount)}</td><td class="actions"><button type="button" class="row-icon-btn" data-complete="${row.orderItemId}">출고 완료</button></td></tr>`).join('');
     document.querySelectorAll('[data-complete]').forEach(button => button.onclick = () => complete(button));
   }
   async function complete(button) {

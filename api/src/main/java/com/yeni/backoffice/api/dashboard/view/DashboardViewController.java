@@ -19,12 +19,7 @@ public class DashboardViewController {
         this.portfolioContentService = portfolioContentService;
     }
 
-    @GetMapping("/")
-    public String root() {
-        return "redirect:/admin/operations-dashboard";
-    }
-
-    @GetMapping("/dashboard")
+    @GetMapping({"/", "/dashboard"})
     public String dashboard(Model model) {
         model.addAttribute("dashboard", dashboardService.getDashboardData());
         model.addAttribute("portfolioProjects", portfolioContentService.getProjects());

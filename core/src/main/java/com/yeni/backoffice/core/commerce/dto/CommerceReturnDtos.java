@@ -27,12 +27,12 @@ public final class CommerceReturnDtos {
     public record ReturnResponse(Long id, Long orderId, String orderNo, String buyerName, Long deliveryId,
             String reason, String responsibility, BigDecimal returnShippingFee, BigDecimal refundAmount,
             String status, LocalDateTime requestedAt, LocalDateTime inspectedAt, LocalDateTime processedAt,
-            String rejectReason, String refundStatus, String refundFailureReason) {
-        public static ReturnResponse from(CommerceReturn r, String orderNo, String buyerName) {
+            String rejectReason, String refundStatus, String refundFailureReason, Long storeId) {
+        public static ReturnResponse from(CommerceReturn r, String orderNo, String buyerName, Long storeId) {
             return new ReturnResponse(r.getId(), r.getOrderId(), orderNo, buyerName, r.getDeliveryId(),
                     r.getReason(), r.getResponsibility().name(), r.getReturnShippingFee(), r.getRefundAmount(),
                     r.getStatus().name(), r.getCreatedAt(), r.getInspectedAt(), r.getProcessedAt(), r.getRejectReason(),
-                    r.getRefundStatus() == null ? null : r.getRefundStatus().name(), r.getRefundFailureReason());
+                    r.getRefundStatus() == null ? null : r.getRefundStatus().name(), r.getRefundFailureReason(), storeId);
         }
     }
 }

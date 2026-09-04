@@ -37,6 +37,20 @@ public class PaymentOperationViewController {
         return "payment/pending-sales";
     }
 
+    @GetMapping("/recovery-tasks")
+    public String recoveryTasks(Model model) {
+        model.addAttribute("title", "복구 작업");
+        model.addAttribute("description", "결과불명·후속 처리 실패로 남은 복구 작업을 조회하고 재시도·성공/실패 처리합니다.");
+        return "payment/recovery-tasks";
+    }
+
+    @GetMapping("/accounting")
+    public String accounting(Model model) {
+        model.addAttribute("title", "회계 · 분개장");
+        model.addAttribute("description", "매출 원장과 정산 명세를 복식부기 분개로 전기하고 시산표·손익계산서로 집계합니다.");
+        return "payment/accounting";
+    }
+
     @GetMapping("/settlements")
     public String settlements(Model model) {
         model.addAttribute("title", "정산 관리");

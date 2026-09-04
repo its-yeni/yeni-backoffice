@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>복구 작업 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"><link rel="stylesheet" href="/css/pages/payment-transactions.css"><link rel="stylesheet" href="/css/pages/recovery-tasks.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page">
+<header class="page-header"><div><h3>복구 작업</h3><p>PG 승인/취소 결과불명, 후속 전송 실패로 남은 <b>RecoveryTask</b>를 조회하고 재시도·성공/실패 처리합니다. 운영 대시보드의 "AI 원인 분석"이 이 작업들을 원인별로 요약합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/payment-operations">PG 거래</a><a class="btn btn-light" href="/admin/payment-operations/sales-ledger">매출 원장</a></div></header>
+
+<div class="ops-filter-bar">
+  <label class="ops-search"><input id="rt-keyword" type="search" placeholder="작업키, 주문번호, TID, 멱등키 검색"></label>
+  <div class="ops-date-range"><input id="rt-start" type="date" aria-label="생성일 시작"><span>~</span><input id="rt-end" type="date" aria-label="생성일 종료"></div>
+  <select id="rt-status" aria-label="상태"><option value="">상태 전체</option><option value="READY">재시도 대기(READY)</option><option value="PROCESSING">처리 중(PROCESSING)</option><option value="FAILED">실패(FAILED)</option><option value="SUCCESS">완료(SUCCESS)</option></select>
+  <select id="rt-type" aria-label="복구 유형"><option value="">유형 전체</option><option value="APPROVE_UNKNOWN_CHECK">승인 결과불명 재조회</option><option value="CANCEL_UNKNOWN_CHECK">취소 결과불명 재조회</option><option value="NETWORK_CANCEL">망취소</option><option value="APPROVE_INTERNAL_SAVE_FAILED">승인 내부저장 실패</option><option value="EXTERNAL_SEND_RETRY">외부전송 재시도</option><option value="ALIMTALK_RETRY">알림톡 재시도</option></select>
+  <button class="btn btn-primary btn-sm" id="rt-search">조회</button>
+</div>
+<div class="ops-summary-strip"><div><div class="k-txt"><span>조회 결과</span><strong id="rt-total">0건</strong></div></div><div><div class="k-txt"><span>재시도 대기</span><strong id="rt-ready">0건</strong></div></div><div><div class="k-txt"><span>실패</span><strong id="rt-failed">0건</strong></div></div><div><div class="k-txt"><span>완료</span><strong id="rt-success">0건</strong></div></div></div>
+<div class="data-table-wrap ops-table-wrap"><table class="data-table"><thead><tr><th>생성일시</th><th>작업키</th><th>주문번호</th><th>복구 유형</th><th>상태</th><th class="amount">재시도</th><th>마지막 오류</th><th class="actions">처리</th></tr></thead><tbody id="rt-rows"></tbody></table><div class="data-table-empty" id="rt-empty" hidden><strong>복구 작업이 없습니다.</strong><p>결과불명·후속 처리 실패가 발생하면 여기에 쌓입니다.</p></div></div>
+<div id="rt-pagination"></div>
+</section>
+<div class="transaction-drawer-backdrop" id="rt-backdrop" hidden></div>
+<aside class="transaction-drawer" id="rt-drawer" aria-label="복구 작업 상세"><header><div><small>복구 작업 상세</small><h2 id="rt-drawer-title">작업</h2></div><button id="rt-drawer-close" type="button" aria-label="닫기">×</button></header><div id="rt-drawer-body" class="transaction-drawer-body"></div></aside>
+</main></div><script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/recovery-tasks.js"></script></body></html>

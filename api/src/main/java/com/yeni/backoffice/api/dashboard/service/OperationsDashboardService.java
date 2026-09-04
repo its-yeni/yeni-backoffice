@@ -150,13 +150,13 @@ public class OperationsDashboardService {
                 "거래 확인", "/admin/payment-operations?status=UNKNOWN"));
         queue.add(new OperationsQueueItem("CRITICAL", "반품", "환불 실패 건 확인",
                 "반품 처리(재고 복원)는 끝났지만 PG 취소가 실패해 실제로 환불이 나가지 않은 상태입니다.", refundFailed,
-                "환불 재시도", "/admin/commerce/returns"));
+                "환불 재시도", "/admin/commerce/returns?refundStatus=FAILED"));
         queue.add(new OperationsQueueItem("CRITICAL", "재고", "품절 SKU",
                 "가용재고가 0이라 판매 자체가 불가능한 SKU입니다. 입고 또는 판매중지 처리가 필요합니다.", soldOut,
                 "재고 확인", "/admin/commerce/inventory?health=SOLD_OUT"));
         queue.add(new OperationsQueueItem("HIGH", "복구", "복구 작업 처리",
                 "결제 결과 조회, 망취소 또는 후속 전송 재시도가 필요한 작업입니다.", recovery,
-                "복구 현황", "/admin/payment-operations?attention=recovery"));
+                "복구 작업", "/admin/payment-operations/recovery-tasks?status=READY"));
         queue.add(new OperationsQueueItem("HIGH", "결제", "승인 실패 원인 확인",
                 "고객 재시도 전에 실패 사유와 결제 수단 오류를 확인합니다.", failed,
                 "실패 거래", "/admin/payment-operations?status=APPROVE_FAILED"));
@@ -203,8 +203,10 @@ public class OperationsDashboardService {
         for (int i = trendDays - 1; i >= 0; i--) {
             LocalDate day = today.minusDays(i);
             List<Object[]> rows = byDate.getOrDefault(day, List.of());
+            // SalesTransaction.totalAmount is already signed: SALE is positive and
+            // CANCEL is negative. Sum it exactly as the sales-ledger summary does.
             BigDecimal revenue = rows.stream()
-                    .map(r -> ((SaleType) r[1]) == SaleType.CANCEL ? ((BigDecimal) r[2]).negate() : (BigDecimal) r[2])
+                    .map(r -> (BigDecimal) r[2])
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             long orderCount = rows.stream().filter(r -> r[1] == SaleType.SALE).map(r -> (String) r[3]).distinct().count();
             salesTrend.add(new DailySalesPoint(day, revenue, orderCount));
@@ -222,7 +224,7 @@ public class OperationsDashboardService {
                 .filter(row -> storeId == null || storeId.equals(row.getStoreId()))
                 .collect(Collectors.groupingBy(row -> row.getStoreId(), Collectors.reducing(
                         BigDecimal.ZERO,
-                        row -> row.getSaleType() == SaleType.CANCEL ? row.getTotalAmount().negate() : row.getTotalAmount(),
+                        row -> row.getTotalAmount(),
                         BigDecimal::add)));
         List<StorePerformance> storePerformance = ordersByStore.entrySet().stream()
                 .map(entry -> new StorePerformance(entry.getKey(),

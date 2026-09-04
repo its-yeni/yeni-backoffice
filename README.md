@@ -11,14 +11,14 @@
 - 구현 노트: [docs/implementation-notes.md](docs/implementation-notes.md)
 
 실제 PG 운영망에는 연결하지 않고 `MockPaymentGateway`를 사용합니다.
-데모는 무료 호스팅 + H2 in-memory라 첫 접속이 느리고 재시작하면 데이터가 초기화됩니다.
+데모는 무료 호스팅이라 유휴 상태에서 첫 접속이 느릴 수 있습니다.
 
 ## 기술 스택
 
 | 구분 | 내용 |
 |---|---|
 | Backend | Java 17, Spring Boot 3.5, Spring MVC, Spring Data JPA |
-| DB | H2 (dev/demo), MySQL (profile) |
+| DB | PostgreSQL (fly/prod/local), H2 (test) · 스키마는 Flyway 마이그레이션 |
 | Frontend | Thymeleaf, Vanilla JS, htmx |
 | Build | Gradle 멀티모듈 (`api`, `core`) |
 | Test | JUnit 5, Spring Boot Test, MockMvc, Playwright(e2e) |
@@ -55,6 +55,14 @@ core - 도메인 Entity/Repository/Service, Mock PG
   불일치가 남아 있으면 정산 확정을 막는다.
 - 구매 확정(배송 완료) 후에만 정산 대상으로 전환
 
+### 회계 (복식부기 분개장)
+
+- 매출 원장(SALE/CANCEL)과 지급 완료 정산 명세를 소스로 복식부기 **분개**를 전기하는 프로젝션.
+  결제 처리 경로는 건드리지 않고, `source_type + source_id` 유니크로 멱등. 스케줄러가 매일 자동 전기.
+- SALE → (차) 미수금 / (대) 상품매출 + 부가세예수금 · CANCEL은 반대 · 정산 지급 → (차) 보통예금 + 지급수수료 + 부가세대급금 / (대) 미수금
+- 각 전표·분개선에 **매장(분석 차원)** 을 상속. 시산표·손익계산서는 매장 한정 조회가 되고, "매장별 손익"은 전 매장 P&L을 한 화면에서 비교
+- 시산표(총 차변 = 총 대변 검증), 총계정원장(계정별 잔액 추이), 손익계산서(수익 − 비용 = 당기순이익)
+
 ### 재고
 
 - 모든 SKU 재고 증감을 매장 단위 원장 한 곳으로 통일. 전역 수량은 매장 재고 합계 파생값이다.
@@ -68,6 +76,11 @@ core - 도메인 Entity/Repository/Service, Mock PG
 
 - 대시보드는 결과불명·복구대기·안전재고 미달·정산초안을 한 큐로 모아서 보여준다
 - 분석 지표는 운영 API와 분리된 읽기 전용 API(`/api/analytics`)로 노출
+- 대시보드 우하단 "AI 원인 분석" 플로팅 버튼 → 슬라이드 패널에서 실행하면 최근 24시간
+  PG 실패 로그·RecoveryTask를 원인별로 그룹핑해 심각도·권장 조치를 제시(`/admin/api/insight/failure-summary`).
+  원인 그룹의 출처(PG 로그/복구 작업)를 판별해 복구 작업 화면으로 딥링크한다.
+  기본은 규칙 기반, `INSIGHT_PROVIDER=openai` + `OPENAI_API_KEY` 설정 시 OpenAI 구조화 출력 사용.
+  전송 전 개인정보/시크릿 마스킹, 응답의 허위 참조키는 입력 표본과 대조해 제거, 호출 실패 시 규칙 기반 폴백.
 
 ## 화면
 
@@ -76,7 +89,9 @@ core - 도메인 Entity/Repository/Service, Mock PG
 | 운영 대시보드 | `/admin/operations-dashboard` |
 | 상품 / 옵션 / 카테고리 | `/admin/commerce/products` 등 |
 | 주문 관리 | `/admin/commerce/orders` |
-| PG 거래 / 복구 | `/admin/payment-operations` |
+| PG 거래 | `/admin/payment-operations` |
+| 복구 작업 (RecoveryTask 재시도·확인) | `/admin/payment-operations/recovery-tasks` |
+| 회계 · 분개장 (전표 / 시산표 / 손익계산서) | `/admin/payment-operations/accounting` |
 | 매출 원장 | `/admin/payment-operations/sales-ledger` |
 | PG 대사 | `/admin/payment-operations/settlements/reconciliation` |
 | 정산 관리 | `/admin/payment-operations/settlements` |
@@ -93,22 +108,44 @@ core - 도메인 Entity/Repository/Service, Mock PG
 - 발주 → 입고, 재고 실사 조정이 재고·LOT·트랜잭션에 반영
 - 같은 정산일·MID 중복 배치 방어, DRAFT 재실행 시 신규 매출 누적
 - 표준 `ErrorResponse` / `requestId` / `fieldErrors`
-- Playwright: 상품·입고·출고·반품·운영 완결 워크플로
+- 실패 로그 AI 요약: 프로바이더 미설정 시 규칙 기반 응답, 마스킹·참조키 검증 단위 테스트
+- Playwright: 상품·입고·출고·반품·운영 완결 워크플로, 운영 대시보드 AI 요약 카드 렌더
 
 ## 실행
 
 ```bash
-./gradlew clean build
-./gradlew :api:bootRun          # http://localhost:8080/
+# 빠르게: H2 인메모리 (Postgres 불필요)
+./gradlew :api:bootRun            # profile = test,demo → http://localhost:8080/
+
+# 운영과 동일하게: PostgreSQL + Flyway
+docker compose up -d             # 로컬 postgres:16
+./gradlew :api:bootRun --args='--spring.profiles.active=local,demo'
 ```
 
-Windows는 `gradlew.bat`. 데모 시드는 `demo` 또는 `fly` 프로파일에서만 채운다.
+Windows는 `gradlew.bat`. 데모 시드는 `demo`/`fly` 프로파일에서만 채운다.
+
+**스키마 관리** — `api/src/main/resources/db/migration/V*.sql` (Flyway). `V1__baseline.sql`은 엔티티에서
+생성한 baseline이고, 이후 변경은 `V2`, `V3`... 로 추가한다. Postgres 프로파일은 `ddl-auto=validate`라
+엔티티와 마이그레이션이 어긋나면 기동 시 실패한다.
+
+**배포(fly.io)** — 관리형 PostgreSQL(Neon 등) JDBC URL을 secret으로 넣는다. 앱은 DB와 같은 지역에 둔다
+(`fly.toml`의 `primary_region`; Neon us-east-2 ↔ fly `iad`):
+```bash
+fly secrets set --stage --app yeni-demo \
+  DATABASE_URL='jdbc:postgresql://<host>/<db>?user=<u>&password=<pw>&sslmode=require&stringtype=unspecified&preferQueryMode=simple'
+fly deploy --app yeni-demo
+```
+첫 기동에 Flyway가 스키마를 만들고, 데모 시더가 데이터를 채운다(이후 재기동은 count-guard로 건너뜀).
+`preferQueryMode=simple` 은 `(:param IS NULL OR ...)` 식 동적 필터 쿼리에서 PG가 null 파라미터 타입을
+추론하지 못하는 문제를 피하기 위한 것 — 근본적으로는 그 쿼리들을 `Specification`으로 바꾸는 게 맞다.
 
 ## 범위 밖 (운영 적용 전 보강)
 
 - 인증/권한, CSRF/CORS, 감사 로그 정책
 - 실제 PG callback signature 검증, 외부 알림 연동
-- 마이그레이션 기반 스키마 관리 (현재 H2 + ddl-auto)
+- 통합 테스트 Testcontainers(실 Postgres) 전환 — 현재 H2(PostgreSQL 호환 모드)
+- 동적 필터 쿼리(`ProductRepository`·`SalesTransaction*Repository`)를 `Specification`으로 전환
+  (현재는 `preferQueryMode=simple`로 우회)
 - RecoveryTask 자동 재처리 Worker, 정산 후 취소 자동 차감
 - 영업일 기준 D+N 정산, 셀러별 정산
 - 대량 데이터 성능 검증

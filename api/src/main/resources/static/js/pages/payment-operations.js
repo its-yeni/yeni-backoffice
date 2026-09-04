@@ -10,6 +10,8 @@
   if (requestedStatus === "UNKNOWN") activeTab = "APPROVE_UNKNOWN,CANCEL_UNKNOWN,UNKNOWN,CANCEL_RECONCILE_REQUIRED,NETWORK_CANCEL_REQUIRED";
   else if (requestedStatus) activeTab = requestedStatus;
   if (requestedStatus && !activeTab.includes(",")) $("payment-status").value = requestedStatus;
+  const requestedKeyword = new URLSearchParams(location.search).get("keyword");
+  if (requestedKeyword) $("payment-keyword").value = requestedKeyword;
   $("payment-refresh").onclick = resetFilters;
   $("payment-status").onchange = () => { activeTab = $("payment-status").value; syncTabs(); resetAndRender(); };
   $("payment-keyword").oninput = resetAndRender;
@@ -51,7 +53,7 @@
     const start = (pagination.getPage() - 1) * pagination.getSize();
     rows.innerHTML = visible.slice(start, start + pagination.getSize()).map((item, i) => `<tr data-payment="${item.id}" tabindex="0">
       <td class="row-index">${start + i + 1}</td>
-      <td>${formatDate(paymentDate(item))}</td><td><strong>${escapeHtml(item.orderNo)}</strong></td><td>${escapeHtml(item.productName || "상품 정보 없음")}</td><td class="mono">#${item.id}</td><td class="mono">${copyableValue(item.tid)}</td>
+      <td>${formatDate(paymentDate(item))}</td><td><strong>${escapeHtml(item.orderNo)}</strong></td><td>${escapeHtml(operationalStoreLabel(item.storeId))}</td><td>${escapeHtml(item.productName || "상품 정보 없음")}</td><td class="mono">#${item.id}</td><td class="mono">${copyableValue(item.tid)}</td>
       <td class="amount">${Number(item.approvedAmount || 0) ? money(item.approvedAmount) : "-"}</td><td class="amount">${Number(item.canceledAmount || 0) ? money(item.canceledAmount) : "-"}</td>
       <td><span class="transaction-status ${statusClass(item.paymentStatus)}">${statusLabel(item.paymentStatus)}</span></td><td class="actions"><button class="btn btn-light btn-sm" type="button">상세</button></td></tr>`).join("");
     $("payment-empty").hidden = visible.length > 0;

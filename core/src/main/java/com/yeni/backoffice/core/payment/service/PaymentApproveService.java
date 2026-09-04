@@ -5,6 +5,7 @@ import com.yeni.backoffice.core.common.exception.ConflictException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.common.exception.ValidationBusinessException;
 import com.yeni.backoffice.core.commerce.service.CommerceOrderPaymentStateService;
+import com.yeni.backoffice.core.commerce.repository.CommerceOrderRepository;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapter;
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapterResolver;
 import com.yeni.backoffice.core.payment.config.InicisStdPayProperties;
@@ -66,6 +67,7 @@ public class PaymentApproveService {
     private final PaymentRecoveryService recoveryService;
     private final PaymentAuditHelper auditHelper;
     private final CommerceOrderPaymentStateService orderStateService;
+    private final CommerceOrderRepository orderRepository;
 
     public PaymentApproveService(
             InicisStdPayProperties inicisProperties,
@@ -79,7 +81,8 @@ public class PaymentApproveService {
             PaymentNotificationService notificationService,
             PaymentRecoveryService recoveryService,
             PaymentAuditHelper auditHelper,
-            CommerceOrderPaymentStateService orderStateService) {
+            CommerceOrderPaymentStateService orderStateService,
+            CommerceOrderRepository orderRepository) {
         this.inicisProperties = inicisProperties;
         this.signatureService = signatureService;
         this.adapterResolver = adapterResolver;
@@ -92,6 +95,7 @@ public class PaymentApproveService {
         this.recoveryService = recoveryService;
         this.auditHelper = auditHelper;
         this.orderStateService = orderStateService;
+        this.orderRepository = orderRepository;
     }
 
     @Transactional
@@ -126,7 +130,7 @@ public class PaymentApproveService {
                 defaultText(request.channelType(), "WEB"),
                 defaultText(request.storeCode(), "PORTFOLIO"),
                 defaultText(request.paymentMethod(), PaymentDefaults.PAYMENT_METHOD_CARD),
-                request.storeId(),
+                resolveStoreId(request.orderNo(), request.storeId()),
                 request.productName()
         );
 
@@ -291,6 +295,7 @@ public class PaymentApproveService {
         try {
             validateApprovalResult(session, approvalResult);
             PaymentTransaction payment = PaymentTransaction.builder()
+                    .storeId(resolveStoreId(session.getOrderNo(), null))
                     .mid(session.getMid())
                     .orderNo(session.getOrderNo())
                     .productName(session.getProductName())
@@ -345,6 +350,12 @@ public class PaymentApproveService {
                 .failureReason(result.resultMessage())
                 .build();
         return paymentRepository.save(payment);
+    }
+
+    private Long resolveStoreId(String orderNo, Long requestedStoreId) {
+        if (requestedStoreId != null) return requestedStoreId;
+        if (!StringUtils.hasText(orderNo)) return null;
+        return orderRepository.findByOrderNo(orderNo).map(order -> order.getStoreId()).orElse(null);
     }
 
     private PaymentApproveResponse toApproveResponse(PaymentTransaction payment, PgProvider provider, String resultCode, String resultMessage) {

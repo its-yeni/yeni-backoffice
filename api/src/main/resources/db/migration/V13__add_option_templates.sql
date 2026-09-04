@@ -1,3 +1,0 @@
-CREATE TABLE option_group_template(id BIGINT NOT NULL AUTO_INCREMENT,template_name VARCHAR(100) NOT NULL,selection_type VARCHAR(20) NOT NULL,required_option BIT NOT NULL,min_selection INT NOT NULL,max_selection INT NOT NULL,sort_order INT NOT NULL,created_at DATETIME(6) NOT NULL,updated_at DATETIME(6) NOT NULL,PRIMARY KEY(id));
-CREATE TABLE option_value_template(id BIGINT NOT NULL AUTO_INCREMENT,template_group_id BIGINT NOT NULL,value_name VARCHAR(100) NOT NULL,default_additional_price DECIMAL(19,2) NOT NULL,sort_order INT NOT NULL,created_at DATETIME(6) NOT NULL,updated_at DATETIME(6) NOT NULL,PRIMARY KEY(id));
-CREATE INDEX idx_option_value_template_group ON option_value_template(template_group_id);

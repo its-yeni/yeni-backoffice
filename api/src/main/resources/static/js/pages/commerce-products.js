@@ -43,7 +43,7 @@
   async function load() {
     const query = new URLSearchParams({keyword: $("product-keyword").value, saleStatus: $("status-filter").value, storeCode: activeStoreCode(), size: "100"});
     const data = await apiGet("/admin/api/commerce/products?" + query);
-    products = data.items || [];
+    products = (data.items || []).filter(product => !activeBrandId() || Number(product.brandId) === activeBrandId());
     renderProducts();
   }
 

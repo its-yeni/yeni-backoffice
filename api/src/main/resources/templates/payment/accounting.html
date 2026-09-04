@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>회계 · 분개장 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"><link rel="stylesheet" href="/css/pages/accounting.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page accounting-page">
+<header class="page-header"><div><h3>회계 · 분개장</h3><p>매출 원장(SALE/CANCEL)과 정산 명세(PAID)를 <b>복식부기 분개</b>로 전기합니다. 분개는 원천 기준으로 멱등하며, 차변 합계 = 대변 합계가 항상 맞습니다. 스케줄러가 매일 자동 전기하고, 아래 버튼으로 즉시 전기할 수도 있습니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/payment-operations/sales-ledger">매출 원장</a><a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리</a><button class="btn btn-primary" id="ac-post">미전기 분개 생성</button></div></header>
+
+<div class="ac-rules"><span>SALE → <b>(차) 미수금</b> / (대) 상품매출 + 부가세예수금</span><span>CANCEL → (차) 매출환입 + 부가세예수금 / <b>(대) 미수금</b></span><span>정산 지급 → (차) 보통예금 + 지급수수료 + 부가세대급금 / <b>(대) 미수금</b></span></div>
+
+<nav class="ac-tabs" id="ac-tabs">
+  <button class="active" data-tab="journal" type="button">전표(분개)</button>
+  <button data-tab="trial" type="button">시산표</button>
+  <button data-tab="income" type="button">손익계산서</button>
+  <button data-tab="storeincome" type="button">매장별 손익</button>
+</nav>
+<p class="ac-scope-note" id="ac-scope-note" hidden></p>
+
+<section class="ac-panel" data-panel="journal">
+  <div class="ops-filter-bar ac-filter">
+    <div class="ops-date-range"><input id="ac-j-start" type="date" aria-label="전표일 시작"><span>~</span><input id="ac-j-end" type="date" aria-label="전표일 종료"></div>
+    <button class="btn btn-primary btn-sm" id="ac-j-search">조회</button>
+  </div>
+  <div class="data-table-wrap ops-table-wrap"><table class="data-table ac-journal-table"><thead><tr><th>전표일</th><th>매장</th><th>적요</th><th>계정과목</th><th class="amount">차변</th><th class="amount">대변</th><th>원천</th></tr></thead><tbody id="ac-j-rows"></tbody></table><div class="data-table-empty" id="ac-j-empty" hidden><strong>전표가 없습니다.</strong><p>"미전기 분개 생성"을 눌러 매출·정산을 분개로 전기하세요.</p></div></div>
+  <div id="ac-j-pagination"></div>
+</section>
+
+<section class="ac-panel" data-panel="storeincome" hidden>
+  <div class="ac-filter-inline"><label>기간 <input id="ac-s-start" type="date"></label><span>~</span><label><input id="ac-s-end" type="date"></label><button class="btn btn-light btn-sm" id="ac-s-search">조회</button><span class="ac-scope-hint">매장 선택과 무관하게 전 매장을 함께 보여줍니다.</span></div>
+  <div class="data-table-wrap ops-table-wrap"><table class="data-table"><thead><tr><th>매장</th><th class="amount">매출액</th><th class="amount">비용</th><th class="amount">순이익</th></tr></thead><tbody id="ac-s-rows"></tbody><tfoot><tr id="ac-s-total"><th>합계</th><th class="amount"></th><th class="amount"></th><th class="amount"></th></tr></tfoot></table><div class="data-table-empty" id="ac-s-empty" hidden><strong>집계할 분개가 없습니다.</strong></div></div>
+</section>
+
+<section class="ac-panel" data-panel="trial" hidden>
+  <div class="ac-filter-inline"><label>기준일 <input id="ac-t-asof" type="date"></label><button class="btn btn-light btn-sm" id="ac-t-search">조회</button><span class="ac-balance" id="ac-t-balance"></span></div>
+  <div class="data-table-wrap ops-table-wrap"><table class="data-table"><thead><tr><th>계정코드</th><th>계정과목</th><th>구분</th><th class="amount">차변 합계</th><th class="amount">대변 합계</th><th class="amount">차변 잔액</th><th class="amount">대변 잔액</th></tr></thead><tbody id="ac-t-rows"></tbody><tfoot><tr id="ac-t-total"><th colspan="3">합계</th><th class="amount"></th><th class="amount"></th><th class="amount"></th><th class="amount"></th></tr></tfoot></table><div class="data-table-empty" id="ac-t-empty" hidden><strong>집계할 분개가 없습니다.</strong></div></div>
+</section>
+
+<section class="ac-panel" data-panel="income" hidden>
+  <div class="ac-filter-inline"><label>기간 <input id="ac-i-start" type="date"></label><span>~</span><label><input id="ac-i-end" type="date"></label><button class="btn btn-light btn-sm" id="ac-i-search">조회</button></div>
+  <div class="ac-income" id="ac-income"></div>
+</section>
+
+</section></main></div><script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/accounting.js"></script></body></html>

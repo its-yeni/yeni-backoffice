@@ -1,7 +1,9 @@
 package com.yeni.backoffice.api.config;
 
 import com.yeni.backoffice.core.commerce.service.CommerceDeliveryService;
+import com.yeni.backoffice.core.payment.dto.GlDtos.PostResult;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
+import com.yeni.backoffice.core.payment.gl.GlPostingService;
 import com.yeni.backoffice.core.payment.service.SettlementOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,21 +30,27 @@ public class PortfolioOperationsScheduler {
 
     private final CommerceDeliveryService deliveryService;
     private final SettlementOperationService settlementOperationService;
+    private final GlPostingService glPostingService;
     private final boolean autoConfirmEnabled;
     private final int autoConfirmGraceDays;
     private final boolean autoDraftEnabled;
+    private final boolean autoPostGlEnabled;
 
     public PortfolioOperationsScheduler(
             CommerceDeliveryService deliveryService,
             SettlementOperationService settlementOperationService,
+            GlPostingService glPostingService,
             @Value("${portfolio.settlement.auto-confirm-enabled:true}") boolean autoConfirmEnabled,
             @Value("${portfolio.settlement.auto-confirm-grace-days:7}") int autoConfirmGraceDays,
-            @Value("${portfolio.settlement.auto-draft-enabled:true}") boolean autoDraftEnabled) {
+            @Value("${portfolio.settlement.auto-draft-enabled:true}") boolean autoDraftEnabled,
+            @Value("${portfolio.gl.auto-post-enabled:true}") boolean autoPostGlEnabled) {
         this.deliveryService = deliveryService;
         this.settlementOperationService = settlementOperationService;
+        this.glPostingService = glPostingService;
         this.autoConfirmEnabled = autoConfirmEnabled;
         this.autoConfirmGraceDays = autoConfirmGraceDays;
         this.autoDraftEnabled = autoDraftEnabled;
+        this.autoPostGlEnabled = autoPostGlEnabled;
     }
 
     /** 매일 01:10 — 배송 완료 후 유예 기간이 지난 주문을 구매 확정 처리한다. */
@@ -71,6 +79,24 @@ public class PortfolioOperationsScheduler {
         } catch (Exception e) {
             // 이미 확정(CONFIRMED/PAID)된 정산이 있거나 동시 실행이면 중복 실행 예외가 난다 — 정상 흐름이므로 debug.
             log.debug("정산 초안 자동 생성 건너뜀 (영업일 {}): {}", targetDate, e.getMessage());
+        }
+    }
+
+    /**
+     * 매일 02:40 — 확정된 매출 원장과 지급 완료된 정산 명세를 복식부기 분개로 전기한다.
+     * {@code sourceType + sourceId} 유니크로 멱등하므로 이미 전기된 건은 자동으로 건너뛴다.
+     */
+    @Scheduled(cron = "${portfolio.gl.auto-post-cron:0 40 2 * * *}")
+    public void autoPostJournalEntries() {
+        if (!autoPostGlEnabled) return;
+        try {
+            PostResult result = glPostingService.postPending();
+            if (result.createdFromSales() + result.createdFromSettlements() > 0) {
+                log.info("분개 자동 전기 완료: 매출 {}건 / 정산 {}건 (기전기 {}건)",
+                        result.createdFromSales(), result.createdFromSettlements(), result.alreadyPosted());
+            }
+        } catch (Exception e) {
+            log.error("분개 자동 전기 실패 — 다음 실행에서 재시도됩니다.", e);
         }
     }
 }

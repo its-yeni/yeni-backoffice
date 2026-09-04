@@ -10,6 +10,7 @@ import com.yeni.backoffice.core.commerce.dto.CommerceDeliveryDtos.SplitDeliveryR
 import com.yeni.backoffice.core.commerce.service.CommerceDeliveryService;
 import com.yeni.backoffice.core.commerce.service.CommerceMockScenarioService;
 import com.yeni.backoffice.core.commerce.service.CommerceOrderService;
+import com.yeni.backoffice.core.commerce.scope.OperationalScopeResolver;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,21 +30,25 @@ public class CommerceOrderRestController {
     private final CommerceOrderService orderService;
     private final CommerceMockScenarioService mockScenarioService;
     private final CommerceDeliveryService deliveryService;
+    private final OperationalScopeResolver scopeResolver;
 
-    public CommerceOrderRestController(CommerceOrderService orderService, CommerceMockScenarioService mockScenarioService, CommerceDeliveryService deliveryService) {
+    public CommerceOrderRestController(CommerceOrderService orderService, CommerceMockScenarioService mockScenarioService, CommerceDeliveryService deliveryService, OperationalScopeResolver scopeResolver) {
         this.orderService = orderService;
         this.mockScenarioService = mockScenarioService;
         this.deliveryService = deliveryService;
+        this.scopeResolver = scopeResolver;
     }
 
     @GetMapping
-    public ResponseEntity<List<CommerceOrderResponse>> orders(@RequestParam(required = false) Long storeId) {
-        return ResponseEntity.ok(orderService.getOrders(storeId));
+    public ResponseEntity<List<CommerceOrderResponse>> orders(@RequestParam(required = false) Long brandId,
+                                                               @RequestParam(required = false) Long storeId) {
+        return ResponseEntity.ok(orderService.getOrdersInScope(scopeResolver.resolve(brandId, storeId)));
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<CommerceOrderSummaryResponse> summary(@RequestParam(required = false) Long storeId) {
-        return ResponseEntity.ok(orderService.getSummary(storeId));
+    public ResponseEntity<CommerceOrderSummaryResponse> summary(@RequestParam(required = false) Long brandId,
+                                                                 @RequestParam(required = false) Long storeId) {
+        return ResponseEntity.ok(orderService.getSummaryInScope(scopeResolver.resolve(brandId, storeId)));
     }
 
     @GetMapping("/{orderId}")

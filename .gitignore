@@ -51,6 +51,7 @@ data/
 
 # node / e2e runtime
 node_modules/
+test-results/
 
 # local tooling / scratch
 .claude/

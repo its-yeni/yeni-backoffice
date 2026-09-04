@@ -2,9 +2,12 @@
   "name": "yeni-backoffice-e2e",
   "private": true,
   "scripts": {
+    "pretest:e2e": ".\\gradlew.bat --no-daemon -g .gradle-user :api:bootJar",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "portfolio:pdf": "node scripts/generate-portfolio.js",
+    "portfolio:validate": "node scripts/validate-portfolio.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0"

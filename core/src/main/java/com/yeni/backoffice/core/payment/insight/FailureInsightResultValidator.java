@@ -19,9 +19,13 @@ public class FailureInsightResultValidator {
 
     public FailureInsightResult validate(FailureInsightResult result, FailureInsightCommand command) {
         Set<String> allowedRefKeys = new HashSet<>();
+        java.util.Map<String, String> refKeySource = new java.util.HashMap<>();
         command.entries().forEach(entry -> {
             if (entry.refKey() != null && !entry.refKey().isBlank()) {
                 allowedRefKeys.add(entry.refKey());
+                if (entry.source() != null && !entry.source().isBlank()) {
+                    refKeySource.putIfAbsent(entry.refKey(), entry.source());
+                }
             }
         });
 
@@ -38,13 +42,19 @@ public class FailureInsightResultValidator {
             if (validRefs.isEmpty()) {
                 continue;
             }
+            List<String> sources = validRefs.stream()
+                    .map(refKeySource::get)
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .toList();
             validatedItems.add(new FailureInsightItem(
                     item.category(),
                     bounded(item.cause()),
                     validRefs.size(),
                     item.severity(),
                     bounded(item.suggestedAction()),
-                    List.copyOf(validRefs)
+                    List.copyOf(validRefs),
+                    sources
             ));
         }
 

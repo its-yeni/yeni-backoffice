@@ -35,13 +35,13 @@ public final class CommerceDeliveryDtos {
             String receiverName, String receiverPhone, String zipCode, String address1, String address2,
             String deliveryRequest, String carrier, String trackingNumber, String status,
             LocalDateTime shippedAt, LocalDateTime deliveredAt, String returnReason, LocalDateTime returnedAt,
-            LocalDateTime createdAt, int unshippedItemCount) {
-        public static DeliveryResponse from(CommerceDelivery d, String orderNo, String buyerName, int unshippedItemCount) {
+              LocalDateTime createdAt, int unshippedItemCount, Long storeId) {
+        public static DeliveryResponse from(CommerceDelivery d, String orderNo, String buyerName, int unshippedItemCount, Long storeId) {
             return new DeliveryResponse(d.getId(), d.getOrderId(), orderNo, buyerName,
                     d.getReceiverName(), d.getReceiverPhone(), d.getZipCode(), d.getAddress1(), d.getAddress2(),
                     d.getDeliveryRequest(), d.getCarrier(), d.getTrackingNumber(), d.getStatus().name(),
                     d.getShippedAt(), d.getDeliveredAt(), d.getReturnReason(), d.getReturnedAt(), d.getCreatedAt(),
-                    unshippedItemCount);
+                      unshippedItemCount, storeId);
         }
     }
 }

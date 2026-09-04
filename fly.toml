@@ -4,7 +4,8 @@
 #
 
 app = 'yeni-demo'
-primary_region = 'nrt'
+# DB(Neon)가 us-east-2에 있어 앱도 같은 지역(iad)에 둔다 — 쿼리 라운드트립 최소화.
+primary_region = 'iad'
 
 [http_service]
   internal_port = 8080

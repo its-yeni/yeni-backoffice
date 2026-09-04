@@ -311,6 +311,6 @@ public class CommerceReturnService {
     private ReturnResponse toResponse(CommerceReturn r, Map<Long, CommerceOrder> orderMap) {
         CommerceOrder order = orderMap.get(r.getOrderId());
         if (order == null) order = orders.findById(r.getOrderId()).orElse(null);
-        return ReturnResponse.from(r, order == null ? "-" : order.getOrderNo(), order == null ? "-" : order.getBuyerName());
+        return ReturnResponse.from(r, order == null ? "-" : order.getOrderNo(), order == null ? "-" : order.getBuyerName(), order == null ? null : order.getStoreId());
     }
 }

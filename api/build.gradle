@@ -15,9 +15,12 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
 	implementation 'org.webjars.npm:htmx.org:2.0.8'
 
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
+
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.postgresql:postgresql'
 	runtimeOnly 'com.h2database:h2'
 	annotationProcessor 'org.projectlombok:lombok'
 
@@ -29,8 +32,17 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// @SpringBootTest 컨텍스트 캐시 + Mockito inline 에이전트가 누적돼 대형 스위트에서
+	// metaspace/heap 고갈로 "Failed to load ApplicationContext" / "cannot mock" 가 나던 것을 방지한다.
+	maxHeapSize = '1536m'
+	jvmArgs '-XX:MaxMetaspaceSize=768m', '-XX:+HeapDumpOnOutOfMemoryError'
+	forkEvery = 40
 }
 
 tasks.named('bootRun') {
 	workingDir = rootProject.projectDir
+}
+
+tasks.named('bootJar') {
+	archiveFileName = 'yeni-backoffice-e2e.jar'
 }

@@ -13,7 +13,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,10 +64,10 @@ public class PgApiLog extends BaseTimeEntity {
     @Column(length = 120)
     private String idempotencyKey;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String requestBody;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String responseBody;
 
     @Enumerated(EnumType.STRING)

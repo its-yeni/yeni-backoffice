@@ -25,16 +25,29 @@ public class DatabaseSpecService {
     private final DataSource dataSource;
     private final DatabaseSpecDescriptionCatalog descriptionCatalog;
 
+    // JDBC 메타데이터 스캔(테이블·컬럼별 라운드트립)은 원격 DB에서 느리다. 스키마는 배포 사이에 바뀌지 않으므로
+    // 첫 호출 결과를 캐시한다.
+    private volatile List<TableSpec> cachedSpecs;
+
     public DatabaseSpecService(DataSource dataSource, DatabaseSpecDescriptionCatalog descriptionCatalog) {
         this.dataSource = dataSource;
         this.descriptionCatalog = descriptionCatalog;
     }
 
     public List<TableSpec> getTableSpecs() {
-        try (Connection connection = dataSource.getConnection()) {
-            return getTables(connection);
-        } catch (SQLException e) {
-            throw new IllegalStateException("DB 명세 자동 조회 중 오류가 발생했습니다.", e);
+        List<TableSpec> specs = cachedSpecs;
+        if (specs != null) {
+            return specs;
+        }
+        synchronized (this) {
+            if (cachedSpecs == null) {
+                try (Connection connection = dataSource.getConnection()) {
+                    cachedSpecs = List.copyOf(getTables(connection));
+                } catch (SQLException e) {
+                    throw new IllegalStateException("DB 명세 자동 조회 중 오류가 발생했습니다.", e);
+                }
+            }
+            return cachedSpecs;
         }
     }
 

@@ -122,6 +122,67 @@
     scrollbar-width: thin;
 }
 
+/* Desktop work screens keep headings and filters visible; only the data region
+   scrolls. This removes the page-level scroll that used to hide tables below tabs. */
+@media (min-width: 769px) {
+    main > section:has(> .data-table-wrap),
+    main > section:has(> .page-tab-panel.active > .data-table-wrap) {
+        display: flex;
+        height: 0;
+        min-height: 0;
+        flex: 1 1 0;
+        flex-direction: column;
+        overflow: hidden !important;
+    }
+    main > section:has(> .data-table-wrap) > .data-table-wrap {
+        height: 0;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto !important;
+    }
+    main > section > .page-tab-panel.active:has(> .data-table-wrap) {
+        display: flex;
+        height: 0;
+        min-height: 0;
+        flex: 1 1 0;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    main > section > .page-tab-panel.active > .data-table-wrap {
+        height: 0;
+        min-height: 0;
+        flex: 1 1 0;
+        overflow: auto !important;
+    }
+    .data-table-wrap > table thead th { position: sticky; top: 0; z-index: 3; }
+}
+
+.dashboard-filter-context {
+    display: flex; min-height: 34px; align-items: center; gap: 9px; margin: 0 0 8px;
+    padding: 6px 10px; border: 1px solid #e7c8b9; border-radius: 6px;
+    background: #fff7f2; color: #697281; font-size: 11px;
+}
+.dashboard-filter-context strong { color: var(--primary-hover); }
+.dashboard-filter-context a { margin-left: auto; color: var(--primary); font-weight: 700; text-decoration: none; }
+.filter-period-presets { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 2px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle); }
+.filter-period-presets button { height: 28px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); font-size: 10px; font-weight: 650; cursor: pointer; }
+.filter-period-presets button:hover,.filter-period-presets button.active { background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.08); }
+@media (max-width: 900px) { .filter-period-presets { order: 2; } }
+.aggregation-basis { display: flex; min-height: 30px; flex: 0 0 auto; align-items: center; gap: 8px; margin: 0 0 8px; padding: 5px 10px; border: 1px solid #e5e8ed; border-radius: 6px; background: #f8f9fb; color: #697281; font-size: 10px; }
+.aggregation-basis strong { color: #394354; font-size: 10px; }
+.aggregation-basis time { margin-left: auto; color: #89919d; white-space: nowrap; }
+@media (max-width: 700px) { .aggregation-basis { align-items: flex-start; flex-direction: column; } .aggregation-basis time { margin-left: 0; } }
+.skip-to-content { position: fixed; z-index: 3000; left: 12px; top: 8px; padding: 9px 13px; border-radius: 6px; background: #172033; color: #fff; font-size: 12px; font-weight: 700; text-decoration: none; transform: translateY(-160%); }
+.skip-to-content:focus { transform: translateY(0); }
+@media (min-width: 769px) and (max-height: 620px) {
+    .ops-list-page > .page-header p, .pg-transaction-page > .page-header p { display: none; }
+    .ops-list-page .payflow-strip, .pg-transaction-page .payflow-strip,
+    .ops-list-page .ledger-legend, .ops-list-page .ps-rule-note { display: none !important; }
+    .ops-list-page .aggregation-basis { min-height: 24px; margin-bottom: 5px; padding-block: 3px; }
+    .ops-list-page .ops-filter-bar, .pg-transaction-page .pg-filter-bar { min-height: 52px; flex-wrap: nowrap !important; padding: 7px 9px !important; overflow-x: auto; }
+    .ops-list-page .ops-summary-strip, .pg-transaction-page .pg-status-tabs { margin-bottom: 6px !important; }
+}
+
 .topbar:has(.workspace-tabs) {
     flex-wrap: wrap;
 }

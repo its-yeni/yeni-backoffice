@@ -24,6 +24,7 @@ window.AdminWorkspace = (function () {
         "/admin/commerce/inventory/insights":"재고 인사이트",
         "/admin/commerce/inventory/transactions":"입출고 내역", "/admin/payment-operations":"PG 거래",
         "/admin/payment-operations/sales-ledger":"매출 원장", "/admin/payment-operations/pending-sales":"미확정 매출",
+        "/admin/payment-operations/recovery-tasks":"복구 작업", "/admin/payment-operations/accounting":"회계 · 분개장",
         "/admin/payment-operations/sales-analytics":"매출 분석", "/admin/payment-operations/settlements":"정산 관리",
         "/admin/payment-operations/settlements/reconciliation":"PG 대사", "/admin/payment-operations/pg-reconciliation":"PG 대사",
         "/admin/analytics":"운영 개요", "/admin/analytics/orders":"주문 분석", "/admin/analytics/payments":"결제 분석",
@@ -235,6 +236,8 @@ window.AdminHtmxNavigation = (function () {
         "/admin/payment-operations",
         "/admin/payment-operations/sales-ledger",
         "/admin/payment-operations/pending-sales",
+        "/admin/payment-operations/recovery-tasks",
+        "/admin/payment-operations/accounting",
         "/admin/payment-operations/sales-analytics",
         "/admin/payment-operations/settlements",
         "/admin/payment-operations/settlements/reconciliation",
@@ -515,9 +518,10 @@ window.AdminHtmxNavigation = (function () {
 
 document.addEventListener("DOMContentLoaded", AdminHtmxNavigation.initialize);
 
-window.activeStoreCode=function(){return localStorage.getItem("commerce-store-code")||"YENI-SHOP-01";};
+window.activeStoreCode=function(){return localStorage.getItem("commerce-store-code")||"";};
 window.activeBrandId=function(){return Number(new URLSearchParams(location.search).get("brandId")||localStorage.getItem("commerce-brand-id")||0);};
 window.activeStoreId=function(){return Number(new URLSearchParams(location.search).get("storeId")||localStorage.getItem("commerce-store-id")||0);};
+window.operationalStoreLabel=function(storeId){if(!storeId)return "매장 미지정";try{const stores=JSON.parse(localStorage.getItem("commerce-store-directory")||"[]");return stores.find(store=>Number(store.id)===Number(storeId))?.storeName||`매장 #${storeId}`;}catch(ignore){return `매장 #${storeId}`;}};
 document.addEventListener("DOMContentLoaded",async function(){
     return;
     try{
@@ -539,7 +543,11 @@ document.addEventListener("DOMContentLoaded",async function(){
         const brands=await apiGet("/admin/api/brands");
         if(!brands.length)return;
         let brand=activeBrandId()?brands.find(b=>b.id===activeBrandId())||null:null;
-        let stores=brand?await apiGet(`/admin/api/brands/${brand.id}/stores`):await apiGet("/admin/api/commerce/stores");
+        const allStores=await apiGet("/admin/api/commerce/stores");
+        localStorage.setItem("commerce-store-directory",JSON.stringify(allStores));
+        let stores=brand?allStores.filter(store=>Number(store.brandId)===Number(brand.id)):allStores;
+        localStorage.setItem("commerce-brand-store-ids",JSON.stringify(stores.map(store=>Number(store.id))));
+        localStorage.setItem("commerce-brand-store-scope",String(brand?brand.id:0));
         let store=activeStoreId()?stores.find(s=>s.id===activeStoreId())||null:null;
         persistCommerceContext(brand,store);
 
@@ -560,6 +568,9 @@ document.addEventListener("DOMContentLoaded",async function(){
         }
         brandSelect.onchange=()=>{
             const bid=Number(brandSelect.value);
+            const scopedStores=bid?allStores.filter(store=>Number(store.brandId)===bid):allStores;
+            localStorage.setItem("commerce-brand-store-ids",JSON.stringify(scopedStores.map(store=>Number(store.id))));
+            localStorage.setItem("commerce-brand-store-scope",String(bid));
             persistCommerceContext(bid?brands.find(b=>b.id===bid):null,null);
             applyContext(bid,0);
         };
@@ -606,9 +617,135 @@ document.addEventListener("click", function(event) {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
+    initializeSkipLink();
     initializeSidebarGroups();
     initializeSidebarCollapse();
+    showDashboardFilterContext();
+    initializeDatePresets();
+    initializeDataViewport();
+    initializeAggregationBasis();
 });
+
+function initializeSkipLink() {
+    const main = document.querySelector("main > section");
+    if (!main || document.querySelector(".skip-to-content")) return;
+    main.id = main.id || "main-content";
+    main.tabIndex = -1;
+    const link = document.createElement("a");
+    link.className = "skip-to-content";
+    link.href = `#${main.id}`;
+    link.textContent = "본문 업무로 바로가기";
+    document.body.prepend(link);
+}
+
+function initializeAggregationBasis() {
+    const path = location.pathname;
+    const configs = [
+        [/\/admin\/operations-dashboard$/, "매출 원장 기준", "영업일 오늘 · SALE은 더하고 CANCEL은 차감한 순매출 · 현재 브랜드/매장 범위"],
+        [/\/sales-ledger$/, "불변 원장 기준", "영업일 기준 · 승인(SALE)과 취소(CANCEL)를 별도 보관 · 취소 금액은 음수로 합산"],
+        [/\/sales-analytics$/, "매출 명세 기준", "상품 명세의 SALE·CANCEL 순액 · ‘확정 매출만’ 선택 시 구매확정 건으로 제한"],
+        [/\/settlements$/, "정산서 기준", "구매확정 원장만 포함 · 수수료와 VAT 차감 · DRAFT → CONFIRMED → PAID 상태 기준"],
+        [/\/analytics\//, "운영 분석 기준", "선택 기간과 현재 브랜드/매장 범위 · 화면별 주문/결제/정산/재고 원천 데이터 기준"]
+    ];
+    const matched = configs.find(([pattern]) => pattern.test(path));
+    if (!matched) return;
+    const section = document.querySelector("main > section"), header = section?.querySelector(":scope > .page-header");
+    if (!section || !header || section.querySelector(":scope > .aggregation-basis")) return;
+    const note = document.createElement("aside");
+    note.className = "aggregation-basis";
+    note.setAttribute("aria-label", "집계 기준");
+    note.innerHTML = `<strong>${matched[1]}</strong><span>${matched[2]}</span><time>조회 ${new Date().toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</time>`;
+    header.insertAdjacentElement("afterend", note);
+}
+
+function initializeDataViewport() {
+    if (window.innerWidth < 769) return;
+    const configure = () => {
+        document.querySelectorAll("main > section").forEach(section => {
+            const directTable = [...section.children].find(child => child.classList?.contains("data-table-wrap"));
+            const activePanel = [...section.children].find(child => child.classList?.contains("page-tab-panel") && child.classList.contains("active") && child.querySelector(":scope > .data-table-wrap"));
+            if (!directTable && !activePanel) return;
+            section.style.setProperty("display", "flex", "important");
+            section.style.setProperty("flex", "1 1 0", "important");
+            section.style.setProperty("height", "auto", "important");
+            section.style.setProperty("min-height", "0", "important");
+            section.style.setProperty("overflow", "hidden", "important");
+            if (section.querySelector(".pagination-footer")) section.style.setProperty("padding-bottom", "62px", "important");
+            const panel = activePanel || section;
+            if (activePanel) {
+                panel.style.setProperty("display", "flex", "important");
+                panel.style.setProperty("flex", "1 1 0", "important");
+                panel.style.setProperty("min-height", "0", "important");
+                panel.style.setProperty("flex-direction", "column", "important");
+                panel.style.setProperty("overflow", "hidden", "important");
+            }
+            const table = directTable || panel.querySelector(":scope > .data-table-wrap");
+            table.style.setProperty("flex", "1 1 0", "important");
+            table.style.setProperty("height", "auto", "important");
+            table.style.setProperty("min-height", "80px", "important");
+            table.style.setProperty("overflow", "auto", "important");
+        });
+    };
+    configure();
+    document.addEventListener("click", event => {
+        if (event.target.closest(".page-tabs")) setTimeout(configure, 0);
+    });
+}
+
+function showDashboardFilterContext() {
+    const params = new URLSearchParams(location.search);
+    if (params.get("from") !== "dashboard") return;
+    const labels = {
+        "today-orders": "오늘 주문",
+        "today-sales": "오늘 매출",
+        "pending-shipments": "출고 대기",
+        "requested-returns": "접수 대기 반품",
+        "queue-item": "운영 예외 항목",
+        "unknown-payments": "결과 불명 거래",
+        "delayed-deliveries": "배송 지연",
+        "draft-settlements": "정산 초안 검토"
+    };
+    const section = document.querySelector("main > section");
+    const anchor = section && (section.querySelector(".filter-bar, .ops-filter-bar, .cmc-toolbar, .pg-filter-bar") || section.firstElementChild);
+    if (!section || !anchor) return;
+    const notice = document.createElement("div");
+    notice.className = "dashboard-filter-context";
+    notice.innerHTML = `<strong>대시보드 선택 조건</strong><span>${labels[params.get("focus")] || "선택 항목"} 데이터만 표시 중입니다.</span><a href="${location.pathname}">전체 보기</a>`;
+    anchor.insertAdjacentElement("beforebegin", notice);
+    anchor.querySelectorAll("input, select").forEach(control => control.addEventListener("change", clearContext, { once: true }));
+    function clearContext() {
+        notice.remove();
+        history.replaceState(null, "", location.pathname);
+    }
+}
+
+function initializeDatePresets() {
+    const configs = [
+        ["ledger-start", "ledger-end", "ledger-search"], ["payment-start", "payment-end", null],
+        ["settlement-start", "settlement-end", "settlement-search"], ["ps-start", "ps-end", "ps-search"],
+        ["sa-start", "sa-end", "sa-search"]
+    ];
+    const format = date => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+    configs.forEach(([startId, endId, searchId]) => {
+        const start = document.getElementById(startId), end = document.getElementById(endId);
+        if (!start || !end || start.closest(".filter-period-owner")?.querySelector(".filter-period-presets")) return;
+        const host = document.createElement("div"); host.className = "filter-period-presets";
+        [[0, "오늘"], [6, "7일"], [29, "30일"]].forEach(([days, label]) => {
+            const button = document.createElement("button"); button.type = "button"; button.textContent = label;
+            button.onclick = () => {
+                const now = new Date(), from = new Date(); from.setDate(now.getDate() - days);
+                start.value = format(from); end.value = format(now);
+                start.dispatchEvent(new Event("change", { bubbles: true })); end.dispatchEvent(new Event("change", { bubbles: true }));
+                if (searchId) document.getElementById(searchId)?.click();
+                host.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
+            };
+            host.appendChild(button);
+        });
+        const range = start.parentElement;
+        range.classList.add("filter-period-owner");
+        range.insertAdjacentElement("beforebegin", host);
+    });
+}
 
 function initializeSidebarCollapse() {
     const button = document.getElementById("sidebarCollapseBtn");
@@ -843,8 +980,40 @@ window.AppLoading = (function () {
 
 async function apiGet(url) {
     AppLoading.begin();
-    try { return parseApiResponse(await fetch(withOperationalStore(url))); }
+    try {
+        const data=await parseApiResponse(await fetch(withOperationalStore(url)));
+        await ensureOperationalStoreDirectory(url);
+        await ensureOperationalBrandStoreIds(url);
+        return applyOperationalBrandScope(url,data);
+    }
     finally { AppLoading.end(); }
+}
+
+async function ensureOperationalStoreDirectory(url){
+    if(!isOperationalScopedUrl(url)||localStorage.getItem("commerce-store-directory"))return;
+    try{const stores=await parseApiResponse(await fetch("/admin/api/commerce/stores"));localStorage.setItem("commerce-store-directory",JSON.stringify(stores));}catch(ignore){}
+}
+
+async function ensureOperationalBrandStoreIds(url){
+    if(!activeBrandId()||activeStoreId()||!isOperationalScopedUrl(url))return;
+    if(localStorage.getItem("commerce-brand-store-scope")===String(activeBrandId())&&localStorage.getItem("commerce-brand-store-ids"))return;
+    try{
+        const stores=await parseApiResponse(await fetch(`/admin/api/brands/${activeBrandId()}/stores`));
+        localStorage.setItem("commerce-brand-store-ids",JSON.stringify(stores.map(store=>Number(store.id))));
+        localStorage.setItem("commerce-brand-store-scope",String(activeBrandId()));
+    }catch(ignore){}
+}
+
+function isOperationalScopedUrl(url){return url.includes("/commerce/orders")||url.includes("/commerce/location-inventory")||url.includes("/commerce/shipments")||url.includes("/commerce/deliveries")||url.includes("/commerce/returns")||url.includes("/payment-operations/payments")||url.includes("/sales-ledger")||url.includes("/settlements")||url.includes("/api/analytics/")||(url.includes("/admin/api/gl/")&&!url.includes("/income-by-store"))||url.includes("/admin/api/dashboard");}
+function applyOperationalBrandScope(url,data){
+    if(!activeBrandId()||activeStoreId()||!isOperationalScopedUrl(url))return data;
+    let allowed=[];try{allowed=JSON.parse(localStorage.getItem("commerce-brand-store-ids")||"[]").map(Number);}catch(ignore){}
+    if(!allowed.length)return data;
+    const filter=rows=>rows.filter(row=>!row||!Object.prototype.hasOwnProperty.call(row,"storeId")||(row.storeId!=null&&allowed.includes(Number(row.storeId))));
+    if(Array.isArray(data))return filter(data);
+    if(data&&Array.isArray(data.data))return {...data,data:filter(data.data)};
+    if(data&&Array.isArray(data.rows))return {...data,rows:filter(data.rows)};
+    return data;
 }
 
 async function apiPost(url, body, method) {
@@ -862,18 +1031,13 @@ async function apiPost(url, body, method) {
 
 function withOperationalStore(url){
     const storeId=activeStoreId();
-    const scoped=url.includes("/commerce/orders")
-        ||url.includes("/commerce/location-inventory")
-        ||url.includes("/commerce/shipments")
-        ||url.includes("/commerce/deliveries")
-        ||url.includes("/commerce/returns")
-        ||url.includes("/payment-operations/payments")
-        ||url.includes("/sales-ledger")
-        ||url.includes("/settlements")
-        ||url.includes("/api/analytics/")
-        ||url.includes("/admin/api/dashboard");
-    if(!storeId||!scoped||/[?&]storeId=/.test(url))return url;
-    return url+(url.includes("?")?"&":"?")+"storeId="+encodeURIComponent(storeId);
+    const brandId=activeBrandId();
+    const scoped=isOperationalScopedUrl(url);
+    if(!scoped)return url;
+    const target=new URL(url,location.origin);
+    if(storeId&&!target.searchParams.has("storeId"))target.searchParams.set("storeId",storeId);
+    if(brandId&&!target.searchParams.has("brandId"))target.searchParams.set("brandId",brandId);
+    return target.pathname+target.search;
 }
 
 /* 화면 우상단 "설계 노트" 버튼으로 여는 drawer. 설계 의도를 남겨둘 만한 화면에만 메모를 붙인다. */

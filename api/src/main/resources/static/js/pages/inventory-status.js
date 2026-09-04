@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function health(row) { if (row.availableQuantity === 0) return 'SOLD_OUT'; if (row.availableQuantity <= row.safetyStock) return 'LOW'; if (incoming(row) > 0) return 'IN_TRANSIT'; return 'NORMAL'; }
   function healthText(h) { return ({ SOLD_OUT: '품절', LOW: '재고 부족', IN_TRANSIT: '입고 예정', NORMAL: '정상' })[h]; }
   const HEALTH_RANK = { SOLD_OUT: 0, LOW: 1, IN_TRANSIT: 2, NORMAL: 3 };
+  const requestedHealth = new URLSearchParams(location.search).get('health');
+  if (requestedHealth && HEALTH_RANK[requestedHealth] !== undefined) $('inventory-health-filter').value = requestedHealth;
   const lotBadge = row => lotMismatch(row) ? ` <span class="inventory-state low" title="LOT 잔량 합 ${number(row.lotAvailableTotal)} ≠ 현재재고 ${number(row.stockQuantity)}">LOT</span>` : '';
   const incomingCell = q => q ? `<a href="/admin/commerce/purchase-orders">${number(q)}</a>` : '0';
   function safetyCell(row) { return `<input type="number" min="0" value="${row.safetyStock}" data-safety="${row.inventoryId}" class="inventory-safety-input">`; }

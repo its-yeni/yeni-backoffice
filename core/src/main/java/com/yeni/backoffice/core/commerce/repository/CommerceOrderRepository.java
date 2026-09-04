@@ -25,5 +25,7 @@ public interface CommerceOrderRepository extends JpaRepository<CommerceOrder, Lo
 
     List<CommerceOrder> findByStoreIdOrderByIdDesc(Long storeId);
 
+    List<CommerceOrder> findByStoreIdInOrderByIdDesc(java.util.Collection<Long> storeIds);
+
     List<CommerceOrder> findByOrderStatus(OrderStatus orderStatus);
 }

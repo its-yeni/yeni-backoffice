@@ -12,8 +12,8 @@ public final class ProductDtos {
     }
     public record ProductStatusRequest(@NotBlank String saleStatus){}
     public record ProductResponse(Long id,String productCode,String productName,String category,String imageUrl,
-        BigDecimal salePrice,int stockQuantity,boolean inventoryManaged,String saleStatus,String storeCode,LocalDateTime createdAt,LocalDateTime updatedAt){
-        public static ProductResponse from(Product p){return new ProductResponse(p.getId(),p.getProductCode(),p.getProductName(),p.getCategory(),p.getImageUrl(),p.getSalePrice(),p.getStockQuantity(),p.isInventoryManaged(),p.getSaleStatus().name(),p.getStoreCode(),p.getCreatedAt(),p.getUpdatedAt());}
+        BigDecimal salePrice,int stockQuantity,boolean inventoryManaged,String saleStatus,String storeCode,Long brandId,LocalDateTime createdAt,LocalDateTime updatedAt){
+        public static ProductResponse from(Product p){return new ProductResponse(p.getId(),p.getProductCode(),p.getProductName(),p.getCategory(),p.getImageUrl(),p.getSalePrice(),p.getStockQuantity(),p.isInventoryManaged(),p.getSaleStatus().name(),p.getStoreCode(),p.getBrandId(),p.getCreatedAt(),p.getUpdatedAt());}
     }
     public record ProductPageResponse(List<ProductResponse> items,long totalCount,int page,int size){}
 }

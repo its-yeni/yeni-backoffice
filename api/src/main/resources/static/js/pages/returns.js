@@ -1,6 +1,8 @@
 (function () {
   const $ = id => document.getElementById(id);
   let rows = [], pagination;
+  const processing = new Set();
+  const requestedRefundStatus = new URLSearchParams(location.search).get('refundStatus');
   const STATUS_LABEL = { REQUESTED: '접수', INSPECTING: '검수 중', COMPLETED: '완료', REJECTED: '반려' };
   const STATUS_TONE = { REQUESTED: '', INSPECTING: 'is-warning', COMPLETED: 'is-success', REJECTED: 'is-danger' };
   const RESPONSIBILITY_LABEL = { CUSTOMER_FAULT: '고객 귀책', SELLER_FAULT: '판매자 귀책' };
@@ -70,6 +72,7 @@
     const staleOnly = $('return-stale-only').checked;
     return rows.filter(row => {
       if (status && row.status !== status) return false;
+      if (requestedRefundStatus && row.refundStatus !== requestedRefundStatus) return false;
       if (staleOnly && !isStale(row)) return false;
       if (!keyword) return true;
       return [row.orderNo, row.buyerName].some(v => (v || '').toLowerCase().includes(keyword));
@@ -92,6 +95,7 @@
     $('return-rows').innerHTML = pagination.slice(list).map(row => `<tr>
       <td>${escapeHtml(row.orderNo)}</td>
       <td>${escapeHtml(row.buyerName)}</td>
+      <td>${escapeHtml(operationalStoreLabel(row.storeId))}</td>
       <td>${escapeHtml(row.reason)}${row.status === 'REJECTED' && row.rejectReason ? `<br><small class="delivery-request">반려: "${escapeHtml(row.rejectReason)}"</small>` : ''}</td>
       <td>${escapeHtml(RESPONSIBILITY_LABEL[row.responsibility] || row.responsibility)}</td>
       <td>${formatWon(row.returnShippingFee)}</td>
@@ -115,19 +119,25 @@
   }
 
   async function retryRefund(id) {
+    if (processing.has(String(id))) return;
+    processing.add(String(id));
     try {
       await apiPost(`/admin/api/commerce/returns/${id}/retry-refund`, {});
       AppToast.success('환불을 재시도했습니다.');
       await load();
     } catch (error) { AppToast.error(error.message || '환불 재시도에 실패했습니다.'); }
+    finally { processing.delete(String(id)); }
   }
 
   async function startInspection(id) {
+    if (processing.has(String(id))) return;
+    processing.add(String(id));
     try {
       await apiPost(`/admin/api/commerce/returns/${id}/inspect`, {});
       AppToast.success('검수를 시작했습니다.');
       await load();
     } catch (error) { AppToast.error(error.message || '검수 시작에 실패했습니다.'); }
+    finally { processing.delete(String(id)); }
   }
 
   function openCompleteRow(id) {
@@ -141,6 +151,8 @@
   }
 
   async function confirmComplete(id) {
+    if (processing.has(String(id))) return;
+    processing.add(String(id));
     const feeInput = document.querySelector(`[data-complete-fee="${id}"]`)?.value;
     const returnShippingFee = feeInput === '' || feeInput == null ? null : Number(feeInput);
     try {
@@ -148,6 +160,7 @@
       AppToast.success('반품 검수를 완료했습니다. 재고가 복원되고 환불이 처리됩니다.');
       await load();
     } catch (error) { AppToast.error(error.message || '검수 완료 처리에 실패했습니다.'); }
+    finally { processing.delete(String(id)); }
   }
 
   function openRejectRow(id) {
@@ -163,11 +176,14 @@
   async function confirmReject(id) {
     const reason = document.querySelector(`[data-reject-reason="${id}"]`)?.value.trim();
     if (!reason) return AppToast.error('반려 사유를 입력해 주세요.');
+    if (processing.has(String(id))) return;
+    processing.add(String(id));
     try {
       await apiPost(`/admin/api/commerce/returns/${id}/reject`, { reason });
       AppToast.success('반품을 반려 처리했습니다.');
       await load();
     } catch (error) { AppToast.error(error.message || '반려 처리에 실패했습니다.'); }
+    finally { processing.delete(String(id)); }
   }
 
   function openCreateModal(prefill) {

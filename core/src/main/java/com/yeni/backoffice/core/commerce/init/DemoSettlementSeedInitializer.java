@@ -4,14 +4,18 @@ import com.yeni.backoffice.core.commerce.repository.CommerceStoreRepository;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementBatchRunRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementPayRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentDtos.SettlementStatementResponse;
+import com.yeni.backoffice.core.payment.entity.SettlementStatement;
+import com.yeni.backoffice.core.payment.enums.SettlementStatus;
 import com.yeni.backoffice.core.payment.repository.SettlementStatementRepository;
 import com.yeni.backoffice.core.payment.service.SettlementOperationService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /** 정산 목록·페이지 이동·상태 전이(초안→확정→지급 완료)를 시연하기 위한 연결 데이터. */
 @Component
@@ -55,5 +59,37 @@ public class DemoSettlementSeedInitializer implements CommandLineRunner {
                 }
             }
         });
+        promoteDraftStatuses();
+    }
+
+    /**
+     * 데모 주문이 모두 최근 날짜라 위 루프의 날짜 기준(5일/9일)으로는 상태 전이가 걸리지 않는다.
+     * 목록·상태 전이·회계 분개 시연이 가능하도록, 생성된 DRAFT 정산 중 앞쪽 절반을 확정/지급 완료로 올린다.
+     */
+    private void promoteDraftStatuses() {
+        List<SettlementStatement> drafts = statements.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+                .filter(s -> s.getSettlementStatus() == SettlementStatus.DRAFT)
+                .filter(s -> s.getGrossAmount() != null && s.getGrossAmount().signum() > 0)
+                .toList();
+        if (drafts.isEmpty()) return;
+
+        // 화면과 반복 가능한 E2E에서 확정 가능한 초안을 항상 하나 이상 남긴다.
+        int promotableCount = Math.max(0, drafts.size() - 1);
+        int paidCount = promotableCount >= 2 ? Math.max(1, promotableCount / 2) : 0;
+        int confirmCount = promotableCount - paidCount;
+        for (int i = 0; i < drafts.size(); i++) {
+            Long id = drafts.get(i).getId();
+            try {
+                if (i < paidCount) {
+                    settlements.confirmStatement(id);
+                    settlements.markPaid(id, new SettlementPayRequest(
+                            "PAYOUT-DEMO-" + id, "가상 정산계좌 000-****-****21"));
+                } else if (i < paidCount + confirmCount) {
+                    settlements.confirmStatement(id);
+                }
+            } catch (Exception ignored) {
+                // 개별 전이 실패는 무시한다.
+            }
+        }
     }
 }

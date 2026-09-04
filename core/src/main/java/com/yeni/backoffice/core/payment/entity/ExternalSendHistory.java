@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,10 +32,10 @@ public class ExternalSendHistory extends BaseTimeEntity {
     @Column(nullable = false, length = 40)
     private String targetSystem;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String requestBody;
 
-    @Lob
+    @Column(columnDefinition = "text")
     private String responseBody;
 
     @Column(nullable = false, length = 30)

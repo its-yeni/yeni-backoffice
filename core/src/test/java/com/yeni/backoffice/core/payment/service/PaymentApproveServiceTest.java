@@ -2,6 +2,7 @@ package com.yeni.backoffice.core.payment.service;
 
 import com.yeni.backoffice.core.payment.adapter.PaymentGatewayAdapterResolver;
 import com.yeni.backoffice.core.commerce.service.CommerceOrderPaymentStateService;
+import com.yeni.backoffice.core.commerce.repository.CommerceOrderRepository;
 import com.yeni.backoffice.core.payment.config.InicisStdPayProperties;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentApproveRequest;
 import com.yeni.backoffice.core.payment.dto.PaymentBridgeDtos.PaymentApproveResponse;
@@ -60,7 +61,8 @@ class PaymentApproveServiceTest {
                 notificationService,
                 recoveryService,
                 auditHelper,
-                mock(CommerceOrderPaymentStateService.class)
+                mock(CommerceOrderPaymentStateService.class),
+                mock(CommerceOrderRepository.class)
         );
     }
 
