@@ -13,13 +13,12 @@
   $("sa-confirmed").onchange = load;
 
   function pct(v) { return Number(v || 0).toFixed(1) + "%"; }
-  function qty(v) { return Number(v || 0).toLocaleString("ko-KR"); }
-  function won(v) { return Number(v || 0).toLocaleString("ko-KR") + "원"; }
+  const qty = AppFormat.number.bind(AppFormat);
+  const won = AppFormat.money.bind(AppFormat);
   function compact(v) {
     const n = Number(v || 0);
     if (Math.abs(n) >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, "") + "억";
-    if (Math.abs(n) >= 1e4) return Math.round(n / 1e4).toLocaleString("ko-KR") + "만";
-    return n.toLocaleString("ko-KR");
+    return AppFormat.compactNumber(n);
   }
 
   async function load() {

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const $ = id => document.getElementById(id), money = value => value == null ? '-' : Number(value).toLocaleString('ko-KR') + '원';
+  const $ = id => document.getElementById(id), money = value => value == null ? '-' : AppFormat.money(value);
   const labels = { MATCHED: '일치', INTERNAL_ONLY: '내부만 존재', PG_ONLY: 'PG만 존재', AMOUNT_MISMATCH: '금액 불일치', FEE_MISMATCH: '수수료 불일치' }, resolutionLabels = { NOT_REQUIRED: '-', OPEN: '미처리', IN_REVIEW: '확인 중', RESOLVED: '해결', EXCLUDED: '제외' };
   let batches = [], current = null, status = '', selectedRow = null;
   $('recon-date').value = new URLSearchParams(location.search).get('businessDate') || new Date().toISOString().slice(0, 10);

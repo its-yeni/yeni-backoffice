@@ -837,10 +837,23 @@ async function parseApiResponse(response) {
     throw error;
 }
 
-/* 여러 admin 페이지가 각자 다시 만들던 공통 유틸. 새로 만들 땐 이걸 먼저 확인. */
-function money(value) {
-    return Number(value || 0).toLocaleString("ko-KR") + "원";
-}
+/* 여러 admin 페이지가 각자 다시 만들던 숫자·금액 포맷. */
+window.AppFormat = Object.freeze({
+    number(value) {
+        return Number(value || 0).toLocaleString("ko-KR");
+    },
+    money(value) {
+        return this.number(value) + "원";
+    },
+    compactNumber(value) {
+        const number = Number(value || 0);
+        if (Math.abs(number) >= 100000000) return (number / 100000000).toFixed(1).replace(".0", "") + "억";
+        if (Math.abs(number) >= 10000) return Math.round(number / 10000).toLocaleString("ko-KR") + "만";
+        return number.toLocaleString("ko-KR");
+    }
+});
+
+function money(value) { return AppFormat.money(value); }
 
 function escapeHtml(value) {
     const div = document.createElement("div");

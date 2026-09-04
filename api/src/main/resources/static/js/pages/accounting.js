@@ -1,6 +1,6 @@
 (function () {
   const $ = id => document.getElementById(id);
-  const won = v => (Number(v) || 0).toLocaleString("ko-KR") + "원";
+  const won = AppFormat.money.bind(AppFormat);
   const wonOrDash = v => Number(v) ? won(v) : "-";
   const SRC = { SALES_TRANSACTION: "매출 원장", SETTLEMENT_STATEMENT: "정산 명세" };
   const TYPE = { ASSET: "자산", LIABILITY: "부채", EQUITY: "자본", REVENUE: "수익", EXPENSE: "비용" };

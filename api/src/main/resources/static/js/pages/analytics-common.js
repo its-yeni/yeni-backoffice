@@ -3,14 +3,13 @@
 window.Analytics = (function () {
   const $ = id => document.getElementById(id);
   const esc = v => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const won = v => Number(v || 0).toLocaleString("ko-KR") + "원";
-  const num = v => Number(v || 0).toLocaleString("ko-KR");
+  const won = AppFormat.money.bind(AppFormat);
+  const num = AppFormat.number.bind(AppFormat);
   const pct = v => Number(v || 0).toFixed(1) + "%";
   const compact = v => {
     const n = Number(v || 0);
     if (Math.abs(n) >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, "") + "억";
-    if (Math.abs(n) >= 1e4) return Math.round(n / 1e4).toLocaleString("ko-KR") + "만";
-    return n.toLocaleString("ko-KR");
+    return AppFormat.compactNumber(n);
   };
   const ymd = d => d.toISOString().slice(0, 10);
   const shortDate = s => String(s).slice(5).replace("-", ".");
