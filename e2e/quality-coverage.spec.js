@@ -58,9 +58,12 @@ test.describe('운영 화면 품질 보완', () => {
     await expect(page.locator('.skip-to-content')).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.locator('.ops-metric').first()).toBeFocused();
-    await page.locator('.ops-metric').first().press('Enter');
+    const firstMetric = page.locator('.ops-metric').first();
+    await expect.poll(async () => {
+      await page.keyboard.press('Tab');
+      return firstMetric.evaluate(node => node === document.activeElement);
+    }, { intervals: [50], timeout: 2000 }).toBeTruthy();
+    await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/from=dashboard/);
     await expect(page.locator('.dashboard-filter-context')).toBeVisible();
   });

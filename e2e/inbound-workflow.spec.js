@@ -6,7 +6,7 @@ test('공급처 → 발주 → 확정 → 입고 → 재고 원장·LOT 반영',
 
   await page.goto('/admin/commerce/inventory/lots');
   await page.waitForLoadState('networkidle');
-  const lotsBefore = await page.locator('#planning-rows tr').count();
+  const lotsBefore = (await (await page.request.get('/admin/api/commerce/inventory-planning/lots')).json()).length;
 
   await page.goto('/admin/commerce/suppliers');
   await page.locator('#supplier-new').click();
@@ -65,5 +65,8 @@ test('공급처 → 발주 → 확정 → 입고 → 재고 원장·LOT 반영',
 
   await page.goto('/admin/commerce/inventory/lots');
   await page.waitForLoadState('networkidle');
-  await expect.poll(async () => page.locator('#planning-rows tr').count()).toBeGreaterThan(lotsBefore);
+  await expect.poll(async () => {
+    const response = await page.request.get('/admin/api/commerce/inventory-planning/lots');
+    return (await response.json()).length;
+  }).toBeGreaterThan(lotsBefore);
 });

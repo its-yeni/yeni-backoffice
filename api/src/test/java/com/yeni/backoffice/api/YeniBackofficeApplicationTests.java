@@ -1532,9 +1532,9 @@ class YeniBackofficeApplicationTests {
 		// 못 찾으므로, 그 데이터가 실제로 페이지에 전달됐는지는 슬래시가 없는 고유 쿼리 조각으로 확인한다).
 		mockMvc.perform(get("/admin/operations-dashboard"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("오늘 확인할 작업")))
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("3분 운영 데모 시작")))
-				.andExpect(content().string(org.hamcrest.Matchers.containsString("외부 CSV 비교")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("운영 예외 큐")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("즉시 처리 필요")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("매출 추이")))
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("status=UNKNOWN")))
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("health=LOW")));
 	}
