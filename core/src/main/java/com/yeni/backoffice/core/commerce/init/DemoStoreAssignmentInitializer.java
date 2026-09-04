@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /** 포트폴리오 데모의 과거 결제·매출 데이터에도 주문의 매장 귀속을 일관되게 채운다. */
 @Component
 @Profile("fly | demo")
-@Order(190)
+@Order(205)
 public class DemoStoreAssignmentInitializer implements CommandLineRunner {
     private final CommerceStoreRepository stores;
     private final CommerceOrderRepository orders;
