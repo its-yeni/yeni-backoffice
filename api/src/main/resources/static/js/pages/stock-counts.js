@@ -1,6 +1,6 @@
 (function () {
   const $ = id => document.getElementById(id);
-  const LABEL = { IN_PROGRESS: '진행 중', COMPLETED: '반영 완료', CANCELED: '취소' };
+  const LABEL = CommerceStatusCatalog.stockCount.labels;
   const TONE = { IN_PROGRESS: 'is-warning', COMPLETED: 'is-success', CANCELED: 'is-danger' };
   let rows = [], stores = [], pagination, sorter, currentDetail = null;
 

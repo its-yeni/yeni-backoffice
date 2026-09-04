@@ -2,8 +2,7 @@
   const $ = (id) => document.getElementById(id);
   let rows = [], pagination;
   const variantId = new URLSearchParams(location.search).get('variantId');
-  const TYPE_LABEL = { RECEIPT: '입고', RESERVE: '주문 예약', RELEASE: '예약 해제', SHIPMENT: '출고 완료', ADJUST_IN: '증가 조정', ADJUST_OUT: '감소 조정', TRANSFER_IN: '이동 입고', TRANSFER_OUT: '이동 출고' };
-  const REFERENCE_LABEL = { ORDER: '주문', MANUAL: '수동 작업', SHIPMENT: '출고', PURCHASE_ORDER: '발주', STOCK_COUNT: '재고 실사', RETURN: '반품', TRANSFER: '재고 이동' };
+  const {typeLabels: TYPE_LABEL, referenceLabels: REFERENCE_LABEL} = CommerceStatusCatalog.inventoryTransaction;
 
   let sorter;
   document.addEventListener('DOMContentLoaded', () => {

@@ -1,8 +1,7 @@
 (function () {
   const $ = id => document.getElementById(id);
   let rows = [], pagination;
-  const STATUS_LABEL = { PREPARING: '배송 준비', IN_TRANSIT: '배송 중', DELIVERED: '배송 완료', RETURNED: '반송' };
-  const STATUS_TONE = { PREPARING: '', IN_TRANSIT: 'is-warning', DELIVERED: 'is-success', RETURNED: 'is-danger' };
+  const {labels: STATUS_LABEL, tones: STATUS_TONE} = CommerceStatusCatalog.delivery;
   // 실무에서 자주 쓰는 택배사 목록 + 목록에 없는 곳은 "직접입력"으로 받는다 — 5개만 하드코딩돼 있으면
   // 목록에 없는 택배사를 쓰는 주문은 아예 배송 시작 처리를 못 하게 되는 문제가 있었다.
   const CARRIERS = ['CJ대한통운', '한진택배', '롯데택배', '우체국택배', '로젠택배', '경동택배', '대신택배', '합동택배', '일양로지스', 'CU 편의점택배', 'GS Postbox 택배', '천일택배'];

@@ -1,7 +1,7 @@
 (function () {
   const $ = id => document.getElementById(id);
   const won = v => Number(v || 0).toLocaleString('ko-KR') + '원';
-  const LABEL = { DRAFT: '작성 중', ORDERED: '발주 완료', PARTIALLY_RECEIVED: '부분 입고', RECEIVED: '입고 완료', CANCELED: '취소' };
+  const LABEL = CommerceStatusCatalog.purchaseOrder.labels;
   const TONE = { DRAFT: '', ORDERED: 'is-warning', PARTIALLY_RECEIVED: 'is-warning', RECEIVED: 'is-success', CANCELED: 'is-danger' };
   let rows = [], suppliers = [], stores = [], variants = [], pagination, sorter;
   let createLines = [], currentDetail = null;

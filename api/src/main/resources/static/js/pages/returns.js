@@ -3,11 +3,13 @@
   let rows = [], pagination;
   const processing = new Set();
   const requestedRefundStatus = new URLSearchParams(location.search).get('refundStatus');
-  const STATUS_LABEL = { REQUESTED: '접수', INSPECTING: '검수 중', COMPLETED: '완료', REJECTED: '반려' };
-  const STATUS_TONE = { REQUESTED: '', INSPECTING: 'is-warning', COMPLETED: 'is-success', REJECTED: 'is-danger' };
-  const RESPONSIBILITY_LABEL = { CUSTOMER_FAULT: '고객 귀책', SELLER_FAULT: '판매자 귀책' };
-  const REFUND_STATUS_LABEL = { NOT_REQUIRED: '환불 불필요', PENDING: '환불 대기', SUCCESS: '환불 완료', FAILED: '환불 실패' };
-  const REFUND_STATUS_TONE = { PENDING: 'is-warning', SUCCESS: 'is-success', FAILED: 'is-danger' };
+  const {
+    labels: STATUS_LABEL,
+    tones: STATUS_TONE,
+    responsibilityLabels: RESPONSIBILITY_LABEL,
+    refundLabels: REFUND_STATUS_LABEL,
+    refundTones: REFUND_STATUS_TONE
+  } = CommerceStatusCatalog.returns;
   // 접수/검수 중 상태가 이 시간(시간 단위)보다 오래 머물러 있으면 "지연" 배지를 붙인다. 실제 SLA 값이 아니라
   // 데모용 기준값이라, 운영에 맞게 바꿔 쓸 수 있게 상수 하나로 뺐다.
   const STALE_HOURS = 48;

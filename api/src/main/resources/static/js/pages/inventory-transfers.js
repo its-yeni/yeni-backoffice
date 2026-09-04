@@ -1,7 +1,7 @@
 (function () {
   const $ = id => document.getElementById(id);
   let rows = [], stores = [], variants = [], pagination, sorter;
-  const LABEL = { REQUESTED: '이동 요청', IN_TRANSIT: '이동 중', RECEIVED: '입고 완료', CANCELLED: '취소' };
+  const LABEL = CommerceStatusCatalog.inventoryTransfer.labels;
   const TONE = { REQUESTED: '', IN_TRANSIT: 'is-warning', RECEIVED: 'is-success', CANCELLED: 'is-danger' };
 
   document.addEventListener('DOMContentLoaded', () => {
