@@ -522,16 +522,6 @@ window.activeStoreCode=function(){return localStorage.getItem("commerce-store-co
 window.activeBrandId=function(){return Number(new URLSearchParams(location.search).get("brandId")||localStorage.getItem("commerce-brand-id")||0);};
 window.activeStoreId=function(){return Number(new URLSearchParams(location.search).get("storeId")||localStorage.getItem("commerce-store-id")||0);};
 window.operationalStoreLabel=function(storeId){if(!storeId)return "매장 미지정";try{const stores=JSON.parse(localStorage.getItem("commerce-store-directory")||"[]");return stores.find(store=>Number(store.id)===Number(storeId))?.storeName||`매장 #${storeId}`;}catch(ignore){return `매장 #${storeId}`;}};
-document.addEventListener("DOMContentLoaded",async function(){
-    return;
-    try{
-        const stores=await apiGet("/admin/api/commerce/stores");
-        const select=document.createElement("select");select.className="global-store-select";select.setAttribute("aria-label","현재 매장");
-        select.innerHTML=stores.filter(store=>store.active).map(store=>`<option value="${escapeHtml(store.storeCode)}">${escapeHtml(store.storeName)}</option>`).join("");
-        select.value=activeStoreCode();select.onchange=()=>{localStorage.setItem("commerce-store-code",select.value);location.reload();};
-        document.querySelector(".top-actions")?.prepend(select);
-    }catch(ignore){}
-});
 
 /* 상단바 브랜드·매장 선택기. "전체"(값 0)를 포함하며, 이 값이 화면 전반의 조회 범위를 결정한다.
    - 매장을 고르면 그 매장 데이터만, "전체 매장"이면 모든 매장 합산.
@@ -760,62 +750,6 @@ function initializeSidebarCollapse() {
     });
 }
 
-window.AppLoading = (function () {
-    let activeCount = 0;
-    let overlay = null;
-    let messageText = null;
-
-    function ensureOverlay() {
-        if (overlay) {
-            return overlay;
-        }
-
-        overlay = document.createElement("div");
-        overlay.className = "global-loading";
-        overlay.setAttribute("role", "status");
-        overlay.setAttribute("aria-live", "polite");
-        overlay.innerHTML = '<div class="global-loading-box">'
-            + '<div class="global-progress"><span></span></div>'
-            + '<strong>화면을 준비하고 있어요</strong>'
-            + '<p>필요한 데이터를 불러오는 중입니다.</p>'
-            + '</div>';
-        document.body.appendChild(overlay);
-        messageText = overlay.querySelector("strong");
-        return overlay;
-    }
-
-    function show(message) {
-        activeCount += 1;
-        ensureOverlay();
-        if (messageText && message) {
-            messageText.textContent = message;
-        }
-        overlay.classList.add("open");
-    }
-
-    function hide() {
-        activeCount = Math.max(activeCount - 1, 0);
-        if (overlay && activeCount === 0) {
-            overlay.classList.remove("open");
-        }
-    }
-
-    async function track(promise, message) {
-        show(message);
-        try {
-            return await promise;
-        } finally {
-            hide();
-        }
-    }
-
-    return {
-        show: show,
-        hide: hide,
-        track: track
-    };
-})();
-
 window.AppToast = (function () {
     let host;
     function ensureHost() {
@@ -975,70 +909,127 @@ window.AppLoading = (function () {
         if (bar) bar.classList.remove("is-on");
         if (pill) pill.classList.remove("is-on");
     }
-    return { begin: begin, end: end };
+    async function track(promise) {
+        begin();
+        try {
+            return await promise;
+        } finally {
+            end();
+        }
+    }
+    return {
+        begin: begin,
+        end: end,
+        show: begin,
+        hide: end,
+        track: track
+    };
 })();
 
-async function apiGet(url) {
-    AppLoading.begin();
-    try {
-        const data=await parseApiResponse(await fetch(withOperationalStore(url)));
-        await ensureOperationalStoreDirectory(url);
-        await ensureOperationalBrandStoreIds(url);
-        return applyOperationalBrandScope(url,data);
+window.AdminApi = (function () {
+    const OPERATIONAL_PATHS = [
+        "/commerce/orders",
+        "/commerce/location-inventory",
+        "/commerce/shipments",
+        "/commerce/deliveries",
+        "/commerce/returns",
+        "/payment-operations/payments",
+        "/sales-ledger",
+        "/settlements",
+        "/api/analytics/",
+        "/admin/api/dashboard"
+    ];
+
+    function isOperationalScopedUrl(url) {
+        return OPERATIONAL_PATHS.some(path => url.includes(path))
+            || (url.includes("/admin/api/gl/") && !url.includes("/income-by-store"));
     }
-    finally { AppLoading.end(); }
-}
 
-async function ensureOperationalStoreDirectory(url){
-    if(!isOperationalScopedUrl(url)||localStorage.getItem("commerce-store-directory"))return;
-    try{const stores=await parseApiResponse(await fetch("/admin/api/commerce/stores"));localStorage.setItem("commerce-store-directory",JSON.stringify(stores));}catch(ignore){}
-}
+    function withOperationalScope(url) {
+        if (!isOperationalScopedUrl(url)) return url;
+        const target = new URL(url, location.origin);
+        const storeId = activeStoreId();
+        const brandId = activeBrandId();
+        if (storeId && !target.searchParams.has("storeId")) target.searchParams.set("storeId", storeId);
+        if (brandId && !target.searchParams.has("brandId")) target.searchParams.set("brandId", brandId);
+        return target.pathname + target.search;
+    }
 
-async function ensureOperationalBrandStoreIds(url){
-    if(!activeBrandId()||activeStoreId()||!isOperationalScopedUrl(url))return;
-    if(localStorage.getItem("commerce-brand-store-scope")===String(activeBrandId())&&localStorage.getItem("commerce-brand-store-ids"))return;
-    try{
-        const stores=await parseApiResponse(await fetch(`/admin/api/brands/${activeBrandId()}/stores`));
-        localStorage.setItem("commerce-brand-store-ids",JSON.stringify(stores.map(store=>Number(store.id))));
-        localStorage.setItem("commerce-brand-store-scope",String(activeBrandId()));
-    }catch(ignore){}
-}
+    async function ensureStoreDirectory(url) {
+        if (!isOperationalScopedUrl(url) || localStorage.getItem("commerce-store-directory")) return;
+        try {
+            const stores = await parseApiResponse(await fetch("/admin/api/commerce/stores"));
+            localStorage.setItem("commerce-store-directory", JSON.stringify(stores));
+        } catch (ignore) {}
+    }
 
-function isOperationalScopedUrl(url){return url.includes("/commerce/orders")||url.includes("/commerce/location-inventory")||url.includes("/commerce/shipments")||url.includes("/commerce/deliveries")||url.includes("/commerce/returns")||url.includes("/payment-operations/payments")||url.includes("/sales-ledger")||url.includes("/settlements")||url.includes("/api/analytics/")||(url.includes("/admin/api/gl/")&&!url.includes("/income-by-store"))||url.includes("/admin/api/dashboard");}
-function applyOperationalBrandScope(url,data){
-    if(!activeBrandId()||activeStoreId()||!isOperationalScopedUrl(url))return data;
-    let allowed=[];try{allowed=JSON.parse(localStorage.getItem("commerce-brand-store-ids")||"[]").map(Number);}catch(ignore){}
-    if(!allowed.length)return data;
-    const filter=rows=>rows.filter(row=>!row||!Object.prototype.hasOwnProperty.call(row,"storeId")||(row.storeId!=null&&allowed.includes(Number(row.storeId))));
-    if(Array.isArray(data))return filter(data);
-    if(data&&Array.isArray(data.data))return {...data,data:filter(data.data)};
-    if(data&&Array.isArray(data.rows))return {...data,rows:filter(data.rows)};
-    return data;
-}
+    async function ensureBrandStoreIds(url) {
+        const brandId = activeBrandId();
+        if (!brandId || activeStoreId() || !isOperationalScopedUrl(url)) return;
+        if (localStorage.getItem("commerce-brand-store-scope") === String(brandId)
+            && localStorage.getItem("commerce-brand-store-ids")) return;
+        try {
+            const stores = await parseApiResponse(await fetch(`/admin/api/brands/${brandId}/stores`));
+            localStorage.setItem("commerce-brand-store-ids", JSON.stringify(stores.map(store => Number(store.id))));
+            localStorage.setItem("commerce-brand-store-scope", String(brandId));
+        } catch (ignore) {}
+    }
 
-async function apiPost(url, body, method) {
-    const requestBody={...(body||{})};
-    if(url.includes("/settlements/batch/run")&&activeStoreId())requestBody.storeId=activeStoreId();
-    AppLoading.begin();
-    try {
-        return parseApiResponse(await fetch(withOperationalStore(url), {
-            method: method || "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody)
-        }));
-    } finally { AppLoading.end(); }
-}
+    function applyBrandScope(url, data) {
+        if (!activeBrandId() || activeStoreId() || !isOperationalScopedUrl(url)) return data;
+        let allowed = [];
+        try {
+            allowed = JSON.parse(localStorage.getItem("commerce-brand-store-ids") || "[]").map(Number);
+        } catch (ignore) {}
+        if (!allowed.length) return data;
+        const filter = rows => rows.filter(row => !row
+            || !Object.prototype.hasOwnProperty.call(row, "storeId")
+            || (row.storeId != null && allowed.includes(Number(row.storeId))));
+        if (Array.isArray(data)) return filter(data);
+        if (data && Array.isArray(data.data)) return {...data, data: filter(data.data)};
+        if (data && Array.isArray(data.rows)) return {...data, rows: filter(data.rows)};
+        return data;
+    }
 
-function withOperationalStore(url){
-    const storeId=activeStoreId();
-    const brandId=activeBrandId();
-    const scoped=isOperationalScopedUrl(url);
-    if(!scoped)return url;
-    const target=new URL(url,location.origin);
-    if(storeId&&!target.searchParams.has("storeId"))target.searchParams.set("storeId",storeId);
-    if(brandId&&!target.searchParams.has("brandId"))target.searchParams.set("brandId",brandId);
-    return target.pathname+target.search;
-}
+    async function get(url) {
+        AppLoading.begin();
+        try {
+            const data = await parseApiResponse(await fetch(withOperationalScope(url)));
+            await ensureStoreDirectory(url);
+            await ensureBrandStoreIds(url);
+            return applyBrandScope(url, data);
+        } finally {
+            AppLoading.end();
+        }
+    }
+
+    async function send(url, body, method) {
+        const requestBody = {...(body || {})};
+        if (url.includes("/settlements/batch/run") && activeStoreId()) requestBody.storeId = activeStoreId();
+        AppLoading.begin();
+        try {
+            return await parseApiResponse(await fetch(withOperationalScope(url), {
+                method: method || "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(requestBody)
+            }));
+        } finally {
+            AppLoading.end();
+        }
+    }
+
+    return {
+        get: get,
+        send: send,
+        withOperationalScope: withOperationalScope,
+        isOperationalScopedUrl: isOperationalScopedUrl
+    };
+})();
+
+// 기존 페이지 전역 API를 유지하면서 신규 코드는 AdminApi를 사용한다.
+async function apiGet(url) { return AdminApi.get(url); }
+async function apiPost(url, body, method) { return AdminApi.send(url, body, method); }
+function withOperationalStore(url) { return AdminApi.withOperationalScope(url); }
 
 /* 화면 우상단 "설계 노트" 버튼으로 여는 drawer. 설계 의도를 남겨둘 만한 화면에만 메모를 붙인다. */
 const AdminDesignNotes = (function () {
