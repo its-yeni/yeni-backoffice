@@ -48,27 +48,23 @@
   }
 
   function renderKpis() {
+    const summary = CommerceProductListModel.summarize(products);
     const set = (id, n) => { const el = $(id); if (el) el.innerHTML = `${Number(n).toLocaleString("ko-KR")}<em>개</em>`; };
-    set("kpi-total", products.length);
-    set("kpi-onsale", products.filter(p => p.saleStatus === "ON_SALE").length);
-    set("kpi-soldout", products.filter(p => p.saleStatus === "SOLD_OUT").length);
-    set("kpi-exposed", products.filter(p => p.saleStatus !== "STOPPED").length);
+    set("kpi-total", summary.total);
+    set("kpi-onsale", summary.onSale);
+    set("kpi-soldout", summary.soldOut);
+    set("kpi-exposed", summary.exposed);
   }
   function renderProducts() {
     renderKpis();
     const category = $("category-filter").value;
-    const filtered = category ? products.filter(product => product.category === category) : products;
+    const filtered = CommerceProductListModel.filter(products, category);
     pagination.setTotal(filtered.length);
     if ($("product-total")) $("product-total").textContent = filtered.length.toLocaleString("ko-KR");
     $("empty-products").hidden = filtered.length > 0;
     const rowStart = (pagination.getPage() - 1) * pagination.getSize();
-    $("product-rows").innerHTML = pagination.slice(filtered).map((product, i) => `<tr class="is-editable-row" data-product-row="${product.id}">
-      <td class="row-index">${rowStart + i + 1}</td>
-      <td><button type="button" class="table-product" data-edit="${product.id}"><span class="table-product-thumb">${product.imageUrl ? `<img src="${escapeHtml(product.imageUrl)}" alt="">` : ""}</span><span><strong>${escapeHtml(product.productName)}</strong><small>${escapeHtml(product.productCode)}</small></span></button></td>
-      <td>${escapeHtml(product.category || "미분류")}</td><td class="amount">${money(product.salePrice)}</td><td class="number">${product.inventoryManaged === false ? "미사용" : product.stockQuantity.toLocaleString("ko-KR")}</td>
-      <td><label class="switch"><input type="checkbox" data-status="SOLD_OUT" data-id="${product.id}" ${product.saleStatus === "SOLD_OUT" ? "checked" : ""}><span></span></label></td>
-      <td><label class="switch"><input type="checkbox" data-status="ON_SALE" data-id="${product.id}" ${product.saleStatus === "ON_SALE" ? "checked" : ""}><span></span></label></td>
-      <td>${formatDate(product.updatedAt)}</td><td class="actions"><button type="button" class="row-icon-btn" data-row-edit="${product.id}" title="상품 수정">수정</button><button type="button" class="row-icon-btn" data-options="${product.id}" title="옵션 설정">옵션</button><button type="button" class="row-icon-btn" data-preview="${product.id}" title="미리보기">보기</button></td></tr>`).join("");
+    $("product-rows").innerHTML = pagination.slice(filtered)
+      .map((product, i) => CommerceProductListModel.row(product, rowStart + i + 1)).join("");
     document.querySelectorAll("[data-edit]").forEach(el => el.onclick = () => openModal(Number(el.dataset.edit)));
     document.querySelectorAll("[data-product-row]").forEach(row => row.onclick = event => {
       if (event.target.closest("button,a,input,select,textarea,label,details,summary")) return;
@@ -479,6 +475,5 @@
     $("variant-stock-link").hidden = !id;
   }
   function closeModal() { $("product-modal").classList.remove("open"); $("product-modal").setAttribute("aria-hidden", "true"); document.body.style.overflow = ""; }
-  function formatDate(value) { return value ? new Date(value).toLocaleDateString("ko-KR", {year: "numeric", month: "2-digit", day: "2-digit"}) : "-"; }
   function debounce(fn, wait) { let timer; return () => { clearTimeout(timer); timer = setTimeout(fn, wait); }; }
 })();
