@@ -111,12 +111,16 @@ public class CommerceDeliveryService {
                 ? deliveries.findByStatusOrderByIdDesc(parseStatus(status))
                 : deliveries.findAllByOrderByIdDesc();
         if (rows.isEmpty()) return List.of();
-        Map<Long, CommerceOrder> orderMap = orders.findAllById(rows.stream().map(CommerceDelivery::getOrderId).distinct().toList())
+        List<Long> orderIds = rows.stream().map(CommerceDelivery::getOrderId).distinct().toList();
+        Map<Long, CommerceOrder> orderMap = orders.findAllById(orderIds)
                 .stream().collect(Collectors.toMap(CommerceOrder::getId, Function.identity()));
+        Map<Long, List<CommerceOrderItem>> itemsByOrder = orderItems
+                .findByOrderIdInOrderByOrderIdAscIdAsc(orderIds).stream()
+                .collect(Collectors.groupingBy(CommerceOrderItem::getOrderId));
         return rows.stream().filter(d -> {
             CommerceOrder order = orderMap.get(d.getOrderId());
             return storeId == null || (order != null && storeId.equals(order.getStoreId()));
-        }).map(d -> toResponse(d, orderMap)).toList();
+        }).map(d -> toResponse(d, orderMap, itemsByOrder)).toList();
     }
 
     @Transactional
@@ -317,6 +321,19 @@ public class CommerceDeliveryService {
                 .count();
         return DeliveryResponse.from(d, order == null ? "-" : order.getOrderNo(), order == null ? "-" : order.getBuyerName(),
                 unshippedItemCount, order == null ? null : order.getStoreId());
+    }
+
+    private DeliveryResponse toResponse(
+            CommerceDelivery delivery,
+            Map<Long, CommerceOrder> orderMap,
+            Map<Long, List<CommerceOrderItem>> itemsByOrder) {
+        CommerceOrder order = orderMap.get(delivery.getOrderId());
+        int unshippedItemCount = (int) itemsByOrder.getOrDefault(delivery.getOrderId(), List.of()).stream()
+                .filter(item -> delivery.getId().equals(item.getDeliveryId()) && !item.isShippedYn())
+                .count();
+        return DeliveryResponse.from(delivery, order == null ? "-" : order.getOrderNo(),
+                order == null ? "-" : order.getBuyerName(), unshippedItemCount,
+                order == null ? null : order.getStoreId());
     }
 
     private String trimToNull(String value) { return StringUtils.hasText(value) ? value.trim() : null; }
