@@ -86,10 +86,11 @@ public final class AnalyticsDtos {
     ) {
     }
 
-    /** 일별 × 결제수단 결제 집계. 승인율은 프론트/DAX 에서 계산하도록 원본 건수를 함께 제공. */
+    /** 일별 × 결제수단 × 채널 결제 집계. 승인율은 프론트/DAX 에서 계산하도록 원본 건수를 함께 제공. */
     public record PaymentAnalyticsRow(
             LocalDate date,
             String paymentMethod,
+            String channelType,
             long paymentRequestCount,
             long approvalCount,
             BigDecimal approvalAmount,

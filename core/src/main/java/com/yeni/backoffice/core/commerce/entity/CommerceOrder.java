@@ -44,6 +44,11 @@ public class CommerceOrder extends BaseTimeEntity {
     @Column(length = 100)
     private String storeName;
 
+    /** 결제 채널 — WEB(온라인 PG) / POS(매장 단말·VAN). 결제 승인 시점에 채워진다. */
+    @Builder.Default
+    @Column(length = 10)
+    private String channelType = "WEB";
+
     @Column(nullable = false, length = 100)
     private String orderNo;
 
@@ -177,6 +182,7 @@ public class CommerceOrder extends BaseTimeEntity {
     }
 
     public void assignStore(Long storeId,String storeCode,String storeName){this.storeId=storeId;this.storeCode=storeCode;this.storeName=storeName;}
+    public void assignChannel(String channelType){if(channelType!=null&&!channelType.isBlank())this.channelType=channelType;}
 
     private void validateNonNegative(BigDecimal amount, String message) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {

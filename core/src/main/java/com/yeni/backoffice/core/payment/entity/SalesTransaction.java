@@ -101,6 +101,11 @@ public class SalesTransaction extends BaseTimeEntity {
     @Column(length = 40)
     private String paymentMethod;
 
+    /** 결제 채널 — WEB(온라인 PG) / POS(매장 단말·VAN). 결제에서 비정규화. */
+    @Builder.Default
+    @Column(length = 10)
+    private String channelType = "WEB";
+
     private Long sellerId;
 
     private Long orderItemId;
@@ -144,4 +149,6 @@ public class SalesTransaction extends BaseTimeEntity {
     }
 
     public void assignStore(Long storeId) { this.storeId = storeId; }
+    public void assignChannel(String channelType) { if (channelType != null && !channelType.isBlank()) this.channelType = channelType; }
+    public void updatePaymentMethod(String paymentMethod) { if (paymentMethod != null && !paymentMethod.isBlank()) this.paymentMethod = paymentMethod; }
 }

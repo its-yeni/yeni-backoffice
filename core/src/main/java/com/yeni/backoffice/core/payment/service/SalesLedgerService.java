@@ -311,6 +311,7 @@ public class SalesLedgerService {
                 .occurredAt(occurredAt)
                 .pgCode(payment.getPgProvider() == null ? "INICIS" : payment.getPgProvider().name())
                 .paymentMethod(StringUtils.hasText(payment.getPaymentMethod())?payment.getPaymentMethod():PaymentDefaults.PAYMENT_METHOD_CARD)
+                .channelType(StringUtils.hasText(payment.getChannelType()) ? payment.getChannelType() : "WEB")
                 .externalSendRequired(true)
                 .settlementIncludedYn(false)
                 .confirmedYn(confirmed)

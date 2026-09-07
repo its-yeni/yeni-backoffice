@@ -171,11 +171,13 @@ public class PaymentApproveService {
                 .canceledAmount(BigDecimal.ZERO)
                 .currency(command.currency())
                 .paymentMethod(command.paymentMethod())
+                .channelType(command.channelType())
                 .paymentStatus(PaymentStatus.APPROVED)
                 .approvedAt(result.approvedAt())
                 .build();
         try {
             paymentRepository.save(payment);
+            orderRepository.findByOrderNo(payment.getOrderNo()).ifPresent(o -> o.assignChannel(payment.getChannelType()));
             // 시나리오 데모 전용 훅: orderNo에 NETCANCEL 마커가 있으면 "PG 승인은 성공했지만
             // 이후 내부 처리가 실패"하는 상황을 의도적으로 재현해 아래 catch의 망취소/복구 흐름을 탄다.
             if (command.orderNo() != null && command.orderNo().toUpperCase().contains("NETCANCEL")) {
@@ -309,10 +311,12 @@ public class PaymentApproveService {
                     .canceledAmount(BigDecimal.ZERO)
                     .currency(session.getCurrency())
                     .paymentMethod(PaymentDefaults.PAYMENT_METHOD_CARD)
+                    .channelType("WEB")
                     .paymentStatus(PaymentStatus.APPROVED)
                     .approvedAt(approvalResult.approvedAt())
                     .build();
             paymentRepository.save(payment);
+            orderRepository.findByOrderNo(payment.getOrderNo()).ifPresent(o -> o.assignChannel("WEB"));
             session.markApproved(approvalResult.tid());
 
             SalesTransaction sales = salesLedgerService.createSales(payment, SaleType.SALE, payment.getId(), payment.getApprovedAmount(), approvalResult.approvedAt());
@@ -351,11 +355,14 @@ public class PaymentApproveService {
                 .canceledAmount(BigDecimal.ZERO)
                 .currency(command.currency())
                 .paymentMethod(command.paymentMethod())
+                .channelType(command.channelType())
                 .paymentStatus(PaymentStatus.APPROVE_UNKNOWN)
                 .approvedAt(LocalDateTime.now())
                 .failureReason(result.resultMessage())
                 .build();
-        return paymentRepository.save(payment);
+        PaymentTransaction saved = paymentRepository.save(payment);
+        orderRepository.findByOrderNo(saved.getOrderNo()).ifPresent(o -> o.assignChannel(saved.getChannelType()));
+        return saved;
     }
 
     private Long resolveStoreId(String orderNo, Long requestedStoreId) {

@@ -49,7 +49,7 @@ public final class CommerceOrderDtos {
             BigDecimal productAmount, BigDecimal deliveryFee, BigDecimal discountAmount, BigDecimal payableAmount,
             BigDecimal paidAmount, BigDecimal cancelledAmount, String orderStatus, String paymentStatus,
             Long paymentId, String tid, String lastMessage, List<CommerceOrderItemResponse> items,
-            CommerceDeliveryDtos.DeliveryResponse delivery, Long storeId,
+            CommerceDeliveryDtos.DeliveryResponse delivery, Long storeId, String channelType,
             LocalDateTime createdAt, LocalDateTime updatedAt) {
         public static CommerceOrderResponse from(CommerceOrder order, List<CommerceOrderItem> items) {
             return from(order, items, null);
@@ -61,7 +61,8 @@ public final class CommerceOrderDtos {
                     order.getPayableAmount(), order.getPaidAmount(), order.getCancelledAmount(),
                     order.getOrderStatus().name(), order.getPaymentStatus().name(), order.getPaymentId(), order.getTid(),
                     order.getLastMessage(), items.stream().map(CommerceOrderItemResponse::from).toList(), delivery,
-                    order.getStoreId(), order.getCreatedAt(), order.getUpdatedAt());
+                    order.getStoreId(), order.getChannelType() == null ? "WEB" : order.getChannelType(),
+                    order.getCreatedAt(), order.getUpdatedAt());
         }
     }
 

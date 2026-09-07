@@ -122,7 +122,9 @@ public final class PaymentDtos {
             @Schema(description = "통화 코드") String currency,
             @Schema(description = "결제 상태") String paymentStatus,
             @Schema(description = "승인 시각") LocalDateTime approvedAt,
-            Long storeId
+            Long storeId,
+            @Schema(description = "결제수단 CARD/CASH 등") String paymentMethod,
+            @Schema(description = "결제 채널 WEB/POS") String channelType
     ) {
         public static PaymentResponse from(PaymentTransaction payment) {
             return new PaymentResponse(
@@ -136,7 +138,9 @@ public final class PaymentDtos {
                     payment.getCurrency(),
                     payment.getPaymentStatus().name(),
                     payment.getApprovedAt(),
-                    payment.getStoreId()
+                    payment.getStoreId(),
+                    payment.getPaymentMethod(),
+                    payment.getChannelType() == null ? "WEB" : payment.getChannelType()
             );
         }
     }

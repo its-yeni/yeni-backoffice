@@ -76,6 +76,11 @@ public class PaymentTransaction extends BaseTimeEntity {
     @Column(nullable = false, length = 20)
     private String paymentMethod = "CARD";
 
+    /** 결제 채널 — WEB(온라인 PG) / POS(매장 단말·VAN). */
+    @Builder.Default
+    @Column(length = 10)
+    private String channelType = "WEB";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PaymentStatus paymentStatus;
@@ -112,4 +117,6 @@ public class PaymentTransaction extends BaseTimeEntity {
     }
 
     public void assignStore(Long storeId) { this.storeId = storeId; }
+    public void assignChannel(String channelType) { if (channelType != null && !channelType.isBlank()) this.channelType = channelType; }
+    public void updatePaymentMethod(String paymentMethod) { if (paymentMethod != null && !paymentMethod.isBlank()) this.paymentMethod = paymentMethod; }
 }

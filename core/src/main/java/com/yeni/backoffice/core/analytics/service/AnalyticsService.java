@@ -161,7 +161,7 @@ public class AnalyticsService {
                 .filter(s -> s.getSaleType() == SaleType.SALE && s.getPaymentMethod() != null)
                 .collect(Collectors.toMap(SalesTransaction::getOrderNo, s -> s.getPaymentMethod(), (a, b) -> a));
 
-        record Key(LocalDate date, String method) {
+        record Key(LocalDate date, String method, String channel) {
         }
         Map<Key, long[]> counts = new LinkedHashMap<>();          // [request, approval, cancel, failure]
         Map<Key, BigDecimal[]> amounts = new LinkedHashMap<>();   // [approvalAmount, cancelAmount]
@@ -172,10 +172,11 @@ public class AnalyticsService {
             LocalDate date = at.toLocalDate();
             if (!filter.matchesDate(date)) continue;
             if (filter.storeId() != null && !filter.storeId().equals(tx.getStoreId())) continue;
-            String method = methodByOrderNo.getOrDefault(tx.getOrderNo(), "기타");
+            String method = methodByOrderNo.getOrDefault(tx.getOrderNo(), tx.getPaymentMethod() != null ? tx.getPaymentMethod() : "기타");
             if (filter.paymentMethod() != null && !filter.paymentMethod().equalsIgnoreCase(method)) continue;
+            String channel = tx.getChannelType() == null ? "WEB" : tx.getChannelType();
 
-            Key key = new Key(date, method);
+            Key key = new Key(date, method, channel);
             long[] c = counts.computeIfAbsent(key, k -> new long[4]);
             BigDecimal[] a = amounts.computeIfAbsent(key, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
             c[0]++;
@@ -193,10 +194,12 @@ public class AnalyticsService {
         List<PaymentAnalyticsRow> rows = new ArrayList<>();
         counts.forEach((key, c) -> {
             BigDecimal[] a = amounts.get(key);
-            rows.add(new PaymentAnalyticsRow(key.date(), key.method(),
+            rows.add(new PaymentAnalyticsRow(key.date(), key.method(), key.channel(),
                     c[0], c[1], a[0], c[2], a[1], c[3]));
         });
-        rows.sort(Comparator.comparing(PaymentAnalyticsRow::date).thenComparing(PaymentAnalyticsRow::paymentMethod));
+        rows.sort(Comparator.comparing(PaymentAnalyticsRow::date)
+                .thenComparing(PaymentAnalyticsRow::paymentMethod)
+                .thenComparing(PaymentAnalyticsRow::channelType));
         return rows;
     }
 
