@@ -27,6 +27,14 @@ public interface AdminNavigationItemRepository extends JpaRepository<AdminNaviga
         """)
     List<AdminNavigationItem> findAllNotDeleted();
 
+    @Query("""
+        SELECT ni FROM AdminNavigationItem ni
+        WHERE ni.isDeleted = false
+        AND ni.useYn = true
+        ORDER BY ni.navigationGroup.sortOrder ASC, ni.sortOrder ASC, ni.id ASC
+        """)
+    List<AdminNavigationItem> findAllUsable();
+
     boolean existsByItemUrl(String itemUrl);
     boolean existsByItemUrlAndIsDeletedFalse(String itemUrl);
     Optional<AdminNavigationItem> findByItemUrlAndIsDeletedFalse(String itemUrl);

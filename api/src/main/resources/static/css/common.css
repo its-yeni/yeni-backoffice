@@ -26,21 +26,19 @@
     --text-primary: #101828;
     --text-secondary: #667085;
     --text-muted: #98a2b3;
-    /* 02. Color / Primary */
-    --primary: #b1532e;
-    --primary-hover: #8f4123;
-    --primary-soft: #faece4;
+    /* 02. Color / Primary — indigo accent (링크·주요 버튼·활성 탭·포커스) */
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-soft: #eef2ff;
 
-    /* Sidebar: light, warm-neutral — a separate ramp from the cool-neutral
-       content area so the accent (terracotta) doesn't fight two different
-       "off-white" hues in the same screen. */
-    --sidebar-bg: #f7f5f2;
-    --sidebar-border: #e8e4de;
-    --sidebar-text: #44403a;
-    --sidebar-text-dim: #a19c92;
-    --sidebar-hover: #efece7;
-    --sidebar-active-bg: var(--primary-soft);
-    --sidebar-active-text: var(--primary-hover);
+    /* Sidebar: 다크 슬레이트. 본문(밝은 뉴트럴)과 명확히 분리. */
+    --sidebar-bg: #0f172a;
+    --sidebar-border: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-text-dim: #64748b;
+    --sidebar-hover: #1e293b;
+    --sidebar-active-bg: rgba(99, 102, 241, .16);
+    --sidebar-active-text: #c7d2fe;
     --danger: #d92d20;
     --success: #067647;
     --radius-control: 6px;
@@ -49,7 +47,7 @@
     --sidebar-expanded: 208px;
     --sidebar-collapsed: 64px;
     --topbar-height: 56px;
-    --content-gutter: 24px;
+    --content-gutter: 28px;
     --control-height: 36px;
     --shadow-overlay: 0 12px 28px rgba(16, 24, 40, .12);
 
@@ -81,12 +79,12 @@
     --admin-blue-line: #bfdbfe;
 }
 
-/* Laptop density is driven by usable height, not only viewport width. */
-@media (min-width: 769px) and (max-height: 950px) {
+/* 컴팩트 밀도는 화면이 정말 짧을 때만. 일반 노트북(≈900px)은 기본 밀도를 쓴다. */
+@media (min-width: 769px) and (max-height: 800px) {
     :root {
-        --topbar-height: 48px;
-        --content-gutter: 18px;
-        --control-height: 32px;
+        --topbar-height: 50px;
+        --content-gutter: 22px;
+        --control-height: 34px;
     }
     body { font-size: 13px; }
 }

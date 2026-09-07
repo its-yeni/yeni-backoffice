@@ -48,6 +48,18 @@ public class PosTerminal extends BaseTimeEntity {
     @Column
     private LocalDateTime lastConnectedAt;
 
+    @Column(nullable = false)
+    private int syncIntervalSeconds;
+
+    @Column(nullable = false)
+    private int requestTimeoutSeconds;
+
+    @Column(nullable = false)
+    private int maxRetryCount;
+
+    @Column(nullable = false)
+    private int logRetentionDays;
+
     public void connected(String appVersion, LocalDateTime connectedAt) {
         this.appVersion = appVersion;
         this.lastConnectedAt = connectedAt;
@@ -56,4 +68,17 @@ public class PosTerminal extends BaseTimeEntity {
     public void changeActive(boolean active) {
         this.active = active;
     }
+
+    public void configure(int syncIntervalSeconds,int requestTimeoutSeconds,int maxRetryCount,int logRetentionDays){
+        this.syncIntervalSeconds=positive(syncIntervalSeconds,300);
+        this.requestTimeoutSeconds=positive(requestTimeoutSeconds,30);
+        this.maxRetryCount=positive(maxRetryCount,5);
+        this.logRetentionDays=positive(logRetentionDays,30);
+    }
+
+    public int effectiveSyncIntervalSeconds(){return positive(syncIntervalSeconds,300);}
+    public int effectiveRequestTimeoutSeconds(){return positive(requestTimeoutSeconds,30);}
+    public int effectiveMaxRetryCount(){return positive(maxRetryCount,5);}
+    public int effectiveLogRetentionDays(){return positive(logRetentionDays,30);}
+    private int positive(int value,int fallback){return value>0?value:fallback;}
 }

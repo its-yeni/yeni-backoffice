@@ -1,6 +1,6 @@
 window.CanvasCharts = (function () {
   const font = '11px "Pretendard", "Noto Sans KR", sans-serif';
-  const color = { primary: "#ad5835", line: "#667085", grid: "#eef0f3", axis: "#dfe3e8", text: "#8a94a3", negative: "#e4a5a0" };
+  const color = { primary: "#4f46e5", line: "#94a3b8", grid: "#eef0f3", axis: "#dfe3e8", text: "#8a94a3", negative: "#e4a5a0" };
 
   function create(host, height, label) {
     host.innerHTML = "";
@@ -82,7 +82,7 @@ window.CanvasCharts = (function () {
     const valueOf = opts.value || (row => Number(row.value || 0)), max = Math.max(1, ...rows.map(valueOf));
     const step = (W - side * 2) / Math.max(rows.length - 1, 1), base = H - bottom;
     const points = rows.map((row, i) => [side + i * step, base - valueOf(row) / max * (base - top)]);
-    ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.lineTo(points.at(-1)[0], base); ctx.lineTo(points[0][0], base); ctx.closePath(); ctx.fillStyle = "rgba(173,88,53,.08)"; ctx.fill();
+    ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.lineTo(points.at(-1)[0], base); ctx.lineTo(points[0][0], base); ctx.closePath(); ctx.fillStyle = "rgba(79,70,229,.08)"; ctx.fill();
     ctx.beginPath(); points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.strokeStyle = opts.lineColor || color.primary; ctx.lineWidth = 2; ctx.stroke();
     points.forEach(([x, y]) => { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); });
     if (rows.length) { label(ctx, opts.label(rows[0]), side, H - 6, "left"); label(ctx, opts.label(rows.at(-1)), W - side, H - 6, "right"); }

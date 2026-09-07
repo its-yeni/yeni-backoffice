@@ -70,6 +70,28 @@ public class AdminNavigationService {
                 .collect(Collectors.toList());
     }
 
+    /** "전체 기능" 페이지 — 사이드바 노출 여부와 무관하게 사용 가능한 모든 화면을 그룹별로. */
+    @Transactional(readOnly = true)
+    public List<SidebarNavigationGroupDto> getAllFeatureGroups(AdminRole currentRole) {
+        AdminRole role = currentRole == null ? AdminRole.USER : currentRole;
+        List<AdminNavigationGroup> groups = navigationGroupRepository.findByUseYnTrueOrderBySortOrderAscIdAsc();
+        Map<Long, List<AdminNavigationItem>> byGroup = new HashMap<>();
+        for (AdminNavigationItem item : navigationItemRepository.findAllUsable()) {
+            if (!role.canAccess(item.getRequiredRole())) continue;
+            byGroup.computeIfAbsent(item.getNavigationGroup().getId(), k -> new ArrayList<>()).add(item);
+        }
+        return groups.stream()
+                .map(group -> new SidebarNavigationGroupDto(
+                        group.getGroupCode(), group.getGroupName(), group.getSortOrder(),
+                        byGroup.getOrDefault(group.getId(), Collections.emptyList()).stream()
+                                .map(item -> new SidebarNavigationItemDto(
+                                        item.getId(), item.getItemName(), item.getItemUrl(),
+                                        item.getIcon(), item.getSortOrder(), false))
+                                .collect(Collectors.toList())))
+                .filter(group -> !group.getItems().isEmpty())
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public List<AdminNavigationListItemDto> getNavigationListForAdmin() {
         return navigationItemRepository.findAllNotDeleted().stream()

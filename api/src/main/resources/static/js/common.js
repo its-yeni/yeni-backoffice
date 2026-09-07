@@ -9,7 +9,7 @@ function toggleSidebar() {
 window.AdminWorkspace = (function () {
     const TABS_KEY = "yeni-admin-workspace-tabs-v1";
     const STATE_PREFIX = "yeni-admin-page-state-v1:";
-    const MAX_TABS = 12;
+    const MAX_TABS = 8;
     let skipNextPagehideSave = false;
     const TAB_TITLES = {
         "/admin/operations-dashboard":"운영 대시보드", "/admin/commerce/products":"상품 목록",
@@ -100,7 +100,18 @@ window.AdminWorkspace = (function () {
             return `<div class="workspace-tab${active ? " active" : ""}" data-workspace-path="${escapeHtml(tab.path)}">`
                 + `<a class="workspace-tab-label" href="${escapeHtml(tab.url)}"${active ? ' aria-current="page"' : ""}>${escapeHtml(tab.title)}</a>`
                 + `<button class="workspace-tab-close" type="button" data-close-workspace="${escapeHtml(tab.path)}" aria-label="${escapeHtml(tab.title)} 탭 닫기">×</button></div>`;
-        }).join("");
+        }).join("")
+            + (tabs.length > 1 ? `<button class="workspace-tab-closeall" type="button" data-close-workspace-all aria-label="다른 탭 모두 닫기">다른 탭 닫기</button>` : "");
+        const closeAll = host.querySelector("[data-close-workspace-all]");
+        if (closeAll) closeAll.addEventListener("click", event => {
+            event.preventDefault();
+            const current = readTabs().filter(tab => tab.path === location.pathname);
+            readTabs().forEach(tab => {
+                if (tab.path !== location.pathname && window.AdminHtmxNavigation) window.AdminHtmxNavigation.dropCachedView(tab.path);
+            });
+            writeTabs(current);
+            render();
+        });
         host.querySelectorAll("[data-close-workspace]").forEach(button => {
             button.addEventListener("click", event => {
                 event.preventDefault();

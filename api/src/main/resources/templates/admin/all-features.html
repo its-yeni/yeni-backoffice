@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>전체 기능 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <style>
+    .feat-search { max-width: 360px; margin-bottom: 22px; }
+    .feat-group { margin-bottom: 30px; }
+    .feat-group > h2 { margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: .02em;
+      color: var(--text-secondary); text-transform: uppercase; }
+    .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+    .feat-grid a { display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-container);
+      background: var(--bg-surface); color: var(--text-primary); font-size: 13.5px; font-weight: 500; }
+    .feat-grid a:hover { border-color: var(--primary); background: var(--bg-subtle); }
+    .feat-grid a::after { content: "→"; margin-left: auto; color: var(--text-muted); }
+    .feat-grid a.is-featured { border-color: var(--primary-soft); }
+    .feat-grid a.is-featured::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--primary); flex: none; }
+    .feat-empty { color: var(--text-muted); font-size: 13px; padding: 40px 0; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{fragments/sidebar}"></div>
+  <main class="main">
+    <div th:replace="~{fragments/topbar :: header}"></div>
+    <section class="content">
+      <header class="page-header">
+        <div><h1>전체 기능</h1><p>사이드바에 없는 화면까지 모두 여기서 열 수 있습니다.</p></div>
+      </header>
+
+      <input class="feat-search" type="search" id="featSearch" placeholder="화면 이름 검색">
+
+      <div id="featBody">
+        <div class="feat-group" th:each="group : ${featureGroups}">
+          <h2 th:text="${group.groupName}">그룹</h2>
+          <div class="feat-grid">
+            <a th:each="item : ${group.items}" th:href="@{${item.itemUrl}}" th:data-name="${item.itemName}"
+               th:classappend="${item.icon != null and !item.icon.isEmpty()} ? 'is-featured' : ''">
+              <span th:text="${item.itemName}">화면</span>
+            </a>
+          </div>
+        </div>
+      </div>
+      <p class="feat-empty" id="featEmpty" hidden>검색 결과가 없습니다.</p>
+    </section>
+  </main>
+</div>
+<script>
+  (function () {
+    var input = document.getElementById('featSearch');
+    var empty = document.getElementById('featEmpty');
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      var anyVisible = false;
+      document.querySelectorAll('.feat-group').forEach(function (g) {
+        var groupHit = false;
+        g.querySelectorAll('.feat-grid a').forEach(function (a) {
+          var hit = !q || (a.dataset.name || '').toLowerCase().indexOf(q) >= 0;
+          a.style.display = hit ? '' : 'none';
+          if (hit) { groupHit = true; anyVisible = true; }
+        });
+        g.style.display = groupHit ? '' : 'none';
+      });
+      empty.hidden = anyVisible;
+    });
+  })();
+</script>
+</body>
+</html>

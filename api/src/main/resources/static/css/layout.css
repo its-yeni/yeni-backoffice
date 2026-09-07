@@ -31,9 +31,12 @@
 .nav a.active::before { display: none; content: none; }
 .nav-item-icon { display: grid; width: 18px; height: 18px; flex: 0 0 18px; place-items: center; color: currentColor; }
 .nav-item-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.sidebar-footer { padding: 16px; border-top: 1px solid var(--sidebar-border); color: var(--sidebar-text-dim); font-size: 12px; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--sidebar-border); color: var(--sidebar-text-dim); font-size: 12px; }
 .sidebar-footer strong { display: block; font-weight: 500; color: var(--sidebar-text); }
-.sidebar-link-button { display: inline-flex; margin-top: 8px; color: var(--primary); font-weight: 600; }
+.sidebar-footer a { display: block; padding: 3px 0; color: var(--sidebar-text-dim); }
+.sidebar-footer a:hover { color: var(--sidebar-text); }
+.sidebar-link-button { color: var(--sidebar-text); font-weight: 600; }
+.sidebar-link-button:hover { color: #fff; }
 .main { width: calc(100% - var(--sidebar-expanded)); min-height: 100vh; margin-left: var(--sidebar-expanded); background: var(--bg-app); transition: width 120ms ease, margin-left 120ms ease; }
 /* height가 아니라 min-height: 브랜드/매장 선택기처럼 JS로 나중에 삽입되는 내용이
    기준 높이보다 커지는 경우, 고정 height면 topbar 밖으로 잘려 보이는 문제가 있었다. */
@@ -60,10 +63,11 @@
     .sidebar-collapse-btn { display: none; }
     .content, .commerce-page, .product-page, .category-page, .option-page, .store-preview-page, .db-spec-page { padding: 20px 16px 40px; }
 }
-/* A 13~15 inch laptop needs the horizontal space more than the full navigation
-   labels. Keep the desktop navigation, but collapse it before the content starts
-   squeezing tables and three-column editors. */
-@media (max-width: 1440px) and (min-width: 769px) {
+/* Collapse the labelled navigation only on genuinely narrow desktop widths.
+   A 13~15" laptop (1280~1440) keeps the labels — an icon-only rail with no
+   visible text reads as "unfinished" to a first-time viewer, and the ~144px it
+   costs is space the tables recover through their own horizontal scroll. */
+@media (max-width: 1200px) and (min-width: 769px) {
     .sidebar { width: var(--sidebar-collapsed); }
     .main { width: calc(100% - var(--sidebar-collapsed)); margin-left: var(--sidebar-collapsed); }
     .logo { justify-content: center; padding: 0; }
@@ -74,26 +78,26 @@
     .sidebar-collapse-btn { display: none; }
 }
 
-@media (min-width: 769px) and (max-height: 950px) {
+@media (min-width: 769px) and (max-height: 800px) {
     .logo { height: var(--topbar-height); padding-inline: 12px; }
     .logo-text { font-size: 16px; }
-    .logo-sub { margin-top: 0; font-size: 10px; }
-    .sidebar-collapse-btn { top: 10px; }
-    .nav { padding: 6px 7px; }
-    .nav-group { margin-bottom: 4px; }
-    .nav-group-toggle { min-height: 22px; padding: 2px 8px; }
-    .nav-title { font-size: 10px; }
-    .nav-group-items { gap: 1px; }
-    .nav a { height: 31px; gap: 8px; padding-inline: 8px; font-size: 12px; }
-    .nav-item-icon, .nav-item-icon svg { width: 15px; height: 15px; }
-    .sidebar-footer { padding: 9px 12px; font-size: 10px; }
-    .sidebar-link-button { margin-top: 3px; }
+    .logo-sub { margin-top: 0; font-size: 10.5px; }
+    .sidebar-collapse-btn { top: 12px; }
+    .nav { padding: 8px 8px; }
+    .nav-group { margin-bottom: 5px; }
+    .nav-group-toggle { min-height: 24px; padding: 3px 9px; }
+    .nav-title { font-size: 10.5px; }
+    .nav-group-items { gap: 2px; }
+    .nav a { height: 33px; gap: 9px; padding-inline: 9px; font-size: 12.5px; }
+    .nav-item-icon, .nav-item-icon svg { width: 16px; height: 16px; }
+    .sidebar-footer { padding: 11px 14px; font-size: 10.5px; }
+    .sidebar-link-button { margin-top: 4px; }
     .topbar { padding-inline: var(--content-gutter); }
     .content, .commerce-page, .product-page, .category-page, .option-page,
-    .store-preview-page, .db-spec-page { padding: 14px var(--content-gutter) 18px; }
+    .store-preview-page, .db-spec-page { padding: 18px var(--content-gutter) 22px; }
 }
 
-@media (min-width: 769px) and (max-height: 780px) {
+@media (min-width: 769px) and (max-height: 680px) {
     .sidebar-footer { display: none; }
 }
 
@@ -236,6 +240,23 @@
     color: #344054;
     background: #f2f4f7;
 }
+
+.workspace-tab-closeall {
+    flex: 0 0 auto;
+    align-self: center;
+    margin-left: 4px;
+    padding: 0 10px;
+    height: 26px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #98a2b3;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.workspace-tab-closeall:hover { color: #344054; background: #f2f4f7; }
 
 main > section[data-workspace-placeholder="true"] {
     pointer-events: none;

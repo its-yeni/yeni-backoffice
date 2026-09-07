@@ -1,18 +1,20 @@
 /* 정산 관리 화면 리디자인 */
 .settlement-page { padding-top: 24px; }
 
-/* KPI 카드 */
-.settlement-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0 0 16px; }
-.kpi-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-  padding: 16px 18px; border: 1px solid var(--border-default); border-radius: var(--radius-container); background: #fff; }
-.kpi-card > div { display: flex; flex-direction: column; gap: 3px; }
-.kpi-card span { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+/* 요약 스트립 — 다른 목록 화면(.summary-strip / .ops-summary-strip)과 동일한 평평한 한 줄 */
+.settlement-kpis { display: flex; margin: 0 0 14px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-subtle); overflow: hidden; }
+.kpi-card { position: relative; flex: 1 1 0; display: flex; align-items: baseline; gap: 8px;
+  min-width: 0; padding: 8px 16px; background: transparent; }
+.kpi-card + .kpi-card::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; border-left: 1px solid var(--border-default); }
+.kpi-card > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.kpi-card span { flex: none; font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
 .kpi-card small { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-.kpi-card strong { font-size: 22px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.kpi-ico { flex: none; font-size: 18px; opacity: .5; }
-.kpi-card-net { border-color: var(--primary); background: var(--primary-soft); }
+.kpi-card strong { font-size: 16px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kpi-ico { display: none; }
 .kpi-card-net strong { color: var(--primary-hover); }
-@media (max-width: 1000px) { .settlement-kpis { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1000px) { .settlement-kpis { display: grid; grid-template-columns: 1fr 1fr; }
+  .kpi-card:nth-child(odd)::before { display: none; } .kpi-card:nth-child(n+3) { border-top: 1px solid var(--border-default); } }
 
 /* 알림 배너 */
 .settlement-alert { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 11px 14px;

@@ -20,34 +20,33 @@
 .an-tabs a.active { color: var(--text-primary); font-weight: 700; }
 .an-tabs a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--primary); }
 
-/* 필터 바 */
-.an-filter { position: sticky; top: 40px; z-index: 7; display: flex; flex-wrap: wrap; align-items: end; gap: 8px; min-height: 64px; margin: 0 0 14px;
-  padding: 10px 12px; border: 1px solid var(--border-default); border-top: 0; border-radius: 0 0 var(--radius-container) var(--radius-container); background: rgba(255,255,255,.97); box-shadow: 0 5px 12px rgba(16,24,40,.04); backdrop-filter: blur(8px); }
-.an-filter label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
-.an-filter select, .an-filter input[type="date"] { height: 36px; min-width: 130px; font-size: 12.5px; }
-.an-filter .an-daterange { display: flex; align-items: center; gap: 6px; }
+/* 필터 바 — 다른 목록 화면(.cmc-toolbar / .ops-filter-bar)과 동일하게 테두리 없는
+   컨트롤 행으로. 기간 프리셋은 오른쪽, 조회/초기화가 그 뒤. */
+.an-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; padding: 0; }
+.an-filter label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+.an-filter select, .an-filter input[type="date"] { height: var(--control-height); min-width: 130px; font-size: 13px; }
+.an-filter .an-daterange { display: inline-flex; align-items: center; gap: 6px; }
 .an-filter .an-daterange input { min-width: 140px; }
-.an-filter .an-filter-reset { height: 36px; }
-.an-filter .an-filter-apply { height: 36px; }
-.an-quick-ranges { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
-.an-quick-ranges button { height: 36px; padding: 0 10px; border: 1px solid var(--border-default); border-radius: var(--radius-control); background: #fff; color: var(--text-secondary); font-size: 12px; }
-.an-quick-ranges button:hover { border-color: var(--primary); color: var(--primary-hover); }
-@media (max-width: 900px) { .an-filter { position: static; } .an-tabs { overflow-x: auto; white-space: nowrap; } }
+.an-filter .an-filter-apply, .an-filter .an-filter-reset { height: var(--control-height); }
+.an-quick-ranges { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; padding: 2px;
+  border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle); }
+.an-quick-ranges button { height: 28px; padding: 0 9px; border: 0; border-radius: 4px; background: transparent;
+  color: var(--text-secondary); font-size: 11px; font-weight: 650; }
+.an-quick-ranges button:hover, .an-quick-ranges button.active { background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.08); }
+@media (max-width: 900px) { .an-tabs { overflow-x: auto; white-space: nowrap; } .an-quick-ranges { margin-left: 0; } }
 
-/* KPI 스트립 — 얇고 단순, 아이콘 없음 */
-.an-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0 0 16px;
-  border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-surface); overflow: hidden; }
-.an-kpis.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.an-kpis.cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.an-kpi { padding: 12px 16px; }
-.an-kpi + .an-kpi { border-left: 1px solid var(--border-default); }
-.an-kpi span { display: block; color: var(--text-secondary); font-size: 12px; font-weight: 600; }
-.an-kpi strong { display: block; margin-top: 5px; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.an-kpi small { display: block; margin-top: 3px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+/* KPI 스트립 — 목록 화면의 .summary-strip 과 같은 평평한 한 줄. */
+.an-kpis { display: flex; margin: 0 0 16px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-container); background: var(--bg-subtle); overflow: hidden; }
+.an-kpi { position: relative; flex: 1 1 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; padding: 8px 16px; }
+.an-kpi + .an-kpi::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; border-left: 1px solid var(--border-default); }
+.an-kpi span { flex: none; color: var(--text-secondary); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.an-kpi strong { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.an-kpi small { flex-basis: 100%; color: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .an-kpi small.up { color: #067647; }
 .an-kpi small.down { color: var(--danger); }
-@media (max-width: 1100px) { .an-kpis, .an-kpis.cols-4, .an-kpis.cols-6 { grid-template-columns: repeat(2, 1fr); }
-  .an-kpi:nth-child(odd) { border-left: 0; } .an-kpi:nth-child(n+3) { border-top: 1px solid var(--border-default); } }
+@media (max-width: 1100px) { .an-kpis { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .an-kpi:nth-child(odd)::before { display: none; } .an-kpi:nth-child(n+3) { border-top: 1px solid var(--border-default); } }
 
 /* 차트 / 표 패널 */
 .an-grid { display: grid; gap: 16px; margin: 0 0 16px; }

@@ -1,7 +1,44 @@
 <aside class="sidebar" id="sidebar" xmlns:th="http://www.thymeleaf.org">
- <div class="logo"><div><div class="logo-text">Yeni<span>Backoffice</span></div><div class="logo-sub">커머스 운영 포트폴리오</div></div><button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="사이드바 접기">‹</button></div>
- <nav class="nav"><div class="nav-group" th:each="group : ${sidebarNavigationGroups}" th:data-group-code="${group.groupCode}" th:data-has-active="${#lists.contains(group.items.![active], true)}"><button type="button" class="nav-group-toggle" aria-expanded="true"><span class="nav-title" th:text="${group.groupName}">메뉴</span><span class="nav-arrow">⌄</span></button><div class="nav-group-items"><a th:each="item : ${group.items}" th:href="@{${item.itemUrl}}" th:title="${item.itemName}"><span class="nav-item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h8M8 17h5"></path></svg></span><span class="nav-item-label" th:text="${item.itemName}">메뉴</span></a></div></div></nav>
- <div class="sidebar-footer"><strong>포트폴리오 데모</strong><a href="/" class="sidebar-link-button">포트폴리오로 이동</a></div>
+  <div class="logo">
+    <div>
+      <div class="logo-text">Yeni<span>Backoffice</span></div>
+      <div class="logo-sub">커머스 운영 백오피스</div>
+    </div>
+    <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="사이드바 접기">‹</button>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-group" th:each="group : ${sidebarNavigationGroups}"
+         th:data-group-code="${group.groupCode}"
+         th:data-has-active="${#lists.contains(group.items.![active], true)}">
+      <button type="button" class="nav-group-toggle" aria-expanded="true">
+        <span class="nav-title" th:text="${group.groupName}">메뉴</span>
+        <span class="nav-arrow">⌄</span>
+      </button>
+      <div class="nav-group-items">
+        <a th:each="item : ${group.items}" th:href="@{${item.itemUrl}}" th:title="${item.itemName}">
+          <span class="nav-item-icon" aria-hidden="true" th:switch="${item.icon}">
+            <svg th:case="'dashboard'" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+            <svg th:case="'exception'" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
+            <svg th:case="'settle'" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            <svg th:case="'ledger'" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"></rect><path d="M4 9h16M9 4v16"></path></svg>
+            <svg th:case="'box'" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><path d="M3.3 7 12 12l8.7-5M12 22V12"></path></svg>
+            <svg th:case="'tag'" viewBox="0 0 24 24"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"></path><circle cx="7" cy="7" r="1.4"></circle></svg>
+            <svg th:case="'cart'" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"></path></svg>
+            <svg th:case="'chart'" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"></path></svg>
+            <svg th:case="'audit'" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4"></path></svg>
+            <svg th:case="*" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle></svg>
+          </span>
+          <span class="nav-item-label" th:text="${item.itemName}">메뉴</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="/admin/all-features" class="sidebar-link-button">전체 기능 →</a>
+    <a href="/">포트폴리오</a>
+  </div>
 </aside>
 <script>(function(){var aliases={"/admin/sales-ledger":"/admin/payment-operations/sales-ledger","/admin/settlements":"/admin/payment-operations/settlements"},path=aliases[location.pathname]||location.pathname;document.querySelectorAll('.nav a').forEach(function(link){link.classList.remove('active');var href=link.getAttribute('href'),matches=path===href||(href==='/admin/commerce/options'&&path==='/admin/commerce/product-options');if(matches){link.classList.add('active');var group=link.closest('.nav-group');if(group)group.dataset.hasActive='true';}});}());</script>
 <script>(function(){document.body.classList.toggle('sidebar-collapsed',localStorage.getItem('sidebar-collapsed')==='true');}());</script>
