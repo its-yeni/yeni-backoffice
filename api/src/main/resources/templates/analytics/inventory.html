@@ -9,8 +9,7 @@
 </head>
 <body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
 <section class="content analytics-page">
-  <header class="page-header"><div><h3>재고 분석</h3><p>SKU 재고 현황과 최근 30일 판매량, 재고 부족 상품을 확인합니다. (입고 처리는 재고 메뉴에서)</p></div></header>
-  <div th:replace="~{analytics/_parts :: meta}"></div>
+  <header class="page-header"><div><h3>재고 분석</h3><p>SKU 재고 현황과 최근 30일 판매량, 재고 부족 상품을 확인합니다. (입고 처리는 재고 메뉴에서)</p></div><div class="page-header-actions"><span th:replace="~{analytics/_parts :: meta}"></span></div></header>
   <nav th:replace="~{analytics/_parts :: tabs('inventory')}"></nav>
   <div th:replace="~{analytics/_parts :: filter(false)}"></div>
 

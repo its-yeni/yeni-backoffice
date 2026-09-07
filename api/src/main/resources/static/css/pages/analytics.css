@@ -8,32 +8,29 @@
 .analytics-page > .page-header h3 { font-size: 20px; }
 .analytics-page > .page-header p { margin-top: 3px; font-size: 12.5px; }
 
-/* BI 메타 (과하게 강조하지 않음) */
-.an-meta { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0 0 14px; padding: 8px 0;
-  border-bottom: 1px solid var(--border-default); color: var(--text-muted); font-size: 11.5px; }
-.an-meta b { margin-right: 6px; color: var(--text-secondary); font-weight: 600; }
+/* 데이터 출처 메타 — 페이지 헤더 우측, 버튼 왼편에 작게. */
+.an-meta { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 14px;
+  margin: 0 4px 0 0; padding: 0; border: 0; color: var(--text-muted); font-size: 11px; }
+.an-meta b { margin-right: 5px; color: var(--text-secondary); font-weight: 600; }
+.an-meta code { font-size: 10.5px; }
 .an-meta a { color: var(--primary); text-decoration: none; }
+@media (max-width: 900px) { .page-header-actions .an-meta { display: none; } }
 
 /* 탭 (운영 개요 / 주문 / 결제 / 정산 / 재고) */
-.an-tabs { position: sticky; top: -1px; z-index: 8; display: flex; gap: 20px; min-height: 42px; margin: 0; padding: 0 2px; border-bottom: 1px solid var(--border-default); background: var(--page-canvas); }
+.an-tabs { position: sticky; top: -1px; z-index: 8; display: flex; gap: 20px; min-height: 42px; margin: 4px 0 0; padding: 0 2px; border-bottom: 1px solid var(--border-default); background: var(--page-canvas); }
 .an-tabs a { position: relative; padding: 8px 1px; color: var(--text-secondary); font-size: 13px; text-decoration: none; }
 .an-tabs a.active { color: var(--text-primary); font-weight: 700; }
 .an-tabs a.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--primary); }
 
-/* 필터 바 — 다른 목록 화면(.cmc-toolbar / .ops-filter-bar)과 동일하게 테두리 없는
-   컨트롤 행으로. 기간 프리셋은 오른쪽, 조회/초기화가 그 뒤. */
-.an-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0; padding: 0; }
+/* 필터 바 — 레이아웃은 components.css 의 공통 필터바 계약(.an-filter 흡수)에 맡기고,
+   여기서는 탭과의 간격과 라벨 타이포만 지정한다. 프리셋(오늘·7일·30일·이번 달)은
+   공통 규칙에서 order:-1 로 날짜 입력칸 왼쪽에 온다. */
+.an-filter { margin: 22px 0 14px !important; }
 .an-filter label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
-.an-filter select, .an-filter input[type="date"] { height: var(--control-height); min-width: 130px; font-size: 13px; }
+.an-filter select, .an-filter input[type="date"] { height: var(--control-height); font-size: 13px; }
 .an-filter .an-daterange { display: inline-flex; align-items: center; gap: 6px; }
-.an-filter .an-daterange input { min-width: 140px; }
 .an-filter .an-filter-apply, .an-filter .an-filter-reset { height: var(--control-height); }
-.an-quick-ranges { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; padding: 2px;
-  border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle); }
-.an-quick-ranges button { height: 28px; padding: 0 9px; border: 0; border-radius: 4px; background: transparent;
-  color: var(--text-secondary); font-size: 11px; font-weight: 650; }
-.an-quick-ranges button:hover, .an-quick-ranges button.active { background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.08); }
-@media (max-width: 900px) { .an-tabs { overflow-x: auto; white-space: nowrap; } .an-quick-ranges { margin-left: 0; } }
+@media (max-width: 900px) { .an-tabs { overflow-x: auto; white-space: nowrap; } }
 
 /* KPI 스트립 — 목록 화면의 .summary-strip 과 같은 평평한 한 줄. */
 .an-kpis { display: flex; margin: 0 0 16px;

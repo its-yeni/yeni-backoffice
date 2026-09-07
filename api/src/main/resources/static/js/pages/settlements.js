@@ -19,7 +19,7 @@
   }
 
   pagination = AdminPagination.mount($('settlement-pagination'), { total: 0, size: 20, onChange: render });
-  $('settlement-start').value = today(-30); $('settlement-end').value = today(0);
+  $('settlement-start').value = today(0); $('settlement-end').value = today(0);
   const requestedStatus = new URLSearchParams(location.search).get('status');
   if (STATUS[requestedStatus]) $('settlement-status').value = requestedStatus;
 
@@ -27,7 +27,7 @@
   $('settlement-run').onclick = run;
   $('settlement-status').onchange = resetAndRender;
   $('settlement-keyword').oninput = resetAndRender;
-  $('settlement-reset').onclick = () => { $('settlement-keyword').value = ''; $('settlement-status').value = ''; $('settlement-start').value = today(-30); $('settlement-end').value = today(0); load(); };
+  $('settlement-reset').onclick = () => { $('settlement-keyword').value = ''; $('settlement-status').value = ''; $('settlement-start').value = today(0); $('settlement-end').value = today(0); load(); };
   $('settlement-detail-close').onclick = close; backdrop.onclick = close;
   $('settlement-select-all').onchange = (e) => { visibleRows().forEach(s => e.target.checked ? selected.add(s.id) : selected.delete(s.id)); render(); };
   $('download-list-csv').onclick = () => downloadCsv();

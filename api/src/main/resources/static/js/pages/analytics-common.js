@@ -61,20 +61,40 @@ window.Analytics = (function () {
     }
   }
 
+  function markActive(el) {
+    document.querySelectorAll(".an-quick-ranges button").forEach(b => b.classList.toggle("active", b === el));
+  }
+  function syncActiveFromDates() {
+    // 분석 화면 기본값은 "최근 30일" — 현재 날짜 범위와 일치하는 프리셋을 활성 표시.
+    const end = $("an-end")?.value, start = $("an-start")?.value;
+    if (!end || !start) return;
+    const today = ymd(new Date());
+    let hit = null;
+    document.querySelectorAll("[data-an-days]").forEach(b => {
+      if (end === today && start === ymd(new Date(Date.now() - Number(b.dataset.anDays) * 864e5))) hit = b;
+    });
+    const firstOfMonth = ymd(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (!hit && end === today && start === firstOfMonth) hit = document.querySelector('[data-an-range="month"]');
+    markActive(hit);
+  }
+
   function init(render) {
     document.addEventListener("DOMContentLoaded", async () => {
       await initFilterBar();
+      syncActiveFromDates();
       if ($("an-filter-apply")) $("an-filter-apply").onclick = render;
       document.querySelectorAll("[data-an-days]").forEach(button => button.onclick = () => {
         const today = new Date();
         if ($("an-end")) $("an-end").value = ymd(today);
         if ($("an-start")) $("an-start").value = ymd(new Date(today.getTime() - Number(button.dataset.anDays) * 864e5));
+        markActive(button);
         render();
       });
       document.querySelectorAll('[data-an-range="month"]').forEach(button => button.onclick = () => {
         const today = new Date();
         if ($("an-start")) $("an-start").value = ymd(new Date(today.getFullYear(), today.getMonth(), 1));
         if ($("an-end")) $("an-end").value = ymd(today);
+        markActive(button);
         render();
       });
       if ($("an-filter-reset")) $("an-filter-reset").onclick = () => {
@@ -82,8 +102,10 @@ window.Analytics = (function () {
         if ($("an-start")) $("an-start").value = ymd(new Date(today.getTime() - 29 * 864e5));
         if ($("an-end")) $("an-end").value = ymd(today);
         ["an-channel", "an-store", "an-method"].forEach(id => { if ($(id)) $(id).value = ""; });
+        syncActiveFromDates();
         render();
       };
+      ["an-start", "an-end"].forEach(id => $(id)?.addEventListener("change", syncActiveFromDates));
       render();
     });
   }

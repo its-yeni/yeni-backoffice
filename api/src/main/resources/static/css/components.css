@@ -84,30 +84,15 @@ tr[draggable="true"].dragging { opacity: .4; }
 body:has(.pagination-footer) { padding-bottom: 80px; }
 @media (min-width: 769px) and (max-height: 950px) { body:has(.pagination-footer) { padding-bottom: 64px; } }
 
-/* ── 목록형 화면 뷰포트 맞춤 ────────────────────────────────────────────────
-   페이지 전체가 스크롤되는 대신, 페이지 헤더·필터·요약·페이지네이션 바는 제자리에
-   두고 데이터 표 본문만 남은 높이 안에서 스크롤한다. 하단 고정 페이지네이션
-   바(.pagination-footer)가 있는 단일 섹션 목록 화면에 자동 적용된다. */
-.main > section:has(.pagination-footer) {
-  height: calc(100vh - var(--topbar-height));
-  min-height: 0;
-  padding-bottom: 62px; /* 고정 페이지네이션 바 자리(56px) + 여백 */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-/* 헤더·탭·필터·요약 스트립은 자연 높이 그대로(눌리거나 잘리지 않게), 표만 남은 공간을 채운다. */
-.main > section:has(.pagination-footer) > * { flex: 0 0 auto; }
-.main > section:has(.pagination-footer) > .data-table-wrap,
-.main > section:has(.pagination-footer) > .table-wrap,
-.main > section:has(.pagination-footer) > .transaction-table-wrap {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-}
-body:has(.main > section:has(.pagination-footer)) { padding-bottom: 0; }
+/* ── 목록형 화면: 콘텐츠 섹션이 통째로 스크롤 ───────────────────────────────
+   과거엔 헤더·필터를 고정하고 표 본문만 남은 높이 안에서 스크롤시켰으나,
+   :has() + height:0 flex 체인이 첫 페인트에서 0높이로 무너져(리사이즈해야 표가
+   보이는 버그) 데이터가 안 보이는 문제가 잦았다. 이제는 섹션 전체가 자연스럽게
+   세로 스크롤되고(레이아웃 셸의 .main > section 이 스크롤 컨테이너), 표 헤더만
+   sticky 로 남는다. 하단 고정 페이지네이션 바 자리만 여백으로 비워둔다. */
+.main > section:has(.pagination-footer) { padding-bottom: 76px; }
 @media (min-width: 769px) and (max-height: 950px) {
-  .main > section:has(.pagination-footer) { padding-bottom: 52px; }
+  .main > section:has(.pagination-footer) { padding-bottom: 64px; }
 }
 /* 표 바로 아래에 붙는 인라인 페이지네이션(고정 바가 아님) */
 .inline-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 10px; padding: 8px 2px; color: var(--text-secondary); font-size: 13px; }
@@ -450,7 +435,7 @@ body:has(.commerce-modal.open), body:has(.product-modal.open), body:has(.modal-b
 }
 .filter-bar > input[type="search"], .filter-bar > .filter-search,
 .cmc-toolbar .cmc-search, .ops-filter-bar .ops-search, .pg-filter-bar .pg-search,
-.settlement-toolbar > input[type="search"], .an-filter > label:first-of-type {
+.settlement-toolbar > input[type="search"] {
   flex: 1 1 220px; min-width: 180px;
 }
 .filter-bar > input, .filter-bar > select, .filter-bar .field,
@@ -475,17 +460,18 @@ body:has(.commerce-modal.open), body:has(.product-modal.open), body:has(.modal-b
 .pg-filter-bar > .btn:first-of-type, .settlement-toolbar > .btn:first-of-type { margin-left: auto; }
 .filter-bar > .btn:first-of-type + .btn, .ops-filter-bar > .btn:first-of-type + .btn,
 .settlement-toolbar > .btn:first-of-type + .btn { margin-left: 0; }
-/* 기간 프리셋 칩 (오늘 · 7일 · 30일) */
-.filter-presets, .an-quick-ranges {
-  display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto;
-  padding: 2px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle);
+/* 기간 프리셋 칩 (오늘 · 7일 · 30일 · 이번 달) — 전 화면 동일. 날짜 입력칸 왼쪽에 온다. */
+.filter-presets, .an-quick-ranges, .filter-period-presets {
+  display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; order: -1;
+  margin: 0; padding: 2px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle);
 }
-.filter-presets button, .an-quick-ranges button {
+.filter-presets button, .an-quick-ranges button, .filter-period-presets button {
   height: 28px; padding: 0 9px; border: 0; border-radius: 4px; background: transparent;
-  color: var(--text-secondary); font-size: 11px; font-weight: 650;
+  color: var(--text-secondary); font-size: 11px; font-weight: 650; white-space: nowrap; cursor: pointer;
 }
 .filter-presets button:hover, .filter-presets button.active,
-.an-quick-ranges button:hover, .an-quick-ranges button.active {
+.an-quick-ranges button:hover, .an-quick-ranges button.active,
+.filter-period-presets button:hover, .filter-period-presets button.active {
   background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.08);
 }
 

@@ -67,7 +67,7 @@
   }
 
   function setupTable() {
-    pagination = AdminPagination.mount($("orderPagination"), { total: 0, size: 20, onChange: renderRows });
+    pagination = AdminPagination.mount($("orderPagination"), { total: 0, size: 50, onChange: renderRows });
     sorter = AdminTableSort.attach(document.querySelector(".order-list-table"), {
       defaultKey: "createdAt", defaultDir: "desc", onSort: renderRows
     });

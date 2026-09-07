@@ -9,8 +9,7 @@
 </head>
 <body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
 <section class="content analytics-page">
-  <header class="page-header"><div><h3>결제 분석</h3><p>PG 승인·취소·실패 추이와 결제수단별 현황을 확인합니다.</p></div></header>
-  <div th:replace="~{analytics/_parts :: meta}"></div>
+  <header class="page-header"><div><h3>결제 분석</h3><p>PG 승인·취소·실패 추이와 결제수단별 현황을 확인합니다.</p></div><div class="page-header-actions"><span th:replace="~{analytics/_parts :: meta}"></span></div></header>
   <nav th:replace="~{analytics/_parts :: tabs('payments')}"></nav>
   <div th:replace="~{analytics/_parts :: filter(true)}"></div>
 

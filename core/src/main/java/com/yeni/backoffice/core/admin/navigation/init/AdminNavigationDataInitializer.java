@@ -57,8 +57,9 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         AdminNavigationGroup shop    = group("SHOP", "커머스", 3);
         AdminNavigationGroup insight = group("INSIGHT", "분석 · 감사", 4);
 
-        // ── 사이드바 (9) ─────────────────────────────────────────────
+        // ── 사이드바 ─────────────────────────────────────────────────
         feature(run,     "운영 대시보드",   "/admin/operations-dashboard",              "dashboard", 1);
+        feature(run,     "전체 기능",       "/admin/all-features",                       "grid",      2);
 
         feature(settle,  "결제 예외 처리",  "/admin/payment-operations",                "exception", 1);
         feature(settle,  "정산 마감",       "/admin/payment-operations/settlements",     "settle",    2);

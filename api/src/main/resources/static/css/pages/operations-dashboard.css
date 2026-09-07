@@ -1,15 +1,13 @@
-/* 운영 대시보드 — 한 화면(뷰포트)에 전부 담기도록 높이 기반 레이아웃을 쓴다.
-   페이지 자체는 스크롤하지 않고, 좌측 예외 큐와 우측 사이드(도넛 + 매출 추이)가
-   같은 높이를 차지하도록 flex/grid로 맞춘다. 브랜드 컬러(테라코타)를 그대로 사용. */
+/* 운영 대시보드 — 콘텐츠 영역이 통째로 스크롤된다(다른 목록 화면과 동일).
+   좌측 예외 큐 / 우측 사이드(도넛 + 매출 추이)는 자연 높이. */
 .operations-dashboard {
   --ops-accent: var(--primary);
   --ops-accent-soft: var(--primary-soft);
   --ops-card-shadow: 0 1px 2px rgba(16, 24, 40, .06);
   --ops-card-border: 1px solid var(--border-default);
-  height: calc(100vh - var(--topbar-height, 56px));
-  padding: 14px var(--content-gutter) 14px;
-  display: flex; flex-direction: column; gap: 12px;
-  overflow: hidden;
+  min-height: calc(100vh - var(--topbar-height, 56px));
+  padding: 18px var(--content-gutter) 24px;
+  display: flex; flex-direction: column; gap: 14px;
 }
 
 .operations-dashboard > .page-header { flex: none; min-height: 0; margin-bottom: 0; }
@@ -56,25 +54,25 @@
 
 /* ── 본문: 예외 큐(좌) + 사이드(우) — 같은 높이 ── */
 .ops-main {
-  flex: 1 1 auto; min-height: 0;
-  display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr);
+  flex: none;
+  display: grid; grid-template-columns: minmax(0, 1fr) 320px;
   gap: 12px;
 }
-.ops-aside { min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.ops-aside { display: flex; flex-direction: column; gap: 12px; }
 
 /* 운영 예외 큐 */
-.ops-queue { display: flex; flex-direction: column; min-height: 0; }
+.ops-queue { display: flex; flex-direction: column; }
 .ops-queue-tabs { flex: none; display: flex; gap: 6px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
 .ops-queue-tab { flex: none; height: 28px; padding: 0 11px; border: 1px solid var(--border-default); border-radius: 999px; background: #fff; color: var(--text-secondary); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .ops-queue-tab:hover { border-color: var(--ops-accent); color: var(--ops-accent); }
 .ops-queue-tab.active { border-color: var(--ops-accent); background: var(--ops-accent); color: #fff; }
 .ops-queue-tab b { margin-left: 4px; font-weight: 700; opacity: .75; }
 
-.ops-queue-table { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border-default); }
+.ops-queue-table { display: flex; flex-direction: column; border-top: 1px solid var(--border-default); }
 .ops-queue-head, .ops-queue-row { display: grid; grid-template-columns: 56px 58px minmax(150px, 1fr) 50px 92px; align-items: center; column-gap: 12px; }
 .ops-queue-head { flex: none; min-height: 30px; padding: 0 10px; color: var(--text-muted); font-size: 10.5px; font-weight: 600; }
 .ops-queue-head span:nth-child(4), .ops-queue-head span:nth-child(5) { text-align: right; }
-.ops-queue-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.ops-queue-rows { max-height: 520px; overflow-y: auto; scrollbar-width: thin; }
 .ops-queue-row { min-height: 42px; padding: 5px 10px; border-bottom: 1px solid #eef0f3; color: var(--text-secondary); font-size: 12px; text-decoration: none; }
 .ops-queue-row:last-child { border-bottom: 0; }
 .ops-queue-row:hover { background: var(--bg-subtle); }
@@ -114,9 +112,9 @@
 
 /* 매출 추이 — 카드는 남은 높이를 채워 좌측 표와 높이를 맞추고, 차트 자체는 적정 크기로
    고정한 뒤 범례를 카드 하단에 붙인다(빈 데이터일 때 차트가 과하게 늘어나 보이지 않도록). */
-.ops-trend { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.ops-trend { display: flex; flex-direction: column; }
 .ops-trend select { width: auto; min-width: 96px; }
-.ops-sales-chart { flex: 1 1 auto; min-height: 70px; max-height: 200px; }
+.ops-sales-chart { height: 160px; }
 .ops-sales-chart svg { width: 100%; height: 100%; display: block; }
 .ops-sales-chart canvas { width: 100%; height: 100%; display: block; }
 .ops-chart-area { fill: color-mix(in srgb, var(--ops-accent) 12%, transparent); stroke: none; }
@@ -326,13 +324,13 @@ body.ops-insight-open { overflow: hidden; }
    Sidebar width/collapse is left to the shared rule in layout.css so navigating
    between the dashboard and every other screen doesn't shift the nav. */
 .operations-dashboard-page{--content-gutter:18px;--topbar-height:42px;background:#f8f9fb}
-.operations-dashboard-page .workspace-tabs,.operations-dashboard-page .design-note-trigger{display:none!important}
+.operations-dashboard-page .workspace-tabs{display:none!important}
 .operations-dashboard-page .topbar{height:42px;min-height:42px;padding-top:5px;padding-bottom:5px}
 .operations-dashboard-page .global-commerce-context select{height:32px;min-width:165px;font-size:11px}
 .operations-dashboard-page .global-commerce-context label>span{font-size:10px}
 .operations-dashboard-page .profile-pill{font-size:11px}.operations-dashboard-page .avatar{width:26px;height:26px}
 .ops-top-status{display:flex;align-items:center;gap:5px;color:#7a8492;font-size:10px;white-space:nowrap}.ops-top-refresh{height:31px!important;padding:0 12px!important;font-size:10px!important}.ops-top-bell{position:relative;display:grid;width:30px;height:30px;place-items:center;border:0;background:transparent;color:#636d7a;font-size:16px}.ops-top-bell b{position:absolute;right:1px;top:-1px;display:grid;min-width:15px;height:15px;padding:0 3px;place-items:center;border-radius:8px;background:#4f46e5;color:#fff;font-size:8px}
-.operations-dashboard-page .operations-dashboard{height:calc(100vh - 42px);min-height:0;padding:12px 18px 10px;gap:10px;overflow:hidden;background:#fafbfc}
+.operations-dashboard-page .operations-dashboard{min-height:calc(100vh - 42px);padding:14px 18px 28px;gap:12px;background:#fafbfc}
 .operations-dashboard-page .ops-titlebar{flex:none;min-height:45px}.operations-dashboard-page .ops-titlebar h1{margin:0;font-size:20px!important;letter-spacing:-.035em}.operations-dashboard-page .ops-titlebar p{margin:5px 0 0;font-size:10.5px!important;color:#7b8492}
 .operations-dashboard-page .ops-summary{grid-template-columns:1fr 1fr;gap:10px}
 .operations-dashboard-page .ops-summary-card{padding:10px 12px;border-radius:7px;box-shadow:0 1px 3px rgba(16,24,40,.04)}
@@ -349,5 +347,4 @@ body.ops-insight-open { overflow: hidden; }
 .operations-dashboard-page .ops-aside{gap:10px}.operations-dashboard-page .ops-progress{flex:0 0 140px}.operations-dashboard-page .ops-progress-list{display:grid;gap:9px;margin:10px 12px}.operations-dashboard-page .ops-progress-label{margin-bottom:3px;font-size:9px}.operations-dashboard-page .ops-progress-bar{height:2px;background:#e7e9ed}.operations-dashboard-page .ops-progress-bar span{background:#a95836}
 .operations-dashboard-page .ops-trend{flex:1}.operations-dashboard-page .ops-trend select{min-width:72px;width:72px;height:27px;padding:0 5px;font-size:8.5px}.operations-dashboard-page .ops-sales-chart{min-height:105px;max-height:none;padding:8px 10px}.operations-dashboard-page .ops-trend-legend{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0;padding:0;border-top:1px solid #e5e8ed}.operations-dashboard-page .ops-trend-legend>div{padding:8px 12px}.operations-dashboard-page .ops-trend-legend>div+div{border-left:1px solid #e5e8ed}.operations-dashboard-page .ops-trend-legend dt{font-size:8.5px}.operations-dashboard-page .ops-trend-legend dd{font-size:13px}
 .operations-dashboard-page .ops-quick{margin-top:0}.operations-dashboard-page .ops-quick h2{margin-bottom:6px;font-size:11px}.operations-dashboard-page .ops-quick-grid{gap:8px}.operations-dashboard-page .ops-quick-grid a{padding:7px 9px}.operations-dashboard-page .ops-quick-icon{width:25px;height:25px;font-size:11px}.operations-dashboard-page .ops-quick-text strong{font-size:10px}.operations-dashboard-page .ops-quick-text small{font-size:8px}
-@media(max-height:760px) and (min-width:1201px){.operations-dashboard-page .operations-dashboard{gap:8px;padding-top:9px}.operations-dashboard-page .ops-titlebar{min-height:39px}.operations-dashboard-page .ops-summary-card{padding:8px 10px}.operations-dashboard-page .ops-metric{padding-top:7px;padding-bottom:6px}.operations-dashboard-page .ops-main{min-height:300px}.operations-dashboard-page .ops-quick{display:none}}
-@media(max-width:1200px){.operations-dashboard-page .operations-dashboard{height:auto;overflow:auto}.operations-dashboard-page .ops-main{grid-template-columns:1fr}.operations-dashboard-page .ops-summary{grid-template-columns:1fr}.operations-dashboard-page .ops-aside{display:grid;grid-template-columns:1fr 1fr}.operations-dashboard-page .ops-quick-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1200px){.operations-dashboard-page .ops-main{grid-template-columns:1fr}.operations-dashboard-page .ops-summary{grid-template-columns:1fr}.operations-dashboard-page .ops-aside{display:grid;grid-template-columns:1fr 1fr}.operations-dashboard-page .ops-quick-grid{grid-template-columns:repeat(3,1fr)}}

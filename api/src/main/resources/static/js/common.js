@@ -33,6 +33,16 @@ window.AdminWorkspace = (function () {
         "/admin/database-spec":"DB 명세", "/admin/audit-logs":"감사 로그", "/admin/navigation":"메뉴 관리"
     };
 
+    // 한 화면 안에서 하위 탭으로 이동하는 URL은 작업 탭(상단) 하나로 묶는다.
+    // 예: /admin/analytics/orders·payments·… → 전부 "운영 분석" 탭.
+    const TAB_ALIASES = [
+        [/^\/admin\/analytics(\/.*)?$/, "/admin/analytics"]
+    ];
+    function canonicalPath(path) {
+        for (const [re, canon] of TAB_ALIASES) if (re.test(path)) return canon;
+        return path;
+    }
+
     function pageKey() {
         return location.pathname + "|" + (activeBrandId() || 0) + "|" + (activeStoreId() || 0);
     }
@@ -46,7 +56,9 @@ window.AdminWorkspace = (function () {
                 try { path = new URL(tab.url || tab.path, location.origin).pathname; }
                 catch (ignore) { path = tab.path; }
                 if (!path || !path.startsWith("/admin/")) return;
-                unique.set(path, {path:path, url:tab.url || path, title:TAB_TITLES[path] || tab.title || "관리 화면"});
+                const canon = canonicalPath(path);
+                const url = canon === path ? (tab.url || path) : canon;
+                unique.set(canon, {path:canon, url:url, title:TAB_TITLES[canon] || tab.title || "관리 화면"});
             });
             const normalized = Array.from(unique.values()).slice(-MAX_TABS);
             if (JSON.stringify(stored) !== JSON.stringify(normalized)) sessionStorage.setItem(TABS_KEY, JSON.stringify(normalized));
@@ -80,23 +92,62 @@ window.AdminWorkspace = (function () {
     function rememberCurrentTab() {
         if (!location.pathname.startsWith("/admin/")) return [];
         const tabs = readTabs();
-        const existing = tabs.find(tab => tab.path === location.pathname);
+        const canon = canonicalPath(location.pathname);
+        const aliased = canon !== location.pathname;
+        const existing = tabs.find(tab => tab.path === canon);
         if (existing) {
-            existing.url = location.href;
-            existing.title = pageTitle();
+            if (!aliased) existing.url = location.href;
+            existing.title = TAB_TITLES[canon] || pageTitle();
         } else {
-            tabs.push({ path: location.pathname, url: location.href, title: pageTitle() });
+            tabs.push({ path: canon, url: aliased ? canon : location.href, title: TAB_TITLES[canon] || pageTitle() });
         }
         writeTabs(tabs);
         return readTabs();
     }
 
-    function render() {
+    function render() { renderCrumb(); renderTabs(); }
+
+    /* 페이지 제목 자리에 "그룹 › 화면명" 브레드크럼을 넣고, 큰 h1 제목은 감춘다. */
+    function renderCrumb() {
+        const ph = document.querySelector("main .page-header");
+        if (!ph) return;
+        const wrap = ph.querySelector(":scope > div:not(.page-header-actions)") || ph;
+        const heading = wrap.querySelector("h1, h2, h3, .page-title");
+
+        // 하위 탭으로 들어온 화면(예: /admin/analytics/payments)은 nav 활성 항목이 없다 —
+        // 이 경우 대표 경로(/admin/analytics)의 nav 항목을 기준으로 잡아 크럼을 일관되게 유지한다.
+        const active = document.querySelector(".nav a.active")
+            || document.querySelector('.nav a[href="' + canonicalPath(location.pathname) + '"]');
+        let group = "", name = "";
+        if (active) {
+            name = (active.querySelector(".nav-item-label") || active).textContent.trim();
+            const g = active.closest(".nav-group");
+            const t = g && g.querySelector(".nav-title");
+            if (t) group = t.textContent.trim();
+        }
+        if (!name) name = heading ? heading.textContent.trim() : (TAB_TITLES[location.pathname] || "");
+        // 그룹명이 화면명 앞에 이미 붙어 있으면(예: "결제 예외 처리" / 그룹 "결제 · 정산") 축약 없이 그대로 둔다.
+
+        let crumb = wrap.querySelector(".page-crumb");
+        if (!crumb) {
+            crumb = document.createElement("nav");
+            crumb.className = "page-crumb";
+            crumb.setAttribute("aria-label", "현재 위치");
+            wrap.insertBefore(crumb, wrap.firstChild);
+        }
+        crumb.innerHTML = (group ? `<span class="crumb-group">${escapeHtml(group)}</span><span class="crumb-sep">›</span>` : "")
+            + `<span class="crumb-current">${escapeHtml(name)}</span>`;
+        if (heading) heading.hidden = true;
+    }
+
+    /* 열린 작업 화면 탭 (세션 동안 유지, 최대 8개) */
+    function renderTabs() {
         const host = document.getElementById("workspaceTabs");
         if (!host) return;
         const tabs = rememberCurrentTab();
+        const here = canonicalPath(location.pathname);
         host.innerHTML = tabs.map(tab => {
-            const active = tab.path === location.pathname;
+            const active = tab.path === here;
             return `<div class="workspace-tab${active ? " active" : ""}" data-workspace-path="${escapeHtml(tab.path)}">`
                 + `<a class="workspace-tab-label" href="${escapeHtml(tab.url)}"${active ? ' aria-current="page"' : ""}>${escapeHtml(tab.title)}</a>`
                 + `<button class="workspace-tab-close" type="button" data-close-workspace="${escapeHtml(tab.path)}" aria-label="${escapeHtml(tab.title)} 탭 닫기">×</button></div>`;
@@ -105,12 +156,12 @@ window.AdminWorkspace = (function () {
         const closeAll = host.querySelector("[data-close-workspace-all]");
         if (closeAll) closeAll.addEventListener("click", event => {
             event.preventDefault();
-            const current = readTabs().filter(tab => tab.path === location.pathname);
+            const current = readTabs().filter(tab => tab.path === here);
             readTabs().forEach(tab => {
-                if (tab.path !== location.pathname && window.AdminHtmxNavigation) window.AdminHtmxNavigation.dropCachedView(tab.path);
+                if (tab.path !== here && window.AdminHtmxNavigation) window.AdminHtmxNavigation.dropCachedView(tab.path);
             });
             writeTabs(current);
-            render();
+            renderTabs();
         });
         host.querySelectorAll("[data-close-workspace]").forEach(button => {
             button.addEventListener("click", event => {
@@ -122,10 +173,10 @@ window.AdminWorkspace = (function () {
                 const remaining = currentTabs.filter(tab => tab.path !== path);
                 writeTabs(remaining);
                 if (window.AdminHtmxNavigation) window.AdminHtmxNavigation.dropCachedView(path);
-                if (path === location.pathname) {
+                if (path === here) {
                     const fallback = remaining[Math.min(Math.max(index - 1, 0), remaining.length - 1)];
                     location.href = fallback ? fallback.url : "/admin/operations-dashboard";
-                } else render();
+                } else renderTabs();
             });
         });
         host.querySelectorAll('.workspace-tab.active .workspace-tab-label').forEach(link => {
@@ -674,36 +725,15 @@ function initializeAggregationBasis() {
 }
 
 function initializeDataViewport() {
-    if (window.innerWidth < 769) return;
-    const configure = () => {
-        document.querySelectorAll("main > section").forEach(section => {
-            const directTable = [...section.children].find(child => child.classList?.contains("data-table-wrap"));
-            const activePanel = [...section.children].find(child => child.classList?.contains("page-tab-panel") && child.classList.contains("active") && child.querySelector(":scope > .data-table-wrap"));
-            if (!directTable && !activePanel) return;
-            section.style.setProperty("display", "flex", "important");
-            section.style.setProperty("flex", "1 1 0", "important");
-            section.style.setProperty("height", "auto", "important");
-            section.style.setProperty("min-height", "0", "important");
-            section.style.setProperty("overflow", "hidden", "important");
-            if (section.querySelector(".pagination-footer")) section.style.setProperty("padding-bottom", "62px", "important");
-            const panel = activePanel || section;
-            if (activePanel) {
-                panel.style.setProperty("display", "flex", "important");
-                panel.style.setProperty("flex", "1 1 0", "important");
-                panel.style.setProperty("min-height", "0", "important");
-                panel.style.setProperty("flex-direction", "column", "important");
-                panel.style.setProperty("overflow", "hidden", "important");
-            }
-            const table = directTable || panel.querySelector(":scope > .data-table-wrap");
-            table.style.setProperty("flex", "1 1 0", "important");
-            table.style.setProperty("height", "auto", "important");
-            table.style.setProperty("min-height", "80px", "important");
-            table.style.setProperty("overflow", "auto", "important");
+    // 과거엔 목록 섹션/탭패널/표를 인라인 display:flex + flex:1 1 0 + height 로 잠가
+    // "표 본문만 스크롤"시켰으나, 이 방식이 첫 페인트에서 0높이로 무너져(리사이즈해야
+    // 데이터가 보임) 문제가 잦았다. 이제는 콘텐츠 섹션이 통째로 스크롤되므로(레이아웃
+    // 셸 + components.css) 여기서 인라인 스타일을 강제하지 않는다. 혹시 이전 세션에서
+    // 남은 인라인 스타일이 있으면 걷어낸다.
+    document.querySelectorAll("main > section, main > section .page-tab-panel, main > section .data-table-wrap").forEach(el => {
+        ["display", "flex", "height", "min-height", "overflow", "flex-direction", "padding-bottom"].forEach(prop => {
+            if (el.style.getPropertyPriority(prop) === "important") el.style.removeProperty(prop);
         });
-    };
-    configure();
-    document.addEventListener("click", event => {
-        if (event.target.closest(".page-tabs")) setTimeout(configure, 0);
     });
 }
 
@@ -745,20 +775,33 @@ function initializeDatePresets() {
         const start = document.getElementById(startId), end = document.getElementById(endId);
         if (!start || !end || start.closest(".filter-period-owner")?.querySelector(".filter-period-presets")) return;
         const host = document.createElement("div"); host.className = "filter-period-presets";
+        const buttons = [];
+        const apply = (button, days, silent) => {
+            const now = new Date(), from = new Date(); from.setDate(now.getDate() - days);
+            start.value = format(from); end.value = format(now);
+            host.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
+            if (silent) return;
+            start.dispatchEvent(new Event("change", { bubbles: true })); end.dispatchEvent(new Event("change", { bubbles: true }));
+            if (searchId) document.getElementById(searchId)?.click();
+        };
         [[0, "오늘"], [6, "7일"], [29, "30일"]].forEach(([days, label]) => {
             const button = document.createElement("button"); button.type = "button"; button.textContent = label;
-            button.onclick = () => {
-                const now = new Date(), from = new Date(); from.setDate(now.getDate() - days);
-                start.value = format(from); end.value = format(now);
-                start.dispatchEvent(new Event("change", { bubbles: true })); end.dispatchEvent(new Event("change", { bubbles: true }));
-                if (searchId) document.getElementById(searchId)?.click();
-                host.querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button));
-            };
-            host.appendChild(button);
+            button.onclick = () => apply(button, days, false);
+            host.appendChild(button); buttons.push([button, days]);
         });
         const range = start.parentElement;
         range.classList.add("filter-period-owner");
         range.insertAdjacentElement("beforebegin", host);
+        // 목록 화면 날짜 필터 기본값은 "오늘"으로 통일 — 아직 비어 있을 때만 채운다.
+        if (!start.value && !end.value) apply(buttons[0][0], 0, true);
+        else {
+            const now = format(new Date());
+            const match = buttons.find(([, days]) => {
+                const from = new Date(); from.setDate(new Date().getDate() - days);
+                return start.value === format(from) && end.value === now;
+            });
+            if (match) match[0].classList.add("active");
+        }
     });
 }
 

@@ -27,6 +27,7 @@
             <svg th:case="'cart'" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"></path></svg>
             <svg th:case="'chart'" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"></path></svg>
             <svg th:case="'audit'" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4"></path></svg>
+            <svg th:case="'grid'" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
             <svg th:case="*" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle></svg>
           </span>
           <span class="nav-item-label" th:text="${item.itemName}">메뉴</span>
@@ -36,8 +37,9 @@
   </nav>
 
   <div class="sidebar-footer">
-    <a href="/admin/all-features" class="sidebar-link-button">전체 기능 →</a>
-    <a href="/">포트폴리오</a>
+    <a href="/" class="sidebar-link-button">포트폴리오</a>
+    <a href="/admin/database-spec">DB 명세</a>
+    <a href="/swagger-ui/index.html">API 문서</a>
   </div>
 </aside>
 <script>(function(){var aliases={"/admin/sales-ledger":"/admin/payment-operations/sales-ledger","/admin/settlements":"/admin/payment-operations/settlements"},path=aliases[location.pathname]||location.pathname;document.querySelectorAll('.nav a').forEach(function(link){link.classList.remove('active');var href=link.getAttribute('href'),matches=path===href||(href==='/admin/commerce/options'&&path==='/admin/commerce/product-options');if(matches){link.classList.add('active');var group=link.closest('.nav-group');if(group)group.dataset.hasActive='true';}});}());</script>

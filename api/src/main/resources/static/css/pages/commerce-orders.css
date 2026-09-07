@@ -122,9 +122,8 @@
 .order-list-table { min-width: 900px; }
 .order-list-table th:last-child, .order-list-table td:last-child { text-align: right; }
 #orderPagination { padding: 8px var(--content-gutter); }
-/* 탭이 있는 화면이라 뷰포트 고정 리스트 레이아웃은 쓰지 않는다(Mock 생성 탭 폼이 잘리지 않게).
-   페이지네이션 바만 .pagination-footer 로 화면 하단에 고정된다. */
-.main > section.commerce-page:has(#orderPagination.pagination-footer) {
+/* 콘텐츠 섹션이 통째로 스크롤된다. 페이지네이션 바만 .pagination-footer 로 하단 고정. */
+.main > section.commerce-page {
   height: auto; min-height: calc(100vh - var(--topbar-height)); display: block; overflow: visible; }
 body:has(#tab-mock.active) .pagination-footer { display: none; }
 .order-status-text{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:#596579;font-size:12px;font-weight:600}.order-status-text i{width:6px;height:6px;border-radius:50%;background:#98a2b3}.order-status-text.paid{color:#18794e}.order-status-text.paid i{background:#22a06b}.order-status-text.failed{color:#b42318}.order-status-text.failed i{background:#d92d20}.order-status-text.unknown{color:#9a5b13}.order-status-text.unknown i{background:#e28a18}.order-status-text.ready i{background:#98a2b3}.order-row-action{padding:4px 6px;border:0;background:transparent;color:#475467;font-size:12px;cursor:pointer}.order-row-action:hover{color:var(--text-primary);text-decoration:underline;text-underline-offset:3px}.order-row-action.primary{margin-left:6px;color:var(--primary);font-weight:650}

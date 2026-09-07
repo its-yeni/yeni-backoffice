@@ -114,55 +114,31 @@
     .main > .topbar { position: relative; top: auto; flex: 0 0 auto; }
     .main > section { flex: 1 1 auto; min-height: 0 !important; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 }
-.workspace-tabs {
-    order: 3;
-    flex: 0 0 100%;
-    width: 100%;
-    min-height: 38px;
+/* 페이지 제목 자리의 브레드크럼 (그룹 › 화면명). 큰 h1 대신 이걸 제목처럼 쓴다. */
+.page-crumb {
     display: flex;
-    align-items: end;
-    gap: 2px;
-    margin: 0 0 -8px;
-    padding: 0;
-    overflow-x: auto;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f2f4f7;
-    scrollbar-width: thin;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 2px;
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: -.01em;
 }
+.crumb-group { color: var(--text-secondary); font-weight: 500; }
+.crumb-sep { color: var(--text-muted); }
+.crumb-current { color: var(--text-primary); font-weight: 700; font-size: 15px; }
 
-/* Desktop work screens keep headings and filters visible; only the data region
-   scrolls. This removes the page-level scroll that used to hide tables below tabs. */
+/* 데스크톱 목록 화면: 콘텐츠 섹션(.main > section)이 스크롤 컨테이너다.
+   표는 자연 높이로 모든 행을 그리고, 표 헤더만 sticky 로 상단에 붙는다.
+   (과거의 height:0 + flex:1 1 0 + :has() 스크롤락은 첫 페인트에서 무너져
+   "새로고침/리사이즈해야 데이터가 보임" 버그를 냈다 — 제거함.) */
 @media (min-width: 769px) {
-    main > section:has(> .data-table-wrap),
-    main > section:has(> .page-tab-panel.active > .data-table-wrap) {
-        display: flex;
-        height: 0;
-        min-height: 0;
-        flex: 1 1 0;
-        flex-direction: column;
-        overflow: hidden !important;
+    .data-table-wrap > table thead th,
+    .transaction-table-wrap > table thead th {
+        position: sticky; top: 0; z-index: 3;
+        background: var(--bg-subtle, #f7f8fa);
+        box-shadow: inset 0 -1px 0 var(--border-default, #e4e7ec);
     }
-    main > section:has(> .data-table-wrap) > .data-table-wrap {
-        height: 0;
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: auto !important;
-    }
-    main > section > .page-tab-panel.active:has(> .data-table-wrap) {
-        display: flex;
-        height: 0;
-        min-height: 0;
-        flex: 1 1 0;
-        flex-direction: column;
-        overflow: hidden;
-    }
-    main > section > .page-tab-panel.active > .data-table-wrap {
-        height: 0;
-        min-height: 0;
-        flex: 1 1 0;
-        overflow: auto !important;
-    }
-    .data-table-wrap > table thead th { position: sticky; top: 0; z-index: 3; }
 }
 
 .dashboard-filter-context {
@@ -172,10 +148,8 @@
 }
 .dashboard-filter-context strong { color: var(--primary-hover); }
 .dashboard-filter-context a { margin-left: auto; color: var(--primary); font-weight: 700; text-decoration: none; }
-.filter-period-presets { display: inline-flex; flex: 0 0 auto; gap: 2px; padding: 2px; border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-subtle); }
-.filter-period-presets button { height: 28px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); font-size: 10px; font-weight: 650; cursor: pointer; }
-.filter-period-presets button:hover,.filter-period-presets button.active { background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.08); }
-@media (max-width: 900px) { .filter-period-presets { order: 2; } }
+/* .filter-period-presets 스타일은 components.css 의 통합 프리셋 칩 규칙으로 이전됨
+   (.filter-presets · .an-quick-ranges · .filter-period-presets 동일 처리). */
 .aggregation-basis { display: flex; min-height: 30px; flex: 0 0 auto; align-items: center; gap: 8px; margin: 0 0 8px; padding: 5px 10px; border: 1px solid #e5e8ed; border-radius: 6px; background: #f8f9fb; color: #697281; font-size: 10px; }
 .aggregation-basis strong { color: #394354; font-size: 10px; }
 .aggregation-basis time { margin-left: auto; color: #89919d; white-space: nowrap; }
@@ -191,76 +165,34 @@
     .ops-list-page .ops-summary-strip, .pg-transaction-page .pg-status-tabs { margin-bottom: 6px !important; }
 }
 
-.topbar:has(.workspace-tabs) {
-    flex-wrap: wrap;
-}
+.topbar:has(.workspace-tabs) { flex-wrap: wrap; }
 
+.workspace-tabs {
+    order: 4; flex: 0 0 100%; width: 100%; min-height: 36px;
+    display: flex; align-items: end; gap: 2px; margin: 0 0 -8px; padding: 0;
+    overflow-x: auto; border-bottom: 1px solid var(--border-default); background: #f2f4f7; scrollbar-width: thin;
+}
 .workspace-tab {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    max-width: 220px;
-    height: 37px;
-    color: #667085;
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
+    flex: 0 0 auto; display: inline-flex; align-items: center; max-width: 200px; height: 35px;
+    color: var(--text-secondary); border-bottom: 2px solid transparent;
 }
-
 .workspace-tab-label {
-    color: inherit;
-    text-decoration: none;
-    min-width: 0;
-    padding: 0 8px 0 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 13px;
-    font-weight: 600;
+    color: inherit; min-width: 0; padding: 0 6px 0 10px; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: 12.5px; font-weight: 600;
 }
-
 .workspace-tab-close {
-    width: 24px;
-    height: 24px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    color: #98a2b3;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    cursor: pointer;
+    width: 22px; height: 22px; display: grid; place-items: center; padding: 0;
+    color: var(--text-muted); border: 0; border-radius: 6px; background: transparent; cursor: pointer;
 }
-
-.workspace-tab:hover,
-.workspace-tab.active {
-    color: #101828;
-}
-
-.workspace-tab.active {
-    border-bottom-color: var(--primary, #ad5937);
-}
-
-.workspace-tab-close:hover {
-    color: #344054;
-    background: #f2f4f7;
-}
-
+.workspace-tab:hover, .workspace-tab.active { color: var(--text-primary); }
+.workspace-tab.active { border-bottom-color: var(--primary); }
+.workspace-tab-close:hover { color: var(--text-primary); background: #e8ebef; }
 .workspace-tab-closeall {
-    flex: 0 0 auto;
-    align-self: center;
-    margin-left: 4px;
-    padding: 0 10px;
-    height: 26px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: #98a2b3;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
+    flex: 0 0 auto; align-self: center; margin-left: 4px; padding: 0 10px; height: 24px;
+    border: 0; border-radius: 6px; background: transparent; color: var(--text-muted);
+    font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer;
 }
-.workspace-tab-closeall:hover { color: #344054; background: #f2f4f7; }
+.workspace-tab-closeall:hover { color: var(--text-primary); background: #e8ebef; }
 
 main > section[data-workspace-placeholder="true"] {
     pointer-events: none;
@@ -300,5 +232,5 @@ main > section.workspace-page-enter {
 
 @media (max-width: 768px) {
     .workspace-tabs { padding: 0 12px; }
-    .workspace-tab { max-width: 160px; }
+    .workspace-tab { max-width: 150px; }
 }

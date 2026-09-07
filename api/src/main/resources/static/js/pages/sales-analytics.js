@@ -5,7 +5,7 @@
 
   const today = new Date();
   $("sa-end").value = today.toISOString().slice(0, 10);
-  $("sa-start").value = new Date(today.getTime() - 30 * 864e5).toISOString().slice(0, 10);
+  $("sa-start").value = today.toISOString().slice(0, 10);
 
   catPage = AdminPagination.mount($("sa-category-pagination"), { total: 0, size: 10, onChange: renderCategories });
   prodPage = AdminPagination.mount($("sa-product-pagination"), { total: 0, size: 10, onChange: renderProducts });
