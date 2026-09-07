@@ -170,6 +170,7 @@ public class PaymentApproveService {
                 .approvedAmount(command.amount())
                 .canceledAmount(BigDecimal.ZERO)
                 .currency(command.currency())
+                .paymentMethod(command.paymentMethod())
                 .paymentStatus(PaymentStatus.APPROVED)
                 .approvedAt(result.approvedAt())
                 .build();
@@ -307,6 +308,7 @@ public class PaymentApproveService {
                     .approvedAmount(session.getAmount())
                     .canceledAmount(BigDecimal.ZERO)
                     .currency(session.getCurrency())
+                    .paymentMethod(PaymentDefaults.PAYMENT_METHOD_CARD)
                     .paymentStatus(PaymentStatus.APPROVED)
                     .approvedAt(approvalResult.approvedAt())
                     .build();
@@ -348,6 +350,7 @@ public class PaymentApproveService {
                 .approvedAmount(command.amount())
                 .canceledAmount(BigDecimal.ZERO)
                 .currency(command.currency())
+                .paymentMethod(command.paymentMethod())
                 .paymentStatus(PaymentStatus.APPROVE_UNKNOWN)
                 .approvedAt(LocalDateTime.now())
                 .failureReason(result.resultMessage())

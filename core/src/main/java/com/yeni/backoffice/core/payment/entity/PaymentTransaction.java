@@ -72,6 +72,10 @@ public class PaymentTransaction extends BaseTimeEntity {
     @Column(nullable = false, length = 10)
     private String currency;
 
+    @Builder.Default
+    @Column(nullable = false, length = 20)
+    private String paymentMethod = "CARD";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private PaymentStatus paymentStatus;

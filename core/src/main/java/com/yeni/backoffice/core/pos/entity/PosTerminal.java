@@ -68,6 +68,8 @@ public class PosTerminal extends BaseTimeEntity {
     public void changeActive(boolean active) {
         this.active = active;
     }
+    public void rename(String terminalName){this.terminalName=terminalName;}
+    public void rotateCredential(String credentialHash){this.credentialHash=credentialHash;}
 
     public void configure(int syncIntervalSeconds,int requestTimeoutSeconds,int maxRetryCount,int logRetentionDays){
         this.syncIntervalSeconds=positive(syncIntervalSeconds,300);

@@ -16,6 +16,8 @@ import com.yeni.backoffice.core.pos.service.PosSyncManagementService;
 import com.yeni.backoffice.core.pos.service.PosOrderService;
 import com.yeni.backoffice.core.pos.service.PosClientLogService;
 import com.yeni.backoffice.core.pos.service.PosTerminalSettingsService;
+import com.yeni.backoffice.core.pos.service.PosPaymentService;
+import com.yeni.backoffice.core.pos.service.PosInventoryLookupService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -49,12 +51,15 @@ public class PosV1RestController {
     private final PosOrderService posOrderService;
     private final PosClientLogService clientLogService;
     private final PosTerminalSettingsService terminalSettingsService;
+    private final PosPaymentService posPaymentService;
+    private final PosInventoryLookupService inventoryLookupService;
     private final ObjectMapper objectMapper;
 
     public PosV1RestController(PosTerminalAuthenticationService authenticationService,
             PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService,
             PosSyncManagementService syncManagementService, PosOrderService posOrderService,
-            PosClientLogService clientLogService,PosTerminalSettingsService terminalSettingsService,ObjectMapper objectMapper) {
+            PosClientLogService clientLogService,PosTerminalSettingsService terminalSettingsService,
+            PosPaymentService posPaymentService,PosInventoryLookupService inventoryLookupService,ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
         this.saleService = saleService;
         this.catalogSyncService = catalogSyncService;
@@ -62,7 +67,27 @@ public class PosV1RestController {
         this.posOrderService = posOrderService;
         this.clientLogService = clientLogService;
         this.terminalSettingsService = terminalSettingsService;
+        this.posPaymentService = posPaymentService;
+        this.inventoryLookupService = inventoryLookupService;
         this.objectMapper = objectMapper;
+    }
+
+    @PostMapping("/orders/{orderId}/payments")
+    public ResponseEntity<PosPaymentService.PaymentResult> approvePayment(@PathVariable Long orderId,
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestHeader(REQUEST_ID_HEADER) String clientRequestId,@Valid @RequestBody PosPaymentService.PaymentCommand request){
+        validateClientRequestId(clientRequestId);PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(posPaymentService.approve(terminal,orderId,clientRequestId.trim(),requestHash(request),request));
+    }
+
+    @GetMapping("/inventory")
+    public ResponseEntity<List<PosInventoryLookupService.InventoryItem>> inventory(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestParam(required=false) String keyword,@RequestParam(required=false) Integer limit){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(inventoryLookupService.search(terminal,keyword,limit));
     }
 
     @GetMapping("/settings")

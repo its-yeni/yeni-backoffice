@@ -310,7 +310,7 @@ public class SalesLedgerService {
                 .businessDate(occurredAt.toLocalDate())
                 .occurredAt(occurredAt)
                 .pgCode(payment.getPgProvider() == null ? "INICIS" : payment.getPgProvider().name())
-                .paymentMethod(PaymentDefaults.PAYMENT_METHOD_CARD)
+                .paymentMethod(StringUtils.hasText(payment.getPaymentMethod())?payment.getPaymentMethod():PaymentDefaults.PAYMENT_METHOD_CARD)
                 .externalSendRequired(true)
                 .settlementIncludedYn(false)
                 .confirmedYn(confirmed)

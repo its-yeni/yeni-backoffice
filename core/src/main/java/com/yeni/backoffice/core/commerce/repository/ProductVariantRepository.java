@@ -10,6 +10,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant,L
  Optional<ProductVariant> findByProductIdAndCombinationKey(Long productId,String key);
  boolean existsBySku(String sku);
  Optional<ProductVariant> findByBarcode(String barcode);
+ Optional<ProductVariant> findBySku(String sku);
  boolean existsByBarcodeAndIdNot(String barcode,Long id);
  List<ProductVariant> findAllByOrderByProductIdAscSortOrderAscIdAsc();
  @Lock(LockModeType.PESSIMISTIC_WRITE) @Query("select v from ProductVariant v where v.id in :ids order by v.id") List<ProductVariant> findAllByIdForUpdate(@Param("ids") Collection<Long> ids);
