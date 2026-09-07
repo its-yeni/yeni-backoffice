@@ -650,6 +650,10 @@ body:has(.commerce-modal.open), body:has(.product-modal.open), body:has(.modal-b
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--primary);
 }
 .step-nav .step.is-blocked .meta { color: var(--danger); font-weight: 600; }
+.step-nav a.step { text-decoration: none; color: inherit; transition: background .12s ease; }
+.step-nav a.step:hover { background: var(--bg-subtle); }
+.step-nav .step.is-pending .label { color: var(--text-secondary); }
+@media (max-width: 760px) { .step-nav { flex-wrap: wrap; } .step-nav .step { flex: 1 1 45%; } .step-nav .step:nth-child(n+3)::before { display: none; } }
 
 /* ── 드로어 (상세 / 설계 노트 — 우측 슬라이드) ─────────────────────────────── */
 .drawer-scrim {

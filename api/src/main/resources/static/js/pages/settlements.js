@@ -42,7 +42,7 @@
     const params = new URLSearchParams({ startDate: $('settlement-start').value, endDate: $('settlement-end').value });
     const [statementResult, importResult] = await Promise.all([apiGet('/admin/api/settlements?' + params), apiGet('/admin/api/pg-reconciliation').catch(() => [])]);
     statements = statementResult || []; pgImports = importResult || [];
-    render(); syncRunButton(); renderAlert(); renderDemoCompletion();
+    render(); syncRunButton(); renderAlert(); renderStepNav(); renderDemoCompletion();
     apiGet('/admin/api/settlements/store-summary?' + params).then(rows => { storeSummary = rows || []; renderStoreSummary(); }).catch(() => {});
     const requested = Number(new URLSearchParams(location.search).get('statementId'));
     if (requested && statements.some((it) => it.id === requested)) open(requested);
@@ -63,6 +63,55 @@
     if (!imports.length) { alert.hidden = false; alert.innerHTML = '<strong>외부 PG 자료가 없습니다.</strong><span>정산일과 MID가 같은 CSV를 먼저 가져와 내부 원장과 비교하세요.</span><a href="/admin/payment-operations/settlements/reconciliation">PG 파일 가져오기 →</a>'; }
     else if (mismatches) { alert.hidden = false; alert.innerHTML = `<strong>PG 대사 미해결 ${mismatches}건 (영업일 ${dates.join(', ')})</strong><span>해당 영업일 정산만 대사 처리 후 확정할 수 있습니다. 다른 영업일에는 영향 없음.</span><a href="/admin/payment-operations/settlements/reconciliation">대사 처리 →</a>`; }
     else alert.hidden = true;
+  }
+
+  // 정산 마감 4단계: ① 매출 확정 → ② PG 대사 → ③ 정산 확정 → ④ 지급.
+  // 조회된 명세·대사 파일에서 각 단계 상태를 파생한다(추가 API 호출 없음).
+  function renderStepNav() {
+    const host = $('settlement-steps');
+    if (!host) return;
+    const drafts = statements.filter(s => s.settlementStatus === 'DRAFT');
+    const confirmed = statements.filter(s => s.settlementStatus === 'CONFIRMED');
+    const paid = statements.filter(s => s.settlementStatus === 'PAID');
+    const imports = relevantImports();
+    const mismatches = imports.reduce((sum, i) => sum + unresolvedOf(i), 0);
+    const grossSale = statements.reduce((s, it) => s + Number(it.saleAmount || 0), 0);
+    const payoutPending = confirmed.reduce((s, it) => s + Number(it.netAmount || 0), 0);
+    const paidTotal = paid.reduce((s, it) => s + Number(it.netAmount || 0), 0);
+
+    const steps = [
+      {
+        n: '① 매출 확정',
+        label: statements.length ? `${statements.length}건 집계` : '대상 없음',
+        meta: statements.length ? `승인 매출 ${money(grossSale)}` : '조회 기간에 정산 대상 매출이 없습니다',
+        state: statements.length ? 'done' : 'pending'
+      },
+      {
+        n: '② PG 대사',
+        label: !imports.length ? '외부 파일 없음' : mismatches ? `미해결 ${mismatches}건` : '대사 완료',
+        meta: !imports.length ? '정산일·MID 같은 PG 파일이 필요합니다' : mismatches ? '해당 영업일은 확정 불가' : `${imports.length}개 파일 일치`,
+        state: !imports.length ? 'pending' : mismatches ? 'blocked' : 'done',
+        href: '/admin/payment-operations/settlements/reconciliation'
+      },
+      {
+        n: '③ 정산 확정',
+        label: drafts.length ? `초안 ${drafts.length}건 대기` : statements.length ? '확정 완료' : '대기',
+        meta: `초안 ${drafts.length} · 확정 ${confirmed.length} · 지급 ${paid.length}`,
+        state: drafts.length ? (mismatches ? 'pending' : 'current') : (statements.length ? 'done' : 'pending')
+      },
+      {
+        n: '④ 지급',
+        label: confirmed.length ? `지급 대기 ${confirmed.length}건` : paid.length ? '지급 완료' : '대기',
+        meta: confirmed.length ? `지급 예정액 ${money(payoutPending)}` : paid.length ? `누적 지급 ${money(paidTotal)}` : '확정 후 진행',
+        state: !drafts.length && confirmed.length ? 'current' : (paid.length && !confirmed.length && !drafts.length ? 'done' : 'pending')
+      }
+    ];
+
+    host.innerHTML = steps.map(s => {
+      const cls = `step is-${s.state}`;
+      const inner = `<span class="n">${s.n}</span><span class="label">${escapeHtml(s.label)}</span><span class="meta">${escapeHtml(s.meta)}</span>`;
+      return s.href ? `<a class="${cls}" href="${s.href}">${inner}</a>` : `<div class="${cls}">${inner}</div>`;
+    }).join('');
   }
 
   function renderStoreSummary() {
