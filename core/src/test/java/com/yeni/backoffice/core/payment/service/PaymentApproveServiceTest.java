@@ -49,9 +49,10 @@ class PaymentApproveServiceTest {
             PaymentNotificationService notificationService,
             PaymentRecoveryService recoveryService,
             PaymentAuditHelper auditHelper) {
+        InicisSignatureService signatureService = mock(InicisSignatureService.class);
         return new PaymentApproveService(
                 props,
-                mock(InicisSignatureService.class),
+                signatureService,
                 mock(PaymentGatewayAdapterResolver.class),
                 gatewayRegistry,
                 gatewayRouter,
@@ -62,7 +63,8 @@ class PaymentApproveServiceTest {
                 recoveryService,
                 auditHelper,
                 mock(CommerceOrderPaymentStateService.class),
-                mock(CommerceOrderRepository.class)
+                mock(CommerceOrderRepository.class),
+                new PaymentApprovalValidator(signatureService, paymentRepository)
         );
     }
 

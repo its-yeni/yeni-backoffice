@@ -68,6 +68,7 @@ public class PaymentApproveService {
     private final PaymentAuditHelper auditHelper;
     private final CommerceOrderPaymentStateService orderStateService;
     private final CommerceOrderRepository orderRepository;
+    private final PaymentApprovalValidator approvalValidator;
 
     public PaymentApproveService(
             InicisStdPayProperties inicisProperties,
@@ -82,7 +83,8 @@ public class PaymentApproveService {
             PaymentRecoveryService recoveryService,
             PaymentAuditHelper auditHelper,
             CommerceOrderPaymentStateService orderStateService,
-            CommerceOrderRepository orderRepository) {
+            CommerceOrderRepository orderRepository,
+            PaymentApprovalValidator approvalValidator) {
         this.inicisProperties = inicisProperties;
         this.signatureService = signatureService;
         this.adapterResolver = adapterResolver;
@@ -96,11 +98,12 @@ public class PaymentApproveService {
         this.auditHelper = auditHelper;
         this.orderStateService = orderStateService;
         this.orderRepository = orderRepository;
+        this.approvalValidator = approvalValidator;
     }
 
     @Transactional
     public PaymentApproveResponse approvePayment(PaymentApproveRequest request) {
-        validateApproveRequest(request);
+        approvalValidator.validateApproveRequest(request);
         String idempotencyKey = defaultText(request.idempotencyKey(), "APPROVE-" + request.orderNo());
         orderStateService.validateApproval(request.orderNo(), request.amount());
 
@@ -204,7 +207,7 @@ public class PaymentApproveService {
 
     @Transactional
     public InicisReadyResponse prepareStdPay(InicisReadyRequest request) {
-        validateReadyRequest(request);
+        approvalValidator.validateReadyRequest(request);
         authSessionRepository.findByOrderNo(request.orderNo())
                 .ifPresent(session -> {
                     throw new ConflictException(ErrorCode.PAYMENT_DUPLICATED_REQUEST, "이미 결제 세션이 생성된 주문번호입니다.");
@@ -258,7 +261,7 @@ public class PaymentApproveService {
 
     @Transactional
     public InicisApproveResponse handleStdPayReturn(InicisAuthResultRequest request) {
-        validateAuthResultRequest(request);
+        approvalValidator.validateAuthResultRequest(request);
         PaymentAuthSession session = authSessionRepository.findByAuthToken(request.authToken())
                 .orElseThrow(() -> new com.yeni.backoffice.core.common.exception.NotFoundException(ErrorCode.PAYMENT_NOT_FOUND, "결제 인증 세션을 찾을 수 없습니다."));
         session.markAuthResultReceived();
@@ -272,7 +275,7 @@ public class PaymentApproveService {
             session.markFailed();
             throw new BusinessException(ErrorCode.PAYMENT_APPROVE_FAILED, "PG 인증 결과가 실패입니다: " + request.resultMessage());
         }
-        validateAuthMatchesSession(request, session);
+        approvalValidator.validateAuthMatchesSession(request, session);
 
         PaymentGatewayAdapter adapter = adapterResolver.resolve(PG_COMPANY);
         PaymentGatewayAdapter.ApprovalResult approvalResult = adapter.approve(
@@ -293,7 +296,7 @@ public class PaymentApproveService {
         }
 
         try {
-            validateApprovalResult(session, approvalResult);
+            approvalValidator.validateApprovalResult(session, approvalResult);
             PaymentTransaction payment = PaymentTransaction.builder()
                     .storeId(resolveStoreId(session.getOrderNo(), null))
                     .mid(session.getMid())
@@ -370,53 +373,6 @@ public class PaymentApproveService {
                 resultCode,
                 resultMessage
         );
-    }
-
-    private void validateApproveRequest(PaymentApproveRequest request) {
-        if (request == null || !StringUtils.hasText(request.orderNo()) || request.amount() == null
-                || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationBusinessException(ErrorCode.VALIDATION_ERROR, "주문번호와 0보다 큰 승인금액은 필수입니다.");
-        }
-    }
-
-    private void validateReadyRequest(InicisReadyRequest request) {
-        if (request == null || !StringUtils.hasText(request.orderNo()) || request.amount() == null
-                || request.amount().compareTo(BigDecimal.ZERO) <= 0 || !StringUtils.hasText(request.buyerName())
-                || !StringUtils.hasText(request.productName())) {
-            throw new ValidationBusinessException(ErrorCode.VALIDATION_ERROR, "주문번호, 0보다 큰 금액, 구매자명, 상품명은 필수입니다.");
-        }
-    }
-
-    private void validateAuthResultRequest(InicisAuthResultRequest request) {
-        if (request == null || !StringUtils.hasText(request.mid()) || !StringUtils.hasText(request.orderNo())
-                || !StringUtils.hasText(request.authToken()) || request.amount() == null
-                || !StringUtils.hasText(request.resultCode()) || !StringUtils.hasText(request.signature())) {
-            throw new ValidationBusinessException(ErrorCode.VALIDATION_ERROR, "인증 결과 요청값이 올바르지 않습니다.");
-        }
-    }
-
-    private void validateAuthMatchesSession(InicisAuthResultRequest request, PaymentAuthSession session) {
-        if (!session.getMid().equals(request.mid()) || !session.getOrderNo().equals(request.orderNo())
-                || session.getAmount().compareTo(request.amount()) != 0) {
-            throw new ValidationBusinessException(ErrorCode.INVALID_REQUEST, "인증 결과가 결제 세션과 일치하지 않습니다.");
-        }
-        if (!signatureService.matchesAuthSignature(request.orderNo(), request.amount(), request.authToken(), request.signature())) {
-            throw new ValidationBusinessException(ErrorCode.INVALID_REQUEST, "인증 서명이 올바르지 않습니다.");
-        }
-    }
-
-    private void validateApprovalResult(PaymentAuthSession session, PaymentGatewayAdapter.ApprovalResult approvalResult) {
-        if (!StringUtils.hasText(approvalResult.tid()) || approvalResult.approvedAt() == null) {
-            throw new ValidationBusinessException(ErrorCode.INVALID_REQUEST, "Mock 승인 응답값이 올바르지 않습니다.");
-        }
-        paymentRepository.findByTid(approvalResult.tid())
-                .ifPresent(payment -> {
-                    throw new ConflictException(ErrorCode.PAYMENT_DUPLICATED_REQUEST, "이미 등록된 PG 거래번호입니다.");
-                });
-        paymentRepository.findByOrderNo(session.getOrderNo())
-                .ifPresent(payment -> {
-                    throw new ConflictException(ErrorCode.PAYMENT_ALREADY_APPROVED);
-                });
     }
 
     private String midByProvider(PgProvider provider) {
