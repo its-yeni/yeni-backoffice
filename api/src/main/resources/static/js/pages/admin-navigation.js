@@ -65,7 +65,7 @@ function resetFilters() {
 
 function openCreateModal() {
     resetForm();
-    document.getElementById("modalTitle").textContent = "New Menu";
+    document.getElementById("modalTitle").textContent = "메뉴 추가";
     openModal();
 }
 
@@ -76,7 +76,7 @@ function openEditModal(event) {
     }
 
     resetForm();
-    document.getElementById("modalTitle").textContent = "Edit Menu";
+    document.getElementById("modalTitle").textContent = "메뉴 수정";
     document.getElementById("formNavigationItemId").value = row.dataset.id;
     document.getElementById("formNavigationGroupId").value = row.dataset.groupId;
     document.getElementById("formIcon").value = row.dataset.icon || "";
@@ -180,7 +180,7 @@ async function requestJson(url, method, payload) {
     const response = await fetch(url, options);
     if (!response.ok) {
         const message = await response.text();
-        alert(message || "Request failed.");
-        throw new Error(message || "Request failed.");
+        alert(message || "요청이 실패했습니다.");
+        throw new Error(message || "요청이 실패했습니다.");
     }
 }

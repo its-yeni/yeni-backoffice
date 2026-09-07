@@ -532,6 +532,16 @@ body:has(.commerce-modal.open), body:has(.product-modal.open), body:has(.modal-b
 .status.bad   { border-color: #fecaca; background: #fef2f2; color: var(--danger); }
 .status.idle  { border-color: var(--border-default); background: var(--bg-subtle); color: var(--text-secondary); }
 .status.info  { border-color: #c7d2fe; background: var(--primary-soft); color: var(--primary-hover); }
+/* 예전 배지 클래스(.st-badge / .ops-badge)를 .status 와 같은 톤으로 */
+.st-badge, .ops-badge {
+  display: inline-flex; align-items: center; justify-content: center; height: 22px; padding: 0 10px;
+  border: 1px solid transparent; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.st-badge.draft, .ops-badge.medium { border-color: var(--border-default); background: var(--bg-subtle); color: var(--text-secondary); }
+.st-badge.confirmed, .st-badge.paid { border-color: #bbf7d0; background: #f0fdf4; color: var(--success); }
+.st-badge.ready { border-color: #c7d2fe; background: var(--primary-soft); color: var(--primary-hover); }
+.ops-badge.high { border-color: #fed7aa; background: #fff7ed; color: #9a6a1c; }
+.ops-badge.critical { border-color: #fecaca; background: #fef2f2; color: var(--danger); }
 /* .status-dot = 부가 상태 (점 + 텍스트). status-indicator 와 동일 */
 .status-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-secondary); white-space: nowrap; }
 .status-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex: none; background: #98a2b3; }

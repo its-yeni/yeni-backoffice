@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Menu Management - Yeni Backoffice</title>
+    <title>메뉴 관리 - Yeni Backoffice</title>
 
     <link rel="stylesheet" th:href="@{/css/common.css}" />
     <link rel="stylesheet" th:href="@{/css/layout.css}" />
@@ -19,10 +19,13 @@
         <div th:replace="~{fragments/topbar :: header}"></div>
 
         <section class="content">
-            <div class="filter-section card">
+            <header class="page-header">
+                <div><h1>메뉴 관리</h1><p>사이드바 메뉴 항목을 추가·수정하고 노출 여부를 관리합니다.</p></div>
+            </header>
+            <div class="filter-section">
                 <div class="filter-row">
                     <select id="groupFilter" class="filter-input">
-                        <option value="">All groups</option>
+                        <option value="">전체 그룹</option>
                         <option th:each="group : ${navigationGroups}"
                                 th:value="${group.groupCode}"
                                 th:text="${group.groupName}">
@@ -30,29 +33,29 @@
                         </option>
                     </select>
 
-                    <input type="text" id="itemNameFilter" class="filter-input" placeholder="Search menu name" />
+                    <input type="text" id="itemNameFilter" class="filter-input" placeholder="메뉴 이름 검색" />
 
                     <select id="useYnFilter" class="filter-input">
-                        <option value="">Use status</option>
-                        <option value="true">Used</option>
-                        <option value="false">Unused</option>
+                        <option value="">사용 여부</option>
+                        <option value="true">사용</option>
+                        <option value="false">미사용</option>
                     </select>
 
                     <select id="displayYnFilter" class="filter-input">
-                        <option value="">Display status</option>
-                        <option value="true">Shown</option>
-                        <option value="false">Hidden</option>
+                        <option value="">노출 여부</option>
+                        <option value="true">노출</option>
+                        <option value="false">숨김</option>
                     </select>
 
-                    <button class="btn btn-primary" id="searchBtn" type="button">Search</button>
-                    <button class="btn btn-light" id="resetBtn" type="button">Reset</button>
-                    <button class="btn btn-primary" id="addBtn" type="button">New Menu</button>
+                    <button class="btn btn-primary" id="searchBtn" type="button">검색</button>
+                    <button class="btn btn-light" id="resetBtn" type="button">초기화</button>
+                    <button class="btn btn-primary" id="addBtn" type="button">메뉴 추가</button>
                 </div>
             </div>
 
             <div class="card table-section">
                 <div class="panel-header">
-                    <h3>Sidebar Navigation</h3>
+                    <h3>사이드바 메뉴</h3>
                     <span class="table-count" th:text="|Total ${#lists.size(navigationItems)}|">Total 0</span>
                 </div>
 
@@ -61,16 +64,16 @@
                         <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Group</th>
-                            <th>Icon</th>
-                            <th>Name</th>
+                            <th>그룹</th>
+                            <th>아이콘</th>
+                            <th>이름</th>
                             <th>URL</th>
-                            <th>Depth</th>
-                            <th>Sort</th>
-                            <th>Use</th>
-                            <th>Display</th>
-                            <th>Role</th>
-                            <th>Actions</th>
+                            <th>깊이</th>
+                            <th>순서</th>
+                            <th>사용</th>
+                            <th>노출</th>
+                            <th>권한</th>
+                            <th>관리</th>
                         </tr>
                         </thead>
                         <tbody id="navigationTableBody">
@@ -118,8 +121,8 @@
                                 </button>
                             </td>
                             <td>
-                                <button class="btn-edit" th:data-id="${item.id}" type="button">Edit</button>
-                                <button class="btn-delete" th:data-id="${item.id}" type="button">Delete</button>
+                                <button class="btn-edit" th:data-id="${item.id}" type="button">수정</button>
+                                <button class="btn-delete" th:data-id="${item.id}" type="button">삭제</button>
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(navigationItems)}">
@@ -133,7 +136,7 @@
             <div id="navigationModal" class="modal" style="display:none;">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 id="modalTitle">New Menu</h3>
+                        <h3 id="modalTitle">메뉴 추가</h3>
                         <button class="modal-close" id="modalCloseBtn" type="button">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -143,7 +146,7 @@
                             <div class="form-group">
                                 <label for="formNavigationGroupId">Group *</label>
                                 <select id="formNavigationGroupId" required>
-                                    <option value="">Select group</option>
+                                    <option value="">그룹 선택</option>
                                     <option th:each="group : ${navigationGroups}"
                                             th:value="${group.id}"
                                             th:text="${group.groupName}">
@@ -153,34 +156,34 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="formIcon">Icon</label>
-                                <input type="text" id="formIcon" placeholder="Icon text" />
+                                <label for="formIcon">아이콘</label>
+                                <input type="text" id="formIcon" placeholder="아이콘 키" />
                             </div>
 
                             <div class="form-group">
                                 <label for="formItemName">Name *</label>
-                                <input type="text" id="formItemName" required placeholder="Menu name" />
+                                <input type="text" id="formItemName" required placeholder="메뉴 이름" />
                             </div>
 
                             <div class="form-group">
                                 <label for="formItemUrl">URL *</label>
-                                <input type="text" id="formItemUrl" required placeholder="/menu-url" />
+                                <input type="text" id="formItemUrl" required placeholder="/화면-경로" />
                             </div>
 
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label for="formDepth">Depth</label>
+                                    <label for="formDepth">깊이</label>
                                     <input type="number" id="formDepth" value="1" min="1" />
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="formSortOrder">Sort Order</label>
+                                    <label for="formSortOrder">정렬 순서</label>
                                     <input type="number" id="formSortOrder" value="1" min="1" />
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label for="formRequiredRole">Required Role</label>
+                                <label for="formRequiredRole">필요 권한</label>
                                 <select id="formRequiredRole">
                                     <option value="USER">USER</option>
                                     <option value="ADMIN">ADMIN</option>

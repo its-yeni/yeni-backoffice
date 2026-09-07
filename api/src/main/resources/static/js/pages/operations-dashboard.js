@@ -145,10 +145,10 @@ function setupFailureInsight($, escape) {
       // 그룹이 복구 작업 출처만이면 각 칩을 복구 화면 딥링크로 만든다.
       const recoveryOnly = sources.length === 1 && sources[0] === 'RECOVERY_TASK';
       const chips = refs.map(r => recoveryOnly
-        ? `<a href="/admin/payment-operations/recovery-tasks?keyword=${encodeURIComponent(r)}">${escape(r)}</a>`
+        ? `<a href="/admin/payment-operations?keyword=${encodeURIComponent(r)}">${escape(r)}</a>`
         : `<span>${escape(r)}</span>`).join('');
       const link = sources.includes('RECOVERY_TASK')
-        ? `<a class="ops-insight-item-link" href="/admin/payment-operations/recovery-tasks${recoveryOnly && refs.length === 1 ? '?keyword=' + encodeURIComponent(refs[0]) : ''}">복구 작업에서 처리 →</a>`
+        ? `<a class="ops-insight-item-link" href="/admin/payment-operations${recoveryOnly && refs.length === 1 ? '?keyword=' + encodeURIComponent(refs[0]) : ''}">복구 작업에서 처리 →</a>`
         : sources.includes('PG_API_LOG')
           ? `<a class="ops-insight-item-link" href="/admin/payment-operations?status=APPROVE_FAILED">PG 거래에서 확인 →</a>`
           : '';
@@ -172,7 +172,7 @@ function setupFailureInsight($, escape) {
       ${data.summaryHeadline ? `<p class="ops-insight-headline">${escape(data.summaryHeadline)}</p>` : ''}
       <div class="ops-insight-items">${itemsHtml}</div>
       <div class="ops-insight-links">
-        <a href="/admin/payment-operations/recovery-tasks">복구 작업 화면 →</a>
+        <a href="/admin/payment-operations">복구 작업 화면 →</a>
         <a href="/admin/payment-operations">PG 거래 화면 →</a>
       </div>
       <div class="ops-insight-foot">
