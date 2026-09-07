@@ -12,12 +12,14 @@ import com.yeni.backoffice.core.pos.entity.PosTerminal;
 import com.yeni.backoffice.core.pos.service.PosSaleCommandService;
 import com.yeni.backoffice.core.pos.service.PosCatalogSyncService;
 import com.yeni.backoffice.core.pos.service.PosTerminalAuthenticationService;
+import com.yeni.backoffice.core.pos.service.PosSyncManagementService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,14 +41,54 @@ public class PosV1RestController {
     private final PosTerminalAuthenticationService authenticationService;
     private final PosSaleCommandService saleService;
     private final PosCatalogSyncService catalogSyncService;
+    private final PosSyncManagementService syncManagementService;
     private final ObjectMapper objectMapper;
 
     public PosV1RestController(PosTerminalAuthenticationService authenticationService,
-            PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService, ObjectMapper objectMapper) {
+            PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService,
+            PosSyncManagementService syncManagementService, ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
         this.saleService = saleService;
         this.catalogSyncService = catalogSyncService;
+        this.syncManagementService = syncManagementService;
         this.objectMapper = objectMapper;
+    }
+
+    @PostMapping("/sync/executions")
+    public ResponseEntity<PosSyncManagementService.SyncExecution> reportSync(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestBody PosSyncManagementService.SyncReport report){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(syncManagementService.report(terminal,report));
+    }
+
+    @GetMapping("/sync/status")
+    public ResponseEntity<PosSyncManagementService.SyncOverview> syncStatus(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(syncManagementService.overview(terminal));
+    }
+
+    @PostMapping("/sync/executions/{executionId}/retry")
+    public ResponseEntity<PosSyncManagementService.SyncExecution> retrySync(
+            @PathVariable Long executionId,@RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,@RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(syncManagementService.requestRetry(terminal,executionId));
+    }
+
+    @PostMapping("/sync/executions/{executionId}/resolve")
+    public ResponseEntity<PosSyncManagementService.SyncExecution> resolveSync(
+            @PathVariable Long executionId,@RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,@RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(syncManagementService.resolve(terminal,executionId));
     }
 
     @GetMapping("/sync/catalog")
