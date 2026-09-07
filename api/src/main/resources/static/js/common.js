@@ -319,6 +319,11 @@ window.AdminHtmxNavigation = (function () {
         "/admin/payment-operations/settlements/reconciliation",
         "/admin/payment-operations/pg-reconciliation",
         "/admin/operations-dashboard",
+        "/admin/analytics",
+        "/admin/analytics/orders",
+        "/admin/analytics/payments",
+        "/admin/analytics/settlements",
+        "/admin/analytics/inventory",
         "/admin/database-spec",
         "/admin/audit-logs",
         "/admin/navigation"
@@ -488,7 +493,11 @@ window.AdminHtmxNavigation = (function () {
         }
 
         document.body.classList.add("workspace-navigating");
-        cacheCurrentView();
+        // cacheCurrentView()는 현재 섹션을 즉시 플레이스홀더로 교체한다(로딩 중 이전 화면을
+        // 흐리게 유지 + 뒤로가기 복원용). 그런데 클릭된 링크가 섹션 안에 있으면(예: 운영 분석
+        // 하위 탭) 링크가 DOM에서 떨어져 나가 htmx 요청 자체가 안 나가고 전체 새로고침으로
+        // 넘어간다. 그런 링크는 캐시 최적화를 건너뛰고 htmx가 섹션을 직접 교체하게 둔다.
+        if (!link.closest("main > section")) cacheCurrentView();
     }
 
     function updateShell() {
