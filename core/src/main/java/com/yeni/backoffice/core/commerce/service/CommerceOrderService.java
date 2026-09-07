@@ -187,7 +187,11 @@ public class CommerceOrderService {
     }
     @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrdersInScope(OperationalScope scope){
         List<CommerceOrder> orders=scope.unrestricted()?orderRepository.findAllByOrderByIdDesc():orderRepository.findByStoreIdInOrderByIdDesc(scope.storeIds());
-        return orders.stream().map(o->CommerceOrderResponse.from(o,orderItemRepository.findByOrderIdOrderByIdAsc(o.getId()),deliveryService.findByOrderId(o.getId()))).toList();
+        if(orders.isEmpty())return List.of();
+        List<CommerceOrderItem> items=orderItemRepository.findByOrderIdInOrderByOrderIdAscIdAsc(orders.stream().map(CommerceOrder::getId).toList());
+        Map<Long,List<CommerceOrderItem>> itemsByOrder=items.stream().collect(Collectors.groupingBy(CommerceOrderItem::getOrderId));
+        Map<Long,com.yeni.backoffice.core.commerce.dto.CommerceDeliveryDtos.DeliveryResponse> deliveries=deliveryService.findFirstByOrders(orders,items);
+        return orders.stream().map(o->CommerceOrderResponse.from(o,itemsByOrder.getOrDefault(o.getId(),List.of()),deliveries.get(o.getId()))).toList();
     }
     @Transactional(readOnly=true) public CommerceOrderResponse getOrder(Long orderId){CommerceOrder order=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));return CommerceOrderResponse.from(order,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));}
     @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(){return getSummary(null);}

@@ -15,6 +15,8 @@ public interface CommerceOrderItemRepository extends JpaRepository<CommerceOrder
 
     List<CommerceOrderItem> findByOrderIdOrderByIdAsc(Long orderId);
 
+    List<CommerceOrderItem> findByOrderIdInOrderByOrderIdAscIdAsc(Collection<Long> orderIds);
+
     long countByOrderId(Long orderId);
 
     List<CommerceOrderItem> findByOrderIdInAndShippedYnFalseAndProductVariantIdIsNotNullOrderByIdAsc(Collection<Long> orderIds);

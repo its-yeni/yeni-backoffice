@@ -74,6 +74,30 @@ public class CommerceDeliveryService {
     }
 
     @Transactional(readOnly = true)
+    public Map<Long, DeliveryResponse> findFirstByOrders(
+            List<CommerceOrder> orderRows,
+            List<CommerceOrderItem> itemRows) {
+        if (orderRows.isEmpty()) return Map.of();
+        Map<Long, CommerceOrder> orderMap = orderRows.stream()
+                .collect(Collectors.toMap(CommerceOrder::getId, Function.identity()));
+        Map<Long, List<CommerceOrderItem>> itemsByOrder = itemRows.stream()
+                .collect(Collectors.groupingBy(CommerceOrderItem::getOrderId));
+        return deliveries.findByOrderIdIn(orderMap.keySet()).stream()
+                .sorted(java.util.Comparator.comparing(CommerceDelivery::getId))
+                .collect(Collectors.toMap(
+                        CommerceDelivery::getOrderId,
+                        delivery -> {
+                            CommerceOrder order = orderMap.get(delivery.getOrderId());
+                            int unshippedItemCount = (int) itemsByOrder.getOrDefault(delivery.getOrderId(), List.of()).stream()
+                                    .filter(item -> delivery.getId().equals(item.getDeliveryId()) && !item.isShippedYn())
+                                    .count();
+                            return DeliveryResponse.from(delivery, order.getOrderNo(), order.getBuyerName(),
+                                    unshippedItemCount, order.getStoreId());
+                        },
+                        (first, ignored) -> first));
+    }
+
+    @Transactional(readOnly = true)
     public List<DeliveryResponse> listByOrder(Long orderId) {
         return deliveries.findAllByOrderIdOrderByIdAsc(orderId).stream().map(d -> toResponse(d, Map.of())).toList();
     }
