@@ -58,7 +58,7 @@
       <!-- ══════════ 전체 PG 거래 (기존 테이블) ══════════ -->
       <div class="page-tab-panel" id="panel-pg">
         <div class="pg-filter-bar">
-          <label class="pg-search"><span class="sr-only">거래 검색</span><input id="payment-keyword" type="search" placeholder="주문번호, 결제 ID, TID 검색"></label>
+          <label class="pg-search"><span class="sr-only"></span><input id="payment-keyword" type="search" placeholder="주문번호, 결제 ID, TID 검색"></label>
           <div class="pg-date-range"><input id="payment-start" type="date" aria-label="조회 시작일"><span>~</span><input id="payment-end" type="date" aria-label="조회 종료일"></div>
           <select id="payment-status" aria-label="거래 상태"><option value="">전체 상태</option><option value="APPROVED">승인</option><option value="APPROVE_UNKNOWN">결과 불명</option><option value="APPROVE_FAILED">승인 실패</option><option value="PARTIAL_CANCELED">부분 취소</option><option value="CANCELED">취소 완료</option><option value="CANCEL_UNKNOWN">취소 결과 불명</option></select>
           <button class="btn btn-text" id="payment-refresh" type="button">초기화</button>
@@ -71,7 +71,7 @@
           <button type="button" data-status="APPROVE_UNKNOWN,CANCEL_UNKNOWN"><span>결과 불명</span><strong id="metric-unknown">0</strong></button>
           <button type="button" data-status="APPROVE_FAILED"><span>실패</span><strong id="metric-failed">0</strong></button>
         </div>
-        <div class="pg-table-meta"><label class="unassigned-filter"><input id="payment-unassigned" type="checkbox"> 매장이 지정되지 않은 기존 거래 포함</label><p>승인 합계 <strong id="metric-approved-amount">0원</strong><span id="payment-result-count">0건</span></p></div>
+        <div class="pg-table-meta"><label class="unassigned-filter"><p>승인 합계 <strong id="metric-approved-amount">0원</strong><span id="payment-result-count">0건</span></p></div>
         <div class="data-table-wrap pg-table-wrap"><table class="data-table transaction-table pg-transaction-table"><thead><tr><th class="row-index">#</th><th>거래시간</th><th>주문번호</th><th>매장</th><th>상품</th><th>결제 ID</th><th>TID</th><th class="amount">승인 금액</th><th class="amount">취소 금액</th><th>상태</th><th class="actions">관리</th></tr></thead><tbody id="payment-rows"></tbody></table><div class="data-table-empty" id="payment-empty" hidden><strong>조회된 PG 거래가 없습니다.</strong><p>기간 또는 검색 조건을 변경하거나 고객 주문 테스트를 실행해 주세요.</p></div><div id="payment-pagination"></div></div>
       </div>
 

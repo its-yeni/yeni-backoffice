@@ -51,34 +51,36 @@
     <section class="ops-quick"><h2>빠른 메뉴</h2><div class="ops-quick-grid">
       <a href="/admin/payment-operations"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><span class="ops-quick-text"><strong>결제 예외 처리</strong><small>결과불명·복구 큐</small></span></a><a href="/admin/payment-operations/settlements"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="ops-quick-text"><strong>정산 마감</strong><small>대사·확정·지급</small></span></a><a href="/admin/payment-operations/accounting"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M4 9h16M9 4v16"/></svg></span><span class="ops-quick-text"><strong>회계 · 분개장</strong><small>전표·시산표</small></span></a><a href="/admin/commerce/inventory"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7 12 12l8.7-5"/></svg></span><span class="ops-quick-text"><strong>재고 · 발주</strong><small>발주·입고 대기</small></span></a><a href="/admin/commerce/orders"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span><span class="ops-quick-text"><strong>주문 관리</strong><small>주문·결제 상태</small></span></a><a href="/admin/analytics"><span class="ops-quick-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg></span><span class="ops-quick-text"><strong>운영 분석</strong><small>주문·결제·정산 지표</small></span></a>
     </div></section>
-  </section>
 
-  <button type="button" class="ops-insight-fab" id="ops-insight-fab" aria-controls="ops-insight-drawer" aria-expanded="false">
-    <span class="ops-insight-fab-ico" aria-hidden="true">✦</span><span>AI 원인 분석</span>
-  </button>
-  <div class="ops-insight-dim" id="ops-insight-dim" hidden></div>
-  <aside class="ops-insight-drawer" id="ops-insight-drawer" aria-hidden="true" aria-labelledby="ops-insight-title">
-    <header>
-      <div><span>AI TRIAGE ASSISTANT</span><h2 id="ops-insight-title">실패 로그 AI 원인 요약</h2></div>
-      <button type="button" id="ops-insight-close" aria-label="닫기">×</button>
-    </header>
-    <div class="ops-insight-drawer-body">
-      <p class="ops-insight-lead">최근 24시간 PG API 실패 로그와 복구 작업을 원인별로 묶어 심각도·권장 조치를 제안합니다. 운영자의 1차 트리아지 보조이며, 실제 재시도·취소는 각 화면에서 직접 처리합니다.</p>
-      <ol class="ops-insight-flow">
-        <li><span>01</span><strong>로그 수집</strong><p><code>pg_api_log</code>·RecoveryTask 최근 24h / 최대 50건</p></li>
-        <li><span>02</span><strong>마스킹</strong><p>이메일·전화·카드번호·인증정보 제거 후 전송</p></li>
-        <li><span>03</span><strong>LLM 구조화</strong><p>OpenAI Structured Outputs(strict)로 원인 그룹핑</p></li>
-        <li><span>04</span><strong>검증</strong><p>허위 참조키 제거·중복 집계 정리, 실패 시 규칙 기반 폴백</p></li>
-      </ol>
-      <div class="ops-insight-tech"><span>Spring Boot</span><span>OpenAI Structured Outputs</span><span>JSON Schema strict</span><span>규칙 기반 폴백</span><span>인메모리 캐시 300s</span></div>
-      <div class="ops-insight-run">
-        <button type="button" class="btn btn-primary" id="ops-insight-run-btn">AI로 원인 분석</button>
-        <span class="ops-insight-conn" id="ops-insight-conn" hidden></span>
+    <!-- AI 원인 분석: position:fixed 라 위치는 그대로지만, htmx 화면 이동 시에도 함께
+         스왑되도록 콘텐츠 섹션 안에 둔다(예전엔 main 직속이라 이동 시 안 나왔음). -->
+    <button type="button" class="ops-insight-fab" id="ops-insight-fab" aria-controls="ops-insight-drawer" aria-expanded="false">
+      <span class="ops-insight-fab-ico" aria-hidden="true">✦</span><span>AI 원인 분석</span>
+    </button>
+    <div class="ops-insight-dim" id="ops-insight-dim" hidden></div>
+    <aside class="ops-insight-drawer" id="ops-insight-drawer" aria-hidden="true" aria-labelledby="ops-insight-title">
+      <header>
+        <div><span>AI TRIAGE ASSISTANT</span><h2 id="ops-insight-title">실패 로그 AI 원인 요약</h2></div>
+        <button type="button" id="ops-insight-close" aria-label="닫기">×</button>
+      </header>
+      <div class="ops-insight-drawer-body">
+        <p class="ops-insight-lead">최근 24시간 PG API 실패 로그와 복구 작업을 원인별로 묶어 심각도·권장 조치를 제안합니다. 운영자의 1차 트리아지 보조이며, 실제 재시도·취소는 각 화면에서 직접 처리합니다.</p>
+        <ol class="ops-insight-flow">
+          <li><span>01</span><strong>로그 수집</strong><p><code>pg_api_log</code>·RecoveryTask 최근 24h / 최대 50건</p></li>
+          <li><span>02</span><strong>마스킹</strong><p>이메일·전화·카드번호·인증정보 제거 후 전송</p></li>
+          <li><span>03</span><strong>LLM 구조화</strong><p>OpenAI Structured Outputs(strict)로 원인 그룹핑</p></li>
+          <li><span>04</span><strong>검증</strong><p>허위 참조키 제거·중복 집계 정리, 실패 시 규칙 기반 폴백</p></li>
+        </ol>
+        <div class="ops-insight-tech"><span>Spring Boot</span><span>OpenAI Structured Outputs</span><span>JSON Schema strict</span><span>규칙 기반 폴백</span><span>인메모리 캐시 300s</span></div>
+        <div class="ops-insight-run">
+          <button type="button" class="btn btn-primary" id="ops-insight-run-btn">AI로 원인 분석</button>
+          <span class="ops-insight-conn" id="ops-insight-conn" hidden></span>
+        </div>
+        <p class="ops-insight-hint"><code>OPENAI_API_KEY</code> 미설정 시 규칙 기반 요약으로 동작합니다.</p>
+        <div class="ops-insight-body" id="ops-insight-body" hidden></div>
       </div>
-      <p class="ops-insight-hint"><code>OPENAI_API_KEY</code> 미설정 시 규칙 기반 요약으로 동작합니다.</p>
-      <div class="ops-insight-body" id="ops-insight-body" hidden></div>
-    </div>
-  </aside>
+    </aside>
+  </section>
 </main></div>
 <script th:inline="javascript">window.opsSalesTrend=/*[[${operations.salesTrend}]]*/[];window.opsQueueItems=/*[[${operations.queueItems}]]*/[];</script>
 <script th:src="@{/js/common.js}"></script><script th:src="@{/js/canvas-charts.js}"></script><script th:src="@{/js/pages/operations-dashboard.js}"></script>

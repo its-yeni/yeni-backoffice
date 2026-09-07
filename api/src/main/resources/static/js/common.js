@@ -350,8 +350,10 @@ window.AdminHtmxNavigation = (function () {
             styles: Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]')).map(link => link.href),
             inlineScripts: Array.from(doc.querySelectorAll('script:not([src])')).map(script => script.textContent)
                 .filter(code => code.trim() && !code.includes("sidebar-collapsed") && !code.includes("var aliases=")),
+            // admin-pagination.js 는 모든 페이지가 로드하지 않으므로 htmx 이동 시에도 실행해야
+            // 한다(예: 대시보드 → 회계·분개장). IIFE라 재실행해도 안전.
             scripts: Array.from(doc.querySelectorAll('script[src]')).map(script => script.src)
-                .filter(src => !src.includes("/js/common.js") && !src.includes("/js/admin-pagination.js") && !src.includes("/js/demo-guide.js"))
+                .filter(src => !src.includes("/js/common.js") && !src.includes("/js/demo-guide.js"))
         };
     }
 
