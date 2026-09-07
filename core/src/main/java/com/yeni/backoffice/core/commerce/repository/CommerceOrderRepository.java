@@ -10,6 +10,8 @@ import jakarta.persistence.LockModeType;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CommerceOrderRepository extends JpaRepository<CommerceOrder, Long> {
 
@@ -24,6 +26,7 @@ public interface CommerceOrderRepository extends JpaRepository<CommerceOrder, Lo
     List<CommerceOrder> findAllByOrderByIdDesc();
 
     List<CommerceOrder> findByStoreIdOrderByIdDesc(Long storeId);
+    Page<CommerceOrder> findByStoreIdOrderByIdDesc(Long storeId, Pageable pageable);
 
     List<CommerceOrder> findByStoreIdInOrderByIdDesc(java.util.Collection<Long> storeIds);
 

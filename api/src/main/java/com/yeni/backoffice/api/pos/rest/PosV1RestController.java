@@ -13,6 +13,7 @@ import com.yeni.backoffice.core.pos.service.PosSaleCommandService;
 import com.yeni.backoffice.core.pos.service.PosCatalogSyncService;
 import com.yeni.backoffice.core.pos.service.PosTerminalAuthenticationService;
 import com.yeni.backoffice.core.pos.service.PosSyncManagementService;
+import com.yeni.backoffice.core.pos.service.PosOrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -42,16 +43,49 @@ public class PosV1RestController {
     private final PosSaleCommandService saleService;
     private final PosCatalogSyncService catalogSyncService;
     private final PosSyncManagementService syncManagementService;
+    private final PosOrderService posOrderService;
     private final ObjectMapper objectMapper;
 
     public PosV1RestController(PosTerminalAuthenticationService authenticationService,
             PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService,
-            PosSyncManagementService syncManagementService, ObjectMapper objectMapper) {
+            PosSyncManagementService syncManagementService, PosOrderService posOrderService, ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
         this.saleService = saleService;
         this.catalogSyncService = catalogSyncService;
         this.syncManagementService = syncManagementService;
+        this.posOrderService = posOrderService;
         this.objectMapper = objectMapper;
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<com.yeni.backoffice.core.commerce.service.CommerceOrderQueryService.OrderPage> orders(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestParam(required=false) Integer page,@RequestParam(required=false) Integer size){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(posOrderService.list(terminal,page,size));
+    }
+
+    @GetMapping("/orders/{orderId}")
+    public ResponseEntity<com.yeni.backoffice.core.commerce.dto.CommerceOrderDtos.CommerceOrderResponse> order(
+            @PathVariable Long orderId,@RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,@RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(posOrderService.detail(terminal,orderId));
+    }
+
+    @PostMapping("/orders/{orderId}/cancel")
+    public ResponseEntity<PosOrderService.CancelResult> cancelOrder(
+            @PathVariable Long orderId,@RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,@RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestHeader(REQUEST_ID_HEADER) String clientRequestId,
+            @Valid @RequestBody PosV1Dtos.CancelRequest request){
+        validateClientRequestId(clientRequestId);
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(posOrderService.cancel(terminal,orderId,clientRequestId.trim(),requestHash(request),
+                request.cancelAmount(),request.reason()));
     }
 
     @PostMapping("/sync/executions")
@@ -123,9 +157,7 @@ public class PosV1RestController {
             @RequestHeader(value = VERSION_HEADER, required = false) String appVersion,
             @RequestHeader(REQUEST_ID_HEADER) String clientRequestId,
             @Valid @RequestBody SaleCreateRequest request) {
-        if (!StringUtils.hasText(clientRequestId) || clientRequestId.trim().length() > 80) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST, "X-Client-Request-Id는 1~80자여야 합니다.");
-        }
+        validateClientRequestId(clientRequestId);
         PosTerminal terminal = authenticationService.authenticate(storeId, terminalCode, credential, appVersion);
         CommerceOrderCreateRequest orderRequest = new CommerceOrderCreateRequest(
                 orderNumber(terminal, request), buyerName(request), request.buyerPhone(), request.items(), null);
@@ -146,7 +178,12 @@ public class PosV1RestController {
         return null;
     }
 
-    private String requestHash(SaleCreateRequest request) {
+    private void validateClientRequestId(String clientRequestId){
+        if(!StringUtils.hasText(clientRequestId)||clientRequestId.trim().length()>80)
+            throw new BusinessException(ErrorCode.INVALID_REQUEST,"X-Client-Request-Id는 1~80자여야 합니다.");
+    }
+
+    private String requestHash(Object request) {
         try {
             return sha256(objectMapper.writeValueAsBytes(request));
         } catch (JsonProcessingException serializationFailure) {
