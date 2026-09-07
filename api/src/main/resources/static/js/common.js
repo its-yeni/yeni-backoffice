@@ -16,9 +16,9 @@ window.AdminWorkspace = (function () {
         "/admin/commerce/categories":"카테고리 관리", "/admin/commerce/options":"옵션 관리",
         "/admin/commerce/product-options":"상품 옵션 설정", "/admin/commerce/preview":"구매·결제 시뮬레이션",
         "/admin/commerce/orders":"주문 관리", "/admin/commerce/stores":"매장 관리",
-        "/admin/commerce/suppliers":"공급처 관리", "/admin/commerce/purchase-orders":"발주 관리",
+        "/admin/commerce/suppliers":"공급처 관리", "/admin/commerce/purchase-orders":"발주서",
         "/admin/commerce/stock-counts":"재고 실사",
-        "/admin/commerce/receiving":"입고 관리", "/admin/commerce/inventory":"재고 · 발주",
+        "/admin/commerce/receiving":"입고 검수", "/admin/commerce/inventory":"재고 · 발주",
         "/admin/commerce/inventory/transfers":"재고 이동", "/admin/commerce/shipments":"출고 관리",
         "/admin/commerce/deliveries":"배송 관리", "/admin/commerce/returns":"반품 관리",
         "/admin/commerce/inventory/lots":"LOT·유통기한", "/admin/commerce/inventory/replenishment":"발주 제안",
@@ -124,6 +124,12 @@ window.AdminWorkspace = (function () {
             const g = active.closest(".nav-group");
             const t = g && g.querySelector(".nav-title");
             if (t) group = t.textContent.trim();
+            // 하위 단계에 있으면 "그룹 › 상위 › 단계" 로 한 단계 더 보여준다.
+            if (active.closest(".nav-substeps")) {
+                const parentLink = active.closest(".nav-item-wrap")?.querySelector(":scope > a .nav-item-label");
+                if (parentLink && group) group = group + " › " + parentLink.textContent.trim();
+                else if (parentLink) group = parentLink.textContent.trim();
+            }
         }
         if (!name) name = heading ? heading.textContent.trim() : (TAB_TITLES[location.pathname] || "");
         // 그룹명이 화면명 앞에 이미 붙어 있으면(예: "결제 예외 처리" / 그룹 "결제 · 정산") 축약 없이 그대로 둔다.
@@ -502,15 +508,27 @@ window.AdminHtmxNavigation = (function () {
 
     function updateShell() {
         document.title = responseDocument?.title || document.title;
-        document.querySelectorAll(".nav a").forEach(link => {
-            const href = new URL(link.href).pathname;
-            const active = href === location.pathname
-                || (href === "/admin/commerce/options" && location.pathname === "/admin/commerce/product-options")
-                || (href === "/admin/payment-operations/settlements/reconciliation" && location.pathname === "/admin/payment-operations/pg-reconciliation");
-            link.classList.toggle("active", active);
-            const group = link.closest(".nav-group");
-            if (active && group) setGroupExpanded(group, true);
+        const aliasMap = {
+            "/admin/commerce/product-options": "/admin/commerce/options",
+            "/admin/payment-operations/pg-reconciliation": "/admin/payment-operations/settlements/reconciliation"
+        };
+        const navPath = aliasMap[location.pathname] || location.pathname;
+        const navLinks = Array.from(document.querySelectorAll(".nav a"));
+        navLinks.forEach(link => link.classList.remove("active"));
+        document.querySelectorAll(".nav-item-wrap.is-section-active").forEach(w => w.classList.remove("is-section-active"));
+        // 경로가 가장 길게 일치하는 링크 하나만 active (부모/자식 동시 활성 방지).
+        let best = null, bestLen = -1;
+        navLinks.forEach(link => {
+            const href = link.getAttribute("href");
+            if (!href) return;
+            if ((navPath === href || navPath.indexOf(href + "/") === 0) && href.length > bestLen) { best = link; bestLen = href.length; }
         });
+        if (best) {
+            best.classList.add("active");
+            best.closest(".nav-item-wrap")?.classList.add("is-section-active");
+            const group = best.closest(".nav-group");
+            if (group) setGroupExpanded(group, true);
+        }
         if (window.AdminWorkspace) window.AdminWorkspace.refresh();
         enhanceLinks(document);
     }

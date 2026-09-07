@@ -40,14 +40,26 @@ public class AdminNavigationService {
     public List<SidebarNavigationGroupDto> getSidebarNavigationGroups(String currentPath, AdminRole currentRole) {
         AdminRole role = currentRole == null ? AdminRole.USER : currentRole;
         List<AdminNavigationGroup> groups = navigationGroupRepository.findByUseYnTrueOrderBySortOrderAscIdAsc();
-        List<AdminNavigationItem> items = navigationItemRepository.findForSidebar().stream()
+
+        // useYn=true 인 항목 전체를 가져와 부모/자식으로 나눈다. 최상위(사이드바 노출)는
+        // displayYn=true + 부모 없음, 하위 단계는 부모가 최상위인 항목(displayYn 무관 —
+        // 숨긴 화면도 업무 흐름 단계로 노출한다).
+        List<AdminNavigationItem> usable = navigationItemRepository.findAllUsable().stream()
                 .filter(item -> role.canAccess(item.getRequiredRole()))
                 .collect(Collectors.toList());
 
-        Map<Long, List<AdminNavigationItem>> itemsByGroupId = new HashMap<>();
-        for (AdminNavigationItem item : items) {
-            Long groupId = item.getNavigationGroup().getId();
-            itemsByGroupId.computeIfAbsent(groupId, key -> new ArrayList<>()).add(item);
+        Map<Long, List<AdminNavigationItem>> childrenByParent = new HashMap<>();
+        for (AdminNavigationItem item : usable) {
+            if (item.getParentNavigationItemId() != null) {
+                childrenByParent.computeIfAbsent(item.getParentNavigationItemId(), k -> new ArrayList<>()).add(item);
+            }
+        }
+
+        Map<Long, List<AdminNavigationItem>> topLevelByGroup = new HashMap<>();
+        for (AdminNavigationItem item : usable) {
+            if (item.getParentNavigationItemId() == null && Boolean.TRUE.equals(item.getDisplayYn())) {
+                topLevelByGroup.computeIfAbsent(item.getNavigationGroup().getId(), k -> new ArrayList<>()).add(item);
+            }
         }
 
         return groups.stream()
@@ -55,14 +67,20 @@ public class AdminNavigationService {
                         group.getGroupCode(),
                         group.getGroupName(),
                         group.getSortOrder(),
-                        itemsByGroupId.getOrDefault(group.getId(), Collections.emptyList()).stream()
+                        topLevelByGroup.getOrDefault(group.getId(), Collections.emptyList()).stream()
                                 .map(item -> new SidebarNavigationItemDto(
                                         item.getId(),
                                         item.getItemName(),
                                         item.getItemUrl(),
                                         item.getIcon(),
                                         item.getSortOrder(),
-                                        isActivePath(item.getItemUrl(), currentPath)
+                                        isActivePath(item.getItemUrl(), currentPath),
+                                        childrenByParent.getOrDefault(item.getId(), Collections.emptyList()).stream()
+                                                .map(child -> new SidebarNavigationItemDto(
+                                                        child.getId(), child.getItemName(), child.getItemUrl(),
+                                                        child.getIcon(), child.getSortOrder(),
+                                                        isActivePath(child.getItemUrl(), currentPath)))
+                                                .collect(Collectors.toList())
                                 ))
                                 .collect(Collectors.toList())
                 ))

@@ -16,7 +16,9 @@
         <span class="nav-arrow">⌄</span>
       </button>
       <div class="nav-group-items">
-        <a th:each="item : ${group.items}" th:href="@{${item.itemUrl}}" th:title="${item.itemName}">
+        <div class="nav-item-wrap" th:each="item : ${group.items}"
+             th:classappend="${item.sectionActive} ? ' is-section-active'">
+        <a th:href="@{${item.itemUrl}}" th:title="${item.itemName}" th:classappend="${item.active} ? ' active'">
           <span class="nav-item-icon" aria-hidden="true" th:switch="${item.icon}">
             <svg th:case="'dashboard'" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
             <svg th:case="'exception'" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4M12 17h.01"></path></svg>
@@ -32,6 +34,11 @@
           </span>
           <span class="nav-item-label" th:text="${item.itemName}">메뉴</span>
         </a>
+        <div class="nav-substeps" th:if="${not #lists.isEmpty(item.children)}">
+          <a th:each="child : ${item.children}" th:href="@{${child.itemUrl}}"
+             th:text="${child.itemName}" th:classappend="${child.active} ? ' active'">단계</a>
+        </div>
+        </div>
       </div>
     </div>
   </nav>
@@ -42,5 +49,19 @@
     <a href="/swagger-ui/index.html">API 문서</a>
   </div>
 </aside>
-<script>(function(){var aliases={"/admin/sales-ledger":"/admin/payment-operations/sales-ledger","/admin/settlements":"/admin/payment-operations/settlements"},path=aliases[location.pathname]||location.pathname;document.querySelectorAll('.nav a').forEach(function(link){link.classList.remove('active');var href=link.getAttribute('href'),matches=path===href||(href==='/admin/commerce/options'&&path==='/admin/commerce/product-options');if(matches){link.classList.add('active');var group=link.closest('.nav-group');if(group)group.dataset.hasActive='true';}});}());</script>
+<script>(function(){
+  var aliases={"/admin/sales-ledger":"/admin/payment-operations/sales-ledger","/admin/settlements":"/admin/payment-operations/settlements","/admin/commerce/product-options":"/admin/commerce/options"};
+  var path=aliases[location.pathname]||location.pathname;
+  var links=[].slice.call(document.querySelectorAll('.nav a'));
+  links.forEach(function(l){l.classList.remove('active');});
+  // 가장 구체적으로(경로가 가장 길게) 일치하는 링크 하나만 active — 부모/자식 동시 활성 방지.
+  var best=null,bestLen=-1;
+  links.forEach(function(l){var href=l.getAttribute('href');if(!href)return;
+    if((path===href||path.indexOf(href+'/')===0)&&href.length>bestLen){best=l;bestLen=href.length;}});
+  if(best){
+    best.classList.add('active');
+    var wrap=best.closest('.nav-item-wrap');if(wrap)wrap.classList.add('is-section-active');
+    var group=best.closest('.nav-group');if(group)group.dataset.hasActive='true';
+  }
+}());</script>
 <script>(function(){document.body.classList.toggle('sidebar-collapsed',localStorage.getItem('sidebar-collapsed')==='true');}());</script>

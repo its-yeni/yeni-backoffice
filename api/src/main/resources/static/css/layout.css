@@ -29,6 +29,17 @@
 .nav a:hover { background: var(--sidebar-hover); }
 .nav a.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); }
 .nav a.active::before { display: none; content: none; }
+
+/* 업무 흐름 하위 단계 — 부모 항목 밑에 들여쓰기. 아이콘 자리(18px)+gap(9px) 만큼 왼쪽 여백. */
+.nav-item-wrap { display: grid; gap: 3px; }
+.nav-substeps { display: grid; gap: 2px; margin: 1px 0 3px; padding-left: 27px; position: relative; }
+.nav-substeps::before { content: ""; position: absolute; left: 13px; top: 2px; bottom: 6px; width: 1px; background: var(--sidebar-border); }
+.nav-substeps a { height: 30px; padding: 0 10px; font-size: 12px; color: var(--sidebar-text-dim); }
+.nav-substeps a::before { content: ""; position: absolute; left: -14px; width: 8px; height: 1px; background: var(--sidebar-border); }
+.nav-substeps a:hover { color: var(--sidebar-text); background: var(--sidebar-hover); }
+.nav-substeps a.active { color: var(--sidebar-active-text); background: var(--sidebar-active-bg); font-weight: 500; }
+.nav-item-wrap.is-section-active > a:not(.active) { color: var(--sidebar-text); }
+.sidebar-collapsed .nav-substeps, :root .sidebar .nav-group.is-collapsed .nav-substeps { display: none; }
 .nav-badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center;
   border-radius: 999px; background: #c2453a; color: #fff; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sidebar-collapsed .nav-badge { position: absolute; top: 3px; right: 3px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 8px; }
@@ -79,6 +90,7 @@
     .nav-group-toggle { display: none; }
     .nav-group-items { display: grid !important; }
     .nav a { justify-content: center; padding: 0; }
+    .nav-substeps { display: none; }
     .sidebar-collapse-btn { display: none; }
 }
 

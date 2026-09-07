@@ -72,12 +72,16 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         feature(insight, "운영 분석",       "/admin/analytics",                          "chart",     1);
         feature(insight, "감사 로그",       "/admin/audit-logs",                         "audit",     2, AdminRole.ADMIN);
 
+        // ── 업무 흐름 하위 단계 (사이드바에서 부모 항목 밑에 펼쳐짐) ──
+        sub(settle, "/admin/payment-operations/settlements", "미확정 매출", "/admin/payment-operations/pending-sales",              1);
+        sub(settle, "/admin/payment-operations/settlements", "PG 대사",    "/admin/payment-operations/settlements/reconciliation", 2);
+        sub(shop,   "/admin/commerce/inventory",             "발주서",     "/admin/commerce/purchase-orders",                      1);
+        sub(shop,   "/admin/commerce/inventory",             "입고 검수",  "/admin/commerce/receiving",                            2);
+
         // ── 전체 기능에서만 (displayYn=false) ────────────────────────
         // "전체 PG 거래"·"복구 작업 전체"는 결제 예외 처리 화면 안의 탭으로 흡수됨
         hidden(settle, "복구 작업",      "/admin/payment-operations/recovery-tasks",            12);
         hidden(settle, "매출 원장",      "/admin/payment-operations/sales-ledger",              13);
-        hidden(settle, "미확정 매출",    "/admin/payment-operations/pending-sales",             14);
-        hidden(settle, "PG 정산 대사",   "/admin/payment-operations/settlements/reconciliation",15);
         hidden(settle, "매출 분석",      "/admin/payment-operations/sales-analytics",           16);
 
         hidden(shop, "카테고리 관리",    "/admin/commerce/categories",              21);
@@ -85,8 +89,6 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         hidden(shop, "구매·결제 시뮬레이션", "/admin/commerce/preview",              23);
         hidden(shop, "매장 관리",        "/admin/commerce/stores",                  24);
         hidden(shop, "공급처 관리",      "/admin/commerce/suppliers",               25);
-        hidden(shop, "발주 관리",        "/admin/commerce/purchase-orders",         26);
-        hidden(shop, "입고 처리",        "/admin/commerce/receiving",               27);
         hidden(shop, "재고 실사",        "/admin/commerce/stock-counts",            28);
         hidden(shop, "LOT · 유통기한",   "/admin/commerce/inventory/lots",          29);
         hidden(shop, "발주 제안",        "/admin/commerce/inventory/replenishment", 30);
@@ -121,6 +123,17 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
 
     private void hidden(AdminNavigationGroup g, String name, String url, int order) {
         upsert(g, name, url, "", order, false, AdminRole.USER);
+    }
+
+    /** 업무 흐름 하위 단계 — 사이드바에서 부모 항목({@code parentUrl}) 밑에 펼쳐진다.
+     *  displayYn=false 라 최상위로는 안 뜨지만 "전체 기능"에는 그대로 나온다. */
+    private void sub(AdminNavigationGroup g, String parentUrl, String name, String url, int order) {
+        Long parentId = items.findByItemUrlAndIsDeletedFalse(parentUrl).map(AdminNavigationItem::getId).orElse(null);
+        items.findByItemUrlAndIsDeletedFalse(url).ifPresentOrElse(
+                i -> i.update(g, parentId, name, url, "", 2, order, true, false, AdminRole.USER),
+                () -> items.save(AdminNavigationItem.builder()
+                        .navigationGroup(g).parentNavigationItemId(parentId).itemName(name).itemUrl(url).icon("")
+                        .depth(2).sortOrder(order).useYn(true).displayYn(false).requiredRole(AdminRole.USER).build()));
     }
 
     private void hiddenAdmin(AdminNavigationGroup g, String name, String url, int order) {
