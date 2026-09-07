@@ -2,32 +2,90 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>PG 거래 - Yeni Backoffice</title>
-  <link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/payment-operations.css"><link rel="stylesheet" href="/css/pages/payment-transactions.css"><link rel="stylesheet" href="/css/pages/payment-operations-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css">
+  <title>결제 예외 처리 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/pages/payment-transactions.css">
 </head>
-<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
-<section class="content payment-page transaction-page pg-transaction-page">
-  <header class="page-header pg-page-header"><div><h3>PG 거래</h3><p>주문에서 발생한 승인·취소·결과 불명 거래와 후속 처리를 추적합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/orders">주문 관리</a><a class="btn btn-primary" href="/admin/commerce/preview">고객 주문 테스트</a></div></header>
+<body>
+<div class="layout">
+  <div th:replace="~{fragments/sidebar}"></div>
+  <main class="main">
+    <div th:replace="~{fragments/topbar :: header}"></div>
+    <section class="content">
+      <header class="page-header">
+        <div>
+          <h1>결제 예외 처리</h1>
+          <p>PG 결과불명·실패·망취소로 아직 확정되지 않은 결제. 오래된 것부터 하나씩 종결합니다.</p>
+        </div>
+        <div class="page-header-actions">
+          <a class="btn btn-light" href="/admin/commerce/orders">주문 관리</a>
+        </div>
+      </header>
 
-  <div class="pg-filter-bar">
-    <label class="pg-search"><span class="sr-only">거래 검색</span><input id="payment-keyword" type="search" placeholder="주문번호, 결제 ID, TID 검색"></label>
-    <div class="pg-date-range"><input id="payment-start" type="date" aria-label="조회 시작일"><span>~</span><input id="payment-end" type="date" aria-label="조회 종료일"></div>
-    <select id="payment-status" aria-label="거래 상태"><option value="">전체 상태</option><option value="APPROVED">승인</option><option value="APPROVE_UNKNOWN">결과 불명</option><option value="APPROVE_FAILED">승인 실패</option><option value="PARTIAL_CANCELED">부분 취소</option><option value="CANCELED">취소 완료</option><option value="CANCEL_UNKNOWN">취소 결과 불명</option></select>
-    <button class="btn btn-text" id="payment-refresh" type="button">초기화</button>
-  </div>
+      <nav class="page-tabs" id="exc-tabs">
+        <button type="button" class="active" data-panel="queue">처리 대기</button>
+        <button type="button" data-panel="pg">전체 PG 거래</button>
+      </nav>
 
-  <nav class="pg-status-tabs" id="payment-status-tabs" aria-label="거래 상태별 조회">
-    <button class="active" type="button" data-status=""><div class="k-txt"><span>전체</span><strong id="metric-all">0건</strong></div><i class="k-ico">≡</i></button>
-    <button type="button" data-status="APPROVED"><div class="k-txt"><span>승인</span><strong id="metric-approved">0건</strong></div><i class="k-ico is-ok">✓</i></button>
-    <button type="button" data-status="PARTIAL_CANCELED"><div class="k-txt"><span>부분 취소</span><strong id="metric-partial">0건</strong></div><i class="k-ico is-info">◐</i></button>
-    <button type="button" data-status="CANCELED"><div class="k-txt"><span>취소</span><strong id="metric-canceled">0건</strong></div><i class="k-ico is-danger">✕</i></button>
-    <button type="button" data-status="APPROVE_UNKNOWN,CANCEL_UNKNOWN"><div class="k-txt"><span>결과 불명</span><strong id="metric-unknown">0건</strong></div><i class="k-ico is-warn">?</i></button>
-    <button type="button" data-status="APPROVE_FAILED"><div class="k-txt"><span>실패</span><strong id="metric-failed">0건</strong></div><i class="k-ico">−</i></button>
-  </nav>
+      <!-- ══════════ 워크리스트 ══════════ -->
+      <div class="page-tab-panel active" id="panel-queue">
+        <div class="worklist-head">
+          <div class="worklist-count"><span id="exc-count">0</span>건<small>처리 대기</small></div>
+          <div class="worklist-chips" id="exc-chips"></div>
+          <div class="worklist-tools">
+            정렬
+            <select id="exc-sort">
+              <option value="old">오래된 순</option>
+              <option value="type">유형별</option>
+            </select>
+          </div>
+        </div>
+        <div class="worklist-selbar" id="exc-selbar">
+          <b><span id="exc-sel-n">0</span>건 선택</b>
+          <span class="spacer"></span>
+          <button class="btn btn-primary btn-sm" id="exc-sel-run" type="button">선택 재조회</button>
+          <button class="btn btn-light btn-sm" id="exc-sel-clear" type="button">해제</button>
+        </div>
+        <div class="worklist" id="exc-worklist"></div>
+        <div class="worklist-empty" id="exc-empty">
+          <strong>지금 처리할 예외가 없습니다</strong>
+          <p>새 결과불명·실패 건이 생기면 여기에 쌓입니다.</p>
+        </div>
+      </div>
 
-  <div class="pg-table-meta"><label class="unassigned-filter"><input id="payment-unassigned" type="checkbox"> 매장이 지정되지 않은 기존 거래 포함</label><p>승인 합계 <strong id="metric-approved-amount">0원</strong><span id="payment-result-count">0건</span></p></div>
+      <!-- ══════════ 전체 PG 거래 (기존 테이블) ══════════ -->
+      <div class="page-tab-panel" id="panel-pg">
+        <div class="pg-filter-bar">
+          <label class="pg-search"><span class="sr-only">거래 검색</span><input id="payment-keyword" type="search" placeholder="주문번호, 결제 ID, TID 검색"></label>
+          <div class="pg-date-range"><input id="payment-start" type="date" aria-label="조회 시작일"><span>~</span><input id="payment-end" type="date" aria-label="조회 종료일"></div>
+          <select id="payment-status" aria-label="거래 상태"><option value="">전체 상태</option><option value="APPROVED">승인</option><option value="APPROVE_UNKNOWN">결과 불명</option><option value="APPROVE_FAILED">승인 실패</option><option value="PARTIAL_CANCELED">부분 취소</option><option value="CANCELED">취소 완료</option><option value="CANCEL_UNKNOWN">취소 결과 불명</option></select>
+          <button class="btn btn-text" id="payment-refresh" type="button">초기화</button>
+        </div>
+        <div class="summary-strip" id="payment-status-tabs" aria-label="거래 상태별 조회">
+          <button class="is-active" type="button" data-status=""><span>전체</span><strong id="metric-all">0</strong></button>
+          <button type="button" data-status="APPROVED"><span>승인</span><strong id="metric-approved">0</strong></button>
+          <button type="button" data-status="PARTIAL_CANCELED"><span>부분 취소</span><strong id="metric-partial">0</strong></button>
+          <button type="button" data-status="CANCELED"><span>취소</span><strong id="metric-canceled">0</strong></button>
+          <button type="button" data-status="APPROVE_UNKNOWN,CANCEL_UNKNOWN"><span>결과 불명</span><strong id="metric-unknown">0</strong></button>
+          <button type="button" data-status="APPROVE_FAILED"><span>실패</span><strong id="metric-failed">0</strong></button>
+        </div>
+        <div class="pg-table-meta"><label class="unassigned-filter"><input id="payment-unassigned" type="checkbox"> 매장이 지정되지 않은 기존 거래 포함</label><p>승인 합계 <strong id="metric-approved-amount">0원</strong><span id="payment-result-count">0건</span></p></div>
+        <div class="data-table-wrap pg-table-wrap"><table class="data-table transaction-table pg-transaction-table"><thead><tr><th class="row-index">#</th><th>거래시간</th><th>주문번호</th><th>매장</th><th>상품</th><th>결제 ID</th><th>TID</th><th class="amount">승인 금액</th><th class="amount">취소 금액</th><th>상태</th><th class="actions">관리</th></tr></thead><tbody id="payment-rows"></tbody></table><div class="data-table-empty" id="payment-empty" hidden><strong>조회된 PG 거래가 없습니다.</strong><p>기간 또는 검색 조건을 변경하거나 고객 주문 테스트를 실행해 주세요.</p></div><div id="payment-pagination"></div></div>
+      </div>
 
-  <div class="data-table-wrap pg-table-wrap"><table class="data-table transaction-table pg-transaction-table"><thead><tr><th class="row-index">#</th><th>거래시간</th><th>주문번호</th><th>매장</th><th>상품</th><th>결제 ID</th><th>TID</th><th class="amount">승인 금액</th><th class="amount">취소 금액</th><th>상태</th><th class="actions">관리</th></tr></thead><tbody id="payment-rows"></tbody></table><div class="data-table-empty" id="payment-empty" hidden><strong>조회된 PG 거래가 없습니다.</strong><p>기간 또는 검색 조건을 변경하거나 고객 주문 테스트를 실행해 주세요.</p></div><div id="payment-pagination"></div></div>
-</section></main></div>
-<div class="transaction-drawer-backdrop" id="transaction-backdrop" hidden></div><aside class="transaction-drawer" id="payment-detail" aria-label="PG 거래 상세"><header><div><small>PG 거래 상세</small><h2 id="payment-detail-title">거래</h2></div><button id="payment-detail-close" type="button" aria-label="닫기">×</button></header><div id="payment-detail-body" class="transaction-drawer-body"></div></aside>
-<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/payment-operations.js"></script></body></html>
+    </section>
+  </main>
+</div>
+
+<div class="transaction-drawer-backdrop" id="transaction-backdrop" hidden></div>
+<aside class="transaction-drawer" id="payment-detail" aria-label="PG 거래 상세"><header><div><small>PG 거래 상세</small><h2 id="payment-detail-title">거래</h2></div><button id="payment-detail-close" type="button" aria-label="닫기">×</button></header><div id="payment-detail-body" class="transaction-drawer-body"></div></aside>
+
+<script src="/js/admin-pagination.js"></script>
+<script src="/js/status-catalog.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/pages/payment-exceptions.js"></script>
+<script src="/js/pages/payment-operations.js"></script>
+</body>
+</html>

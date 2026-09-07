@@ -14,6 +14,8 @@ import com.yeni.backoffice.core.pos.service.PosCatalogSyncService;
 import com.yeni.backoffice.core.pos.service.PosTerminalAuthenticationService;
 import com.yeni.backoffice.core.pos.service.PosSyncManagementService;
 import com.yeni.backoffice.core.pos.service.PosOrderService;
+import com.yeni.backoffice.core.pos.service.PosClientLogService;
+import com.yeni.backoffice.core.pos.service.PosTerminalSettingsService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/pos/v1")
@@ -44,17 +47,65 @@ public class PosV1RestController {
     private final PosCatalogSyncService catalogSyncService;
     private final PosSyncManagementService syncManagementService;
     private final PosOrderService posOrderService;
+    private final PosClientLogService clientLogService;
+    private final PosTerminalSettingsService terminalSettingsService;
     private final ObjectMapper objectMapper;
 
     public PosV1RestController(PosTerminalAuthenticationService authenticationService,
             PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService,
-            PosSyncManagementService syncManagementService, PosOrderService posOrderService, ObjectMapper objectMapper) {
+            PosSyncManagementService syncManagementService, PosOrderService posOrderService,
+            PosClientLogService clientLogService,PosTerminalSettingsService terminalSettingsService,ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
         this.saleService = saleService;
         this.catalogSyncService = catalogSyncService;
         this.syncManagementService = syncManagementService;
         this.posOrderService = posOrderService;
+        this.clientLogService = clientLogService;
+        this.terminalSettingsService = terminalSettingsService;
         this.objectMapper = objectMapper;
+    }
+
+    @GetMapping("/settings")
+    public ResponseEntity<PosTerminalSettingsService.TerminalSettings> settings(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(terminalSettingsService.settings(terminal));
+    }
+
+    @GetMapping("/diagnostics/connection")
+    public ResponseEntity<PosTerminalSettingsService.ConnectionDiagnostic> connectionDiagnostic(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(terminalSettingsService.diagnostic(terminal));
+    }
+
+    @PostMapping("/logs")
+    public ResponseEntity<PosClientLogService.LogBatchResult> receiveLogs(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestBody List<PosClientLogService.LogCommand> logs){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(clientLogService.receive(terminal,logs));
+    }
+
+    @GetMapping("/logs")
+    public ResponseEntity<List<PosClientLogService.LogView>> logs(
+            @RequestHeader(STORE_HEADER) Long storeId,@RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,@RequestHeader(value=VERSION_HEADER,required=false) String appVersion,
+            @RequestParam(required=false) Integer limit){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(clientLogService.list(terminal,limit));
+    }
+
+    @PostMapping("/logs/{logId}/retried")
+    public ResponseEntity<PosClientLogService.LogView> markLogRetried(
+            @PathVariable Long logId,@RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,@RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value=VERSION_HEADER,required=false) String appVersion){
+        PosTerminal terminal=authenticationService.authenticate(storeId,terminalCode,credential,appVersion);
+        return ResponseEntity.ok(clientLogService.markRetried(terminal,logId));
     }
 
     @GetMapping("/orders")

@@ -55,12 +55,12 @@ public class MockPaymentGateway implements PaymentGateway {
 
     @Override
     public PaymentQueryResult query(PaymentQueryCommand command) {
-        if (command.orderNo() != null && command.orderNo().toUpperCase().contains("RECOVERABLE")) {
-            return new PaymentQueryResult(provider(), true, PaymentStatus.APPROVED, command.tid(), "0000", "Mock query confirmed approved.");
-        }
-        if (command.orderNo() != null && command.orderNo().toUpperCase().contains("UNKNOWN")) {
+        String orderNo = command.orderNo() == null ? "" : command.orderNo().toUpperCase();
+        // "STUCK" 마커가 붙은 건은 재조회해도 여전히 결과 불명 — 운영자 판단이 필요한 케이스.
+        if (orderNo.contains("STUCK")) {
             return new PaymentQueryResult(provider(), false, PaymentStatus.APPROVE_UNKNOWN, command.tid(), "U000", "Mock query still unknown.");
         }
+        // 대부분의 timeout·응답유실은 실제로는 승인이 완료돼 있다 — 재조회로 확정된다.
         return new PaymentQueryResult(provider(), true, PaymentStatus.APPROVED, command.tid(), "0000", "Mock query confirmed approved.");
     }
 }

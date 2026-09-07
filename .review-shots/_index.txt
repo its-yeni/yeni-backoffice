@@ -1,0 +1,36 @@
+00-home  200  /
+01-operations-dashboard  200  /admin/operations-dashboard
+02-analytics-overview  200  /admin/analytics
+03-analytics-orders  200  /admin/analytics/orders
+04-analytics-payments  200  /admin/analytics/payments
+05-analytics-settlements  200  /admin/analytics/settlements
+06-analytics-inventory  200  /admin/analytics/inventory
+07-commerce-products  200  /admin/commerce/products
+08-commerce-categories  200  /admin/commerce/categories
+09-commerce-product-options  200  /admin/commerce/product-options
+10-commerce-stores  200  /admin/commerce/stores
+11-commerce-orders  200  /admin/commerce/orders
+12-commerce-inventory  200  /admin/commerce/inventory
+13-inventory-lots  200  /admin/commerce/inventory/lots
+14-inventory-replenishment  200  /admin/commerce/inventory/replenishment
+15-inventory-insights  200  /admin/commerce/inventory/insights
+16-inventory-transactions  200  /admin/commerce/inventory/transactions
+17-inventory-transfers  200  /admin/commerce/inventory/transfers
+18-commerce-receiving  200  /admin/commerce/receiving
+19-commerce-shipments  200  /admin/commerce/shipments
+20-commerce-deliveries  200  /admin/commerce/deliveries
+21-commerce-returns  200  /admin/commerce/returns
+22-commerce-suppliers  200  /admin/commerce/suppliers
+23-commerce-purchase-orders  200  /admin/commerce/purchase-orders
+24-commerce-stock-counts  200  /admin/commerce/stock-counts
+25-payment-operations  200  /admin/payment-operations
+26-sales-ledger  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/sales-ledger
+27-sales-analytics  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/sales-analytics
+28-pending-sales  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/pending-sales
+29-recovery-tasks  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/recovery-tasks
+30-accounting  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/accounting
+31-settlements  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/settlements
+32-pg-reconciliation  ERROR page.goto: Timeout 45000ms exceeded.  /admin/payment-operations/settlements/reconciliation
+33-audit-logs  ERROR page.goto: Timeout 45000ms exceeded.  /admin/audit-logs
+34-database-spec  ERROR page.goto: Timeout 45000ms exceeded.  /admin/database-spec
+35-navigation  ERROR page.goto: Timeout 45000ms exceeded.  /admin/navigation

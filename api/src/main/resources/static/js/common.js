@@ -1078,9 +1078,9 @@ const AdminDesignNotes = (function () {
         { match: "/admin/commerce/orders", title: "주문 상태 ≠ 결제 상태",
           why: "주문 처리랑 PG 응답은 서로 다른 시점에 실패한다. 하나의 상태값으로 못 묶는다.",
           how: "둘을 따로 추적. 주문 생성 때 서버에서 판매가 재검증 + SKU 재고 예약. PG 타임아웃/결과불명은 실패로 단정 안 하고 복구 대상으로 분리." },
-        { match: "/admin/payment-operations", title: "PG 장애를 운영 가능한 상태로",
-          why: "타임아웃 = 승인 실패 아님. 바로 재결제하면 중복 승인 난다.",
-          how: "멱등키로 중복 요청 차단, UNKNOWN은 복구 작업으로 분리, PG 요청·응답·후속처리 로그를 한 거래에 묶음. 실제 PG 대신 Mock Gateway." },
+        { match: "/admin/payment-operations", title: "결과불명을 운영 상태로 — 워크리스트",
+          why: "타임아웃·응답 유실은 승인 실패가 아니다. 실패로 단정하면 승인된 결제를 취소하고, 성공으로 처리하면 미결제 주문이 진행된다.",
+          how: "APPROVE_UNKNOWN / CANCEL_UNKNOWN 상태를 두고 확정 전까지 매출원장·정산·알림톡을 생성하지 않는다. 확정 안 된 건을 발생 경과 순 큐로 세우고, 각 건의 PG 로그와 조치를 한 자리에 둔다. 재조회 성공 시 누락된 원장·알림톡이 unique 제약으로 1회만 생성. 실제 PG 대신 Mock Gateway." },
         { match: "/admin/payment-operations/sales-ledger", title: "매출을 수정하지 않고 누적",
           why: "매출 행을 덮어쓰면 부분취소 이력이랑 정산 근거가 사라진다.",
           how: "승인(SALE)/취소(CANCEL)를 별도 불변 행으로. 주문번호·결제ID·TID로 원거래 연결. 확정 매출의 승인액 − 누적취소액만 정산 대상." },
@@ -1148,11 +1148,11 @@ const AdminPaymentFlow = (function () {
   ];
   function activeKey() {
     const p = location.pathname;
+    // 재설계된 featured 화면(결제 예외 처리 / 정산 마감)에는 붙이지 않는다 — 자체 흐름 UI 사용.
+    if (p === "/admin/payment-operations" || p === "/admin/payment-operations/settlements") return null;
     if (p.startsWith("/admin/payment-operations/settlements/reconciliation")) return "recon";
-    if (p.startsWith("/admin/payment-operations/settlements")) return "settle";
     if (p.startsWith("/admin/payment-operations/pending-sales")) return "confirm";
     if (p.startsWith("/admin/payment-operations/sales-ledger") || p.startsWith("/admin/payment-operations/sales-analytics")) return "ledger";
-    if (p === "/admin/payment-operations" || p.startsWith("/admin/payment-operations?")) return "approve";
     return null;
   }
   function init() {
