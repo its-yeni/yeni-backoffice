@@ -21,7 +21,7 @@
     <label class="cmc-search"><input id="return-keyword" type="search" placeholder="주문번호, 구매자 검색"></label>
     <select id="return-status-filter"><option value="">반품 상태 전체</option><option value="REQUESTED">접수</option><option value="INSPECTING">검수 중</option><option value="COMPLETED">완료</option><option value="REJECTED">반려</option></select>
     <label class="filter-checkbox"><input type="checkbox" id="return-stale-only"> 지연 건만 보기(48시간 초과)</label>
-    <div class="cmc-toolbar-actions"><button type="button" class="btn btn-text" id="return-filter-reset">초기화</button><button type="button" class="btn btn-primary" id="return-new-open">반품 접수</button></div>
+    <div class="cmc-toolbar-actions"><a class="btn btn-text" id="return-filter-reset" href="/admin/commerce/returns" data-full-navigation data-reset-workspace-state>초기화</a><button type="button" class="btn btn-primary" id="return-new-open">반품 접수</button></div>
   </div>
 
   <div class="data-table-wrap">

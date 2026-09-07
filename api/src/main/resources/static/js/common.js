@@ -10,6 +10,7 @@ window.AdminWorkspace = (function () {
     const TABS_KEY = "yeni-admin-workspace-tabs-v1";
     const STATE_PREFIX = "yeni-admin-page-state-v1:";
     const MAX_TABS = 12;
+    let skipNextPagehideSave = false;
     const TAB_TITLES = {
         "/admin/operations-dashboard":"운영 대시보드", "/admin/commerce/products":"상품 목록",
         "/admin/commerce/categories":"카테고리 관리", "/admin/commerce/options":"옵션 관리",
@@ -197,13 +198,26 @@ window.AdminWorkspace = (function () {
             window.clearTimeout(scrollTimer);
             scrollTimer = window.setTimeout(savePageState, 120);
         }, { passive: true });
-        window.addEventListener("pagehide", savePageState);
+        window.addEventListener("pagehide", () => {
+            if (skipNextPagehideSave) {
+                skipNextPagehideSave = false;
+                return;
+            }
+            savePageState();
+        });
         document.addEventListener("click", event => {
             const link = event.target.closest("a[href]");
             let adminLink = false;
             try { adminLink = Boolean(link) && new URL(link.href, location.origin).pathname.startsWith("/admin/"); }
             catch (ignore) { adminLink = false; }
-            if (adminLink && !link.closest("#workspaceTabs")) savePageState();
+            if (adminLink && !link.closest("#workspaceTabs")) {
+                if (link.hasAttribute("data-reset-workspace-state")) {
+                    sessionStorage.removeItem(STATE_PREFIX + pageKey());
+                    skipNextPagehideSave = true;
+                } else {
+                    savePageState();
+                }
+            }
         }, true);
     }
 
@@ -259,7 +273,7 @@ window.AdminHtmxNavigation = (function () {
 
     function enhanceLinks(root) {
         (root || document).querySelectorAll('a[href]').forEach(link => {
-            if (!supportedPath(link.href)) return;
+            if (link.hasAttribute("data-full-navigation") || !supportedPath(link.href)) return;
             link.setAttribute("hx-get", link.getAttribute("href"));
             link.setAttribute("hx-target", "main > section:first-of-type");
             link.setAttribute("hx-select", "main > section:first-of-type");
