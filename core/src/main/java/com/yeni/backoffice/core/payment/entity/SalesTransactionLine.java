@@ -87,6 +87,7 @@ public class SalesTransactionLine extends BaseTimeEntity {
     private LocalDateTime occurredAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean confirmedYn = false;
 
     public void confirm() {

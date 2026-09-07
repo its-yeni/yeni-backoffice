@@ -441,8 +441,10 @@ public class DemoOperationsSeedInitializer implements CommandLineRunner {
                         .setParameter("ts", ts).setParameter("no", orderNo).executeUpdate();
                 em.createNativeQuery("UPDATE sales_transaction SET created_at = :ts, updated_at = :ts, occurred_at = :ts, business_date = :bd WHERE order_no = :no")
                         .setParameter("ts", ts).setParameter("bd", businessDate).setParameter("no", orderNo).executeUpdate();
-                Long orderId = (Long) em.createNativeQuery("SELECT id FROM commerce_order WHERE order_no = :no")
-                        .setParameter("no", orderNo).getResultList().stream().findFirst().map(x -> ((Number) x).longValue()).orElse(null);
+                List<?> orderIds = em.createNativeQuery("SELECT id FROM commerce_order WHERE order_no = :no")
+                        .setParameter("no", orderNo).setMaxResults(1).getResultList();
+                Object rawOrderId = orderIds.isEmpty() ? null : orderIds.get(0);
+                Long orderId = rawOrderId instanceof Number number ? number.longValue() : null;
                 if (orderId != null) {
                     em.createNativeQuery("UPDATE commerce_return SET created_at = :ts, updated_at = :ts WHERE order_id = :id")
                             .setParameter("ts", ts).setParameter("id", orderId).executeUpdate();
