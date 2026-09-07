@@ -55,9 +55,10 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         AdminNavigationGroup run     = group("RUN", "운영", 1);
         AdminNavigationGroup settle  = group("SETTLE", "결제 · 정산", 2);
         AdminNavigationGroup shop    = group("SHOP", "커머스", 3);
-        AdminNavigationGroup insight = group("INSIGHT", "분석 · 감사", 4);
+        AdminNavigationGroup base    = group("BASE", "기준정보", 4);
+        AdminNavigationGroup insight = group("INSIGHT", "분석 · 감사", 5);
 
-        // ── 사이드바 ─────────────────────────────────────────────────
+        // ── 사이드바 최상위 ─────────────────────────────────────────
         feature(run,     "운영 대시보드",   "/admin/operations-dashboard",              "dashboard", 1);
         feature(run,     "전체 기능",       "/admin/all-features",                       "grid",      2);
 
@@ -69,33 +70,36 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         feature(shop,    "상품 관리",       "/admin/commerce/products",                  "tag",       2);
         feature(shop,    "주문 관리",       "/admin/commerce/orders",                    "cart",      3);
 
+        feature(base,    "매장 관리",       "/admin/commerce/stores",                    "store",     1);
+        feature(base,    "공급처 관리",     "/admin/commerce/suppliers",                 "supplier",  2);
+
         feature(insight, "운영 분석",       "/admin/analytics",                          "chart",     1);
         feature(insight, "감사 로그",       "/admin/audit-logs",                         "audit",     2, AdminRole.ADMIN);
 
         // ── 업무 흐름 하위 단계 (사이드바에서 부모 항목 밑에 펼쳐짐) ──
         sub(settle, "/admin/payment-operations/settlements", "미확정 매출", "/admin/payment-operations/pending-sales",              1);
         sub(settle, "/admin/payment-operations/settlements", "PG 대사",    "/admin/payment-operations/settlements/reconciliation", 2);
-        sub(shop,   "/admin/commerce/inventory",             "발주서",     "/admin/commerce/purchase-orders",                      1);
-        sub(shop,   "/admin/commerce/inventory",             "입고 검수",  "/admin/commerce/receiving",                            2);
+        sub(settle, "/admin/payment-operations/settlements", "매출 원장",  "/admin/payment-operations/sales-ledger",               3);
 
-        // ── 전체 기능에서만 (displayYn=false) ────────────────────────
-        // "전체 PG 거래"·"복구 작업 전체"는 결제 예외 처리 화면 안의 탭으로 흡수됨
+        sub(shop,   "/admin/commerce/inventory", "발주서",    "/admin/commerce/purchase-orders",     1);
+        sub(shop,   "/admin/commerce/inventory", "입고 검수", "/admin/commerce/receiving",           2);
+        sub(shop,   "/admin/commerce/inventory", "재고 실사", "/admin/commerce/stock-counts",        3);
+        sub(shop,   "/admin/commerce/inventory", "재고 이동", "/admin/commerce/inventory/transfers", 4);
+
+        sub(shop,   "/admin/commerce/products",  "카테고리",  "/admin/commerce/categories",          1);
+        sub(shop,   "/admin/commerce/products",  "옵션",      "/admin/commerce/options",             2);
+
+        sub(shop,   "/admin/commerce/orders",    "출고",      "/admin/commerce/shipments",           1);
+        sub(shop,   "/admin/commerce/orders",    "배송",      "/admin/commerce/deliveries",          2);
+        sub(shop,   "/admin/commerce/orders",    "반품",      "/admin/commerce/returns",             3);
+
+        // ── 전체 기능에서만 (displayYn=false, 사이드바 미노출) ─────────
         hidden(settle, "복구 작업",      "/admin/payment-operations/recovery-tasks",            12);
-        hidden(settle, "매출 원장",      "/admin/payment-operations/sales-ledger",              13);
         hidden(settle, "매출 분석",      "/admin/payment-operations/sales-analytics",           16);
 
-        hidden(shop, "카테고리 관리",    "/admin/commerce/categories",              21);
-        hidden(shop, "옵션 관리",        "/admin/commerce/options",                 22);
         hidden(shop, "구매·결제 시뮬레이션", "/admin/commerce/preview",              23);
-        hidden(shop, "매장 관리",        "/admin/commerce/stores",                  24);
-        hidden(shop, "공급처 관리",      "/admin/commerce/suppliers",               25);
-        hidden(shop, "재고 실사",        "/admin/commerce/stock-counts",            28);
         hidden(shop, "LOT · 유통기한",   "/admin/commerce/inventory/lots",          29);
         hidden(shop, "발주 제안",        "/admin/commerce/inventory/replenishment", 30);
-        hidden(shop, "재고 이동",        "/admin/commerce/inventory/transfers",     31);
-        hidden(shop, "출고 관리",        "/admin/commerce/shipments",               32);
-        hidden(shop, "배송 관리",        "/admin/commerce/deliveries",              33);
-        hidden(shop, "반품 관리",        "/admin/commerce/returns",                 34);
         hidden(shop, "입출고 내역",      "/admin/commerce/inventory/transactions",  35);
         hidden(shop, "재고 인사이트",    "/admin/commerce/inventory/insights",      36);
 
