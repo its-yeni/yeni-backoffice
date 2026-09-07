@@ -32,30 +32,25 @@ public class CommerceOrderService {
     private final ProductVariantRepository variantRepository;
     private final PaymentApproveService paymentApproveService;
     private final CommerceStoreRepository storeRepository;
-    private final InventoryTransactionService inventoryTransactionService;
     private final CommerceDeliveryService deliveryService;
-    private final StoreVariantInventoryRepository storeInventoryRepository;
-    private final InventoryLedgerService inventoryLedgerService;
     private final CommerceOrderQueryService orderQueryService;
+    private final OrderInventoryReservationService reservationService;
 
     public CommerceOrderService(CommerceOrderRepository orderRepository, CommerceOrderItemRepository orderItemRepository,
             ProductRepository productRepository, ProductOptionGroupRepository optionGroupRepository,
             ProductOptionValueRepository optionValueRepository, ProductAddonGroupRepository addonGroupRepository,
             ProductAddonItemRepository addonItemRepository, ProductVariantRepository variantRepository, PaymentApproveService paymentApproveService,CommerceStoreRepository storeRepository,
-            InventoryTransactionService inventoryTransactionService, CommerceDeliveryService deliveryService,
-            StoreVariantInventoryRepository storeInventoryRepository, InventoryLedgerService inventoryLedgerService,
-            CommerceOrderQueryService orderQueryService) {
-        this.inventoryLedgerService=inventoryLedgerService;
+            CommerceDeliveryService deliveryService, CommerceOrderQueryService orderQueryService,
+            OrderInventoryReservationService reservationService) {
         this.orderRepository=orderRepository; this.orderItemRepository=orderItemRepository; this.productRepository=productRepository;
         this.optionGroupRepository=optionGroupRepository; this.optionValueRepository=optionValueRepository;
         this.addonGroupRepository=addonGroupRepository; this.addonItemRepository=addonItemRepository;
         this.variantRepository=variantRepository;
         this.paymentApproveService=paymentApproveService;
         this.storeRepository=storeRepository;
-        this.inventoryTransactionService=inventoryTransactionService;
         this.deliveryService=deliveryService;
-        this.storeInventoryRepository=storeInventoryRepository;
         this.orderQueryService=orderQueryService;
+        this.reservationService=reservationService;
     }
 
     @Transactional
@@ -81,13 +76,10 @@ public class CommerceOrderService {
             Product product=products.get(item.productId());
             OptionResult option=validateOptions(product,item,values);
             ProductVariant variant=findVariant(product.getId(),option.values());
-            if(variant==null){product.decreaseStock(item.quantity());option.values().forEach(v->v.decreaseStock(item.quantity()));}
-            else {
+            if(variant!=null) {
                 if(fulfillmentStore==null)fulfillmentStore=storeRepository.findByStoreCode(product.getStoreCode()).orElse(null);
-                // 매장이 지정되면 예약은 주문 저장 후 재고 원장을 통해 처리한다(주문번호를 감사 로그에 남기기 위함).
-                // 매장이 없는 폴백 경로(순수 SKU 테스트 등)에서는 기존처럼 SKU 전역 예약만 건다.
-                if(fulfillmentStore==null)variant.reserve(item.quantity());
             }
+            reservationService.reserveSellable(product,option.values(),variant,fulfillmentStore,item.quantity());
             BigDecimal configuredAmount=variant==null?option.amount():variant.getAdditionalPrice().add(extraOptionAmount(variant,option.values()));
             plans.add(new ItemPlan(product,configuredAmount,item.quantity(),option.summary(),option.ids(),false,variant));
             addAddons(product,item,products,plans);
@@ -103,15 +95,10 @@ public class CommerceOrderService {
         CommerceOrder saved=orderRepository.save(order);
         if(fulfillmentStore!=null)saved.assignStore(fulfillmentStore.getId(),fulfillmentStore.getStoreCode(),fulfillmentStore.getStoreName());
         List<CommerceOrderItem> savedItems=plans.stream().map(p->orderItemRepository.save(p.toEntity(saved.getId()))).toList();
-        CommerceStore reservationStore=fulfillmentStore;
-        plans.stream().filter(p->p.variant()!=null).forEach(p->{
-            if(reservationStore!=null)
-                inventoryLedgerService.reserve(reservationStore.getId(),p.variant().getId(),p.quantity(),
-                        "주문 생성에 따른 재고 예약","ORDER",saved.getId(),"SYSTEM");
-            else
-                inventoryTransactionService.record(p.variant(),InventoryTransactionType.RESERVE,p.quantity(),
-                        "주문 생성에 따른 재고 예약","ORDER",saved.getId(),"SYSTEM");
-        });
+        reservationService.recordVariantReservations(saved.getId(),fulfillmentStore,plans.stream()
+                .filter(p->p.variant()!=null)
+                .map(p->new OrderInventoryReservationService.VariantReservation(p.variant(),p.quantity()))
+                .toList());
         deliveryService.createForOrder(saved.getId(),saved.getBuyerName(),saved.getBuyerPhone(),request.delivery());
         return CommerceOrderResponse.from(saved,savedItems,deliveryService.findByOrderId(saved.getId()));
     }
@@ -142,7 +129,7 @@ public class CommerceOrderService {
             ProductAddonItem link=addonItemRepository.findByAddonGroupIdAndAddonProductId(group.getId(),addon.productId()).orElseThrow(()->validation("등록되지 않은 추가상품입니다."));
             if(addon.quantity()>link.getMaxQuantity())throw validation("추가상품 최대 선택 수량을 초과했습니다.");
             totals.merge(group.getId(),addon.quantity(),Integer::sum);
-            int totalQuantity=Math.multiplyExact(addon.quantity(),item.quantity()); Product p=products.get(addon.productId()); p.decreaseStock(totalQuantity);
+            int totalQuantity=Math.multiplyExact(addon.quantity(),item.quantity()); Product p=products.get(addon.productId()); reservationService.reserveAddon(p,totalQuantity);
             plans.add(new ItemPlan(p,BigDecimal.ZERO,totalQuantity,group.getGroupName(),null,true,null));
         }
         for(ProductAddonGroup g:groups){int count=totals.getOrDefault(g.getId(),0);if(count<g.getMinQuantity()||count>g.getMaxQuantity())throw validation(g.getGroupName()+" 추가상품 선택 수량이 올바르지 않습니다.");}
