@@ -12,7 +12,7 @@ window.AdminWorkspace = (function () {
     const MAX_TABS = 8;
     let skipNextPagehideSave = false;
     const TAB_TITLES = {
-        "/admin/operations-dashboard":"운영 대시보드", "/admin/commerce/products":"상품 목록",
+        "/admin/operations-dashboard":"운영 대시보드", "/admin/commerce/products":"상품 관리",
         "/admin/commerce/categories":"카테고리 관리", "/admin/commerce/options":"옵션 관리",
         "/admin/commerce/product-options":"상품 옵션 설정", "/admin/commerce/preview":"구매·결제 시뮬레이션",
         "/admin/commerce/orders":"주문 관리", "/admin/commerce/stores":"매장 관리",
@@ -23,12 +23,12 @@ window.AdminWorkspace = (function () {
         "/admin/commerce/deliveries":"배송 관리", "/admin/commerce/returns":"반품 관리",
         "/admin/commerce/inventory/lots":"LOT·유통기한", "/admin/commerce/inventory/replenishment":"발주 제안",
         "/admin/commerce/inventory/insights":"재고 인사이트",
-        "/admin/commerce/inventory/transactions":"입출고 내역", "/admin/payment-operations":"PG 거래",
+        "/admin/commerce/inventory/transactions":"입출고 내역", "/admin/payment-operations":"결제 예외 처리",
         "/admin/payment-operations/sales-ledger":"매출 원장", "/admin/payment-operations/pending-sales":"미확정 매출",
         "/admin/payment-operations/recovery-tasks":"복구 작업", "/admin/payment-operations/accounting":"회계 · 분개장",
-        "/admin/payment-operations/sales-analytics":"매출 분석", "/admin/payment-operations/settlements":"정산 관리",
+        "/admin/payment-operations/sales-analytics":"매출 분석", "/admin/payment-operations/settlements":"정산 마감",
         "/admin/payment-operations/settlements/reconciliation":"PG 대사", "/admin/payment-operations/pg-reconciliation":"PG 대사",
-        "/admin/analytics":"운영 개요", "/admin/analytics/orders":"주문 분석", "/admin/analytics/payments":"결제 분석",
+        "/admin/analytics":"운영 분석", "/admin/analytics/orders":"주문 분석", "/admin/analytics/payments":"결제 분석",
         "/admin/analytics/settlements":"정산 분석", "/admin/analytics/inventory":"재고 분석",
         "/admin/database-spec":"DB 명세", "/admin/audit-logs":"감사 로그", "/admin/navigation":"메뉴 관리"
     };
