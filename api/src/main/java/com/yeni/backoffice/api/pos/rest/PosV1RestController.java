@@ -10,11 +10,14 @@ import com.yeni.backoffice.core.common.exception.BusinessException;
 import com.yeni.backoffice.core.common.exception.ErrorCode;
 import com.yeni.backoffice.core.pos.entity.PosTerminal;
 import com.yeni.backoffice.core.pos.service.PosSaleCommandService;
+import com.yeni.backoffice.core.pos.service.PosCatalogSyncService;
 import com.yeni.backoffice.core.pos.service.PosTerminalAuthenticationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,13 +38,27 @@ public class PosV1RestController {
 
     private final PosTerminalAuthenticationService authenticationService;
     private final PosSaleCommandService saleService;
+    private final PosCatalogSyncService catalogSyncService;
     private final ObjectMapper objectMapper;
 
     public PosV1RestController(PosTerminalAuthenticationService authenticationService,
-            PosSaleCommandService saleService, ObjectMapper objectMapper) {
+            PosSaleCommandService saleService, PosCatalogSyncService catalogSyncService, ObjectMapper objectMapper) {
         this.authenticationService = authenticationService;
         this.saleService = saleService;
+        this.catalogSyncService = catalogSyncService;
         this.objectMapper = objectMapper;
+    }
+
+    @GetMapping("/sync/catalog")
+    public ResponseEntity<PosCatalogSyncService.CatalogPage> syncCatalog(
+            @RequestHeader(STORE_HEADER) Long storeId,
+            @RequestHeader(TERMINAL_HEADER) String terminalCode,
+            @RequestHeader(CREDENTIAL_HEADER) String credential,
+            @RequestHeader(value = VERSION_HEADER, required = false) String appVersion,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false) Integer limit) {
+        PosTerminal terminal = authenticationService.authenticate(storeId, terminalCode, credential, appVersion);
+        return ResponseEntity.ok(catalogSyncService.pull(terminal.getStoreId(), cursor, limit));
     }
 
     @PostMapping("/session/connect")

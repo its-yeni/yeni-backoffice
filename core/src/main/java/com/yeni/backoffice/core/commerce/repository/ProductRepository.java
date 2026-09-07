@@ -21,6 +21,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategory(String category);
     List<Product> findByStoreCode(String storeCode);
     List<Product> findByStoreCodeAndCategory(String storeCode,String category);
+    List<Product> findByStoreCodeAndIdGreaterThanOrderByIdAsc(String storeCode, Long id, Pageable pageable);
 
     @Query("""
             select p from Product p

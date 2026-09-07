@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.*;
 public interface ProductVariantRepository extends JpaRepository<ProductVariant,Long>{
  List<ProductVariant> findByProductIdOrderBySortOrderAscIdAsc(Long productId);
+ List<ProductVariant> findByProductIdInOrderByProductIdAscSortOrderAscIdAsc(Collection<Long> productIds);
  Optional<ProductVariant> findByProductIdAndCombinationKey(Long productId,String key);
  boolean existsBySku(String sku);
  Optional<ProductVariant> findByBarcode(String barcode);
