@@ -21,10 +21,10 @@
     $('return-keyword').addEventListener('input', debounce(() => { pagination.reset(); render(); }, 250));
     $('return-status-filter').onchange = () => { pagination.reset(); render(); };
     $('return-stale-only').onchange = () => { pagination.reset(); render(); };
-    $('return-filter-reset').onclick = () => {
+    $('return-filter-reset').addEventListener('click', () => {
       $('return-keyword').value = ''; $('return-status-filter').value = ''; $('return-stale-only').checked = false;
       pagination.reset(); render();
-    };
+    });
     $('return-new-open').onclick = () => openCreateModal();
     document.querySelectorAll('[data-close-return-create]').forEach(el => el.onclick = closeCreateModal);
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closeCreateModal(); });
