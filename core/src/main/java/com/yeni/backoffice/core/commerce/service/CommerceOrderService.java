@@ -36,13 +36,15 @@ public class CommerceOrderService {
     private final CommerceDeliveryService deliveryService;
     private final StoreVariantInventoryRepository storeInventoryRepository;
     private final InventoryLedgerService inventoryLedgerService;
+    private final CommerceOrderQueryService orderQueryService;
 
     public CommerceOrderService(CommerceOrderRepository orderRepository, CommerceOrderItemRepository orderItemRepository,
             ProductRepository productRepository, ProductOptionGroupRepository optionGroupRepository,
             ProductOptionValueRepository optionValueRepository, ProductAddonGroupRepository addonGroupRepository,
             ProductAddonItemRepository addonItemRepository, ProductVariantRepository variantRepository, PaymentApproveService paymentApproveService,CommerceStoreRepository storeRepository,
             InventoryTransactionService inventoryTransactionService, CommerceDeliveryService deliveryService,
-            StoreVariantInventoryRepository storeInventoryRepository, InventoryLedgerService inventoryLedgerService) {
+            StoreVariantInventoryRepository storeInventoryRepository, InventoryLedgerService inventoryLedgerService,
+            CommerceOrderQueryService orderQueryService) {
         this.inventoryLedgerService=inventoryLedgerService;
         this.orderRepository=orderRepository; this.orderItemRepository=orderItemRepository; this.productRepository=productRepository;
         this.optionGroupRepository=optionGroupRepository; this.optionValueRepository=optionValueRepository;
@@ -53,6 +55,7 @@ public class CommerceOrderService {
         this.inventoryTransactionService=inventoryTransactionService;
         this.deliveryService=deliveryService;
         this.storeInventoryRepository=storeInventoryRepository;
+        this.orderQueryService=orderQueryService;
     }
 
     @Transactional
@@ -181,22 +184,17 @@ public class CommerceOrderService {
         CommerceOrder refreshed=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));
         return CommerceOrderResponse.from(refreshed,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));
     }
-    @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrders(){return getOrders(null);}
+    @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrders(){return orderQueryService.getOrders();}
     @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrders(Long storeId){
-        return getOrdersInScope(storeId == null ? OperationalScope.all() : OperationalScope.stores(null, storeId, Set.of(storeId)));
+        return orderQueryService.getOrders(storeId);
     }
     @Transactional(readOnly=true) public List<CommerceOrderResponse> getOrdersInScope(OperationalScope scope){
-        List<CommerceOrder> orders=scope.unrestricted()?orderRepository.findAllByOrderByIdDesc():orderRepository.findByStoreIdInOrderByIdDesc(scope.storeIds());
-        if(orders.isEmpty())return List.of();
-        List<CommerceOrderItem> items=orderItemRepository.findByOrderIdInOrderByOrderIdAscIdAsc(orders.stream().map(CommerceOrder::getId).toList());
-        Map<Long,List<CommerceOrderItem>> itemsByOrder=items.stream().collect(Collectors.groupingBy(CommerceOrderItem::getOrderId));
-        Map<Long,com.yeni.backoffice.core.commerce.dto.CommerceDeliveryDtos.DeliveryResponse> deliveries=deliveryService.findFirstByOrders(orders,items);
-        return orders.stream().map(o->CommerceOrderResponse.from(o,itemsByOrder.getOrDefault(o.getId(),List.of()),deliveries.get(o.getId()))).toList();
+        return orderQueryService.getOrdersInScope(scope);
     }
-    @Transactional(readOnly=true) public CommerceOrderResponse getOrder(Long orderId){CommerceOrder order=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));return CommerceOrderResponse.from(order,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));}
+    @Transactional(readOnly=true) public CommerceOrderResponse getOrder(Long orderId){return orderQueryService.getOrder(orderId);}
     @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(){return getSummary(null);}
-    @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(Long storeId){return CommerceOrderSummaryResponse.from(storeId==null?orderRepository.findAll():orderRepository.findByStoreIdOrderByIdDesc(storeId));}
-    @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummaryInScope(OperationalScope scope){return CommerceOrderSummaryResponse.from(scope.unrestricted()?orderRepository.findAll():orderRepository.findByStoreIdInOrderByIdDesc(scope.storeIds()));}
+    @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummary(Long storeId){return orderQueryService.getSummary(storeId);}
+    @Transactional(readOnly=true) public CommerceOrderSummaryResponse getSummaryInScope(OperationalScope scope){return orderQueryService.getSummaryInScope(scope);}
     @Transactional public CommerceOrderResponse assignStore(Long orderId,Long storeId){if(storeId==null)return getOrder(orderId);CommerceOrder order=orderRepository.findById(orderId).orElseThrow(()->new NotFoundException(ErrorCode.ORDER_NOT_FOUND));CommerceStore store=storeRepository.findById(storeId).orElseThrow(()->new NotFoundException(ErrorCode.NOT_FOUND,"매장을 찾을 수 없습니다."));order.assignStore(store.getId(),store.getStoreCode(),store.getStoreName());return CommerceOrderResponse.from(order,orderItemRepository.findByOrderIdOrderByIdAsc(orderId),deliveryService.findByOrderId(orderId));}
     private void validateCreateRequest(CommerceOrderCreateRequest r){
         if(r==null||!StringUtils.hasText(r.buyerName()))throw validation("구매자명은 필수입니다.");
