@@ -18,7 +18,7 @@ window.AdminWorkspace = (function () {
         "/admin/commerce/orders":"주문 관리", "/admin/commerce/stores":"매장 관리",
         "/admin/commerce/suppliers":"공급처 관리", "/admin/commerce/purchase-orders":"발주 관리",
         "/admin/commerce/stock-counts":"재고 실사",
-        "/admin/commerce/receiving":"입고 관리", "/admin/commerce/inventory":"재고 현황",
+        "/admin/commerce/receiving":"입고 관리", "/admin/commerce/inventory":"재고 · 발주",
         "/admin/commerce/inventory/transfers":"재고 이동", "/admin/commerce/shipments":"출고 관리",
         "/admin/commerce/deliveries":"배송 관리", "/admin/commerce/returns":"반품 관리",
         "/admin/commerce/inventory/lots":"LOT·유통기한", "/admin/commerce/inventory/replenishment":"발주 제안",

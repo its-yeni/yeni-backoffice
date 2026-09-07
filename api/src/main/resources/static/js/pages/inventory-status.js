@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const expanded = new Set();
   const pagination = AdminPagination.mount($('inventory-pagination'), { total: 0, size: 20, onChange: render });
   const sorter = AdminTableSort.attach(document.querySelector('.inventory-status-table'), { onSort: render });
-  const money = value => Number(value || 0).toLocaleString('ko-KR') + '원';
+  const money = value => Math.round(Number(value || 0)).toLocaleString('ko-KR') + '원';
   const number = value => Number(value || 0).toLocaleString('ko-KR');
   const incoming = row => Number(row.inTransitQuantity || 0) + Number(row.onOrderQuantity || 0);
   const lotMismatch = row => Number(row.lotAvailableTotal || 0) > 0 && Number(row.lotAvailableTotal || 0) !== Number(row.stockQuantity || 0);
@@ -27,6 +27,36 @@ document.addEventListener('DOMContentLoaded', () => {
       if (current && !$('inventory-store-filter').value) $('inventory-store-filter').value = String(current.id);
       renderSummary(); render();
     } catch (error) { rows = []; renderSummary(); render(); AppToast.error(error.message || '재고 현황을 불러오지 못했습니다.'); }
+    renderOpsQueue();
+  }
+
+  // 상단 "지금 처리할 것" — 발주 필요 / 입고 대기 / 지연 발주 / 품절 / 유통기한 임박.
+  // 재고 목록과 별개 데이터라 실패해도 화면 나머지는 유지한다.
+  async function renderOpsQueue() {
+    const host = $('inv-ops-strip');
+    if (!host) return;
+    try {
+      const [repl, poSummary, planSummary] = await Promise.all([
+        apiGet('/admin/api/commerce/inventory-planning/replenishments').catch(() => []),
+        apiGet('/admin/api/commerce/purchase-orders/summary').catch(() => ({})),
+        apiGet('/admin/api/commerce/inventory-planning/summary').catch(() => ({}))
+      ]);
+      const reorder = (repl || []).filter(r => Number(r.suggestedOrderQuantity || 0) > 0).length;
+      const awaiting = Number(poSummary.orderedCount || 0) + Number(poSummary.partialCount || 0);
+      const overdue = Number(poSummary.overdueCount || 0);
+      const soldOut = Number(planSummary.soldOutCount || 0);
+      const expiring = Number(planSummary.expiringSoonCount || 0);
+      const seg = (label, count, href, tone) => `<a href="${href}"${tone ? ` class="seg-${tone}"` : ''}><span>${label}</span><strong>${number(count)}</strong></a>`;
+      const cells = [
+        seg('발주 필요', reorder, '/admin/commerce/inventory/replenishment', reorder ? 'warn' : ''),
+        seg('입고 대기', awaiting, '/admin/commerce/receiving', ''),
+        seg('지연 발주', overdue, '/admin/commerce/purchase-orders', overdue ? 'bad' : ''),
+        seg('품절 SKU', soldOut, '/admin/commerce/inventory?health=SOLD_OUT', soldOut ? 'bad' : ''),
+        seg('유통기한 임박', expiring, '/admin/commerce/inventory/lots', expiring ? 'warn' : '')
+      ];
+      host.innerHTML = cells.join('');
+      host.hidden = false;
+    } catch (ignore) { host.hidden = true; }
   }
   function filtered() {
     const keyword = $('inventory-keyword').value.trim().toLowerCase(), store = $('inventory-store-filter').value, state = $('inventory-health-filter').value;

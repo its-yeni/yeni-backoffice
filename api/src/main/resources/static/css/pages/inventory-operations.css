@@ -132,3 +132,10 @@
 .inventory-safety-input { width: 52px; padding: 2px 4px; text-align: right; border: 1px solid var(--border-default); border-radius: var(--radius-control); font: inherit; font-size: 12px; background: #fff; }
 .inventory-safety-input:focus { border-color: var(--primary); outline: none; }
 .inventory-state.low { background: #fdecec; color: var(--danger); }
+
+/* 재고·발주 상단 "지금 처리할 것" 스트립 — .summary-strip 위에 색만 얹는다. */
+.inv-ops-strip { margin-bottom: 14px; }
+.inv-ops-strip > a { text-decoration: none; color: inherit; transition: background .12s ease; }
+.inv-ops-strip > a:hover { background: var(--bg-subtle); }
+.inv-ops-strip .seg-warn strong { color: #9a3412; }
+.inv-ops-strip .seg-bad strong { color: var(--danger); }
