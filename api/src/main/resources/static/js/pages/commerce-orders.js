@@ -86,7 +86,7 @@
       if (order.orderStatus === "PAID" && unshipped.length) actions.push(`<button type="button" class="order-row-action primary" data-a="ship">출고 완료</button>`);
       return `<tr data-order="${order.id}">
         <td class="row-index">${rowStart + i + 1}</td>
-        <td><strong>${escapeHtml(order.orderNo || "-")}</strong></td>
+        <td><strong>${escapeHtml(order.orderNo || "-")}</strong> ${channelBadge(order.channelType)}</td>
         <td><small>${escapeHtml((order.createdAt || "").replace("T", " ").slice(0, 16))}</small></td>
         <td>${escapeHtml(order.buyerName || "-")}</td>
         <td><span class="store-scope-cell">${escapeHtml(operationalStoreLabel(order.storeId))}</span></td>
@@ -127,6 +127,10 @@
   function badge(status) {
     return `<span class="order-status-text ${PAYMENT_CLASS[status] || "ready"}"><i></i>${escapeHtml(PAYMENT_LABEL[status] || status)}</span>`;
   }
+  function channelBadge(channel) {
+    const pos = channel === "POS";
+    return `<span class="channel-badge ${pos ? "pos" : "web"}">${pos ? "매장" : "온라인"}</span>`;
+  }
   function badge2({ label, tone }) {
     return `<span class="order-status-text ${tone}"><i></i>${escapeHtml(label)}</span>`;
   }
@@ -137,9 +141,11 @@
     $("orderSearchBtn").onclick = applyFilters;
     $("orderRefreshBtn").onclick = () => {
       $("filterDateFrom").value = ""; $("filterDateTo").value = ""; $("filterPaymentStatus").value = "";
+      if ($("filterChannel")) $("filterChannel").value = "";
       $("orderKeyword").value = ""; activeStatus = ""; applyFilters();
     };
     $("filterPaymentStatus").onchange = () => { activeStatus = $("filterPaymentStatus").value; applyFilters(); };
+    if ($("filterChannel")) $("filterChannel").onchange = applyFilters;
     $("filterDateFrom").onchange = applyFilters;
     $("filterDateTo").onchange = applyFilters;
     $("orderKeyword").addEventListener("keydown", event => { if (event.key === "Enter") applyFilters(); });
@@ -161,9 +167,11 @@
     const keyword = $("orderKeyword").value.trim().toLowerCase();
     const from = $("filterDateFrom").value;
     const to = $("filterDateTo").value;
+    const channel = $("filterChannel") ? $("filterChannel").value : "";
     const activeFilter = QUICK_FILTERS.find(f => f.key === activeStatus) || EXTRA_FILTERS.find(f => f.key === activeStatus) || QUICK_FILTERS[0];
     filteredOrders = allOrders.filter(order => {
       if (!activeFilter.match(order)) return false;
+      if (channel && (order.channelType || "WEB") !== channel) return false;
       if (keyword && !((order.orderNo || "").toLowerCase().includes(keyword) || (order.buyerName || "").toLowerCase().includes(keyword))) return false;
       const day = (order.createdAt || "").slice(0, 10);
       if (from && day < from) return false;

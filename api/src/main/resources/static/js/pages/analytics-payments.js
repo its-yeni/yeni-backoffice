@@ -1,18 +1,57 @@
 (function () {
   const A = window.Analytics, $ = A.$;
+  let allRows = [], channel = "";
   A.init(render);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const seg = $("an-channel-seg");
+    if (!seg) return;
+    seg.querySelectorAll("button").forEach(btn => btn.onclick = () => {
+      channel = btn.dataset.channel;
+      seg.querySelectorAll("button").forEach(b => b.classList.toggle("is-on", b === btn));
+      paint();
+    });
+  });
+
+  const CH_LABEL = { WEB: "온라인", POS: "매장(POS)" };
 
   async function render() {
     $("an-refresh").textContent = new Date().toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" });
     try {
-      const payments = await A.get("payments");
-      renderKpi(payments);
-      renderApprovalTrend(payments);
-      renderMethodAmount(payments);
-      renderMethodCount(payments);
+      allRows = await A.get("payments");
+      paint();
     } catch (error) {
       $("an-kpis").innerHTML = `<div class="an-empty" style="grid-column:1/-1">${A.esc(error.message)}</div>`;
     }
+  }
+
+  function paint() {
+    const payments = channel ? allRows.filter(r => (r.channelType || "WEB") === channel) : allRows;
+    renderKpi(payments);
+    renderChannelMatrix(allRows);
+    renderApprovalTrend(payments);
+    renderMethodAmount(payments);
+    renderMethodCount(payments);
+  }
+
+  // 채널 × 결제수단 승인금액 교차표 — 채널 필터와 무관하게 항상 전체를 보여준다.
+  function renderChannelMatrix(rows) {
+    const table = $("an-channel-matrix");
+    if (!table) return;
+    const channels = [...new Set(rows.map(r => r.channelType || "WEB"))].sort();
+    const methods = [...new Set(rows.map(r => r.paymentMethod || "기타"))].sort();
+    const cell = (mth, ch) => rows.filter(r => (r.paymentMethod || "기타") === mth && (r.channelType || "WEB") === ch)
+      .reduce((s, r) => s + Number(r.approvalAmount || 0), 0);
+    const colTotal = ch => rows.filter(r => (r.channelType || "WEB") === ch).reduce((s, r) => s + Number(r.approvalAmount || 0), 0);
+    const grand = rows.reduce((s, r) => s + Number(r.approvalAmount || 0), 0);
+    table.querySelector("thead").innerHTML = `<tr><th>결제수단</th>${channels.map(c => `<th class="num">${A.esc(CH_LABEL[c] || c)}</th>`).join("")}<th class="num">합계</th></tr>`;
+    table.querySelector("tbody").innerHTML = methods.length ? methods.map(m => {
+      const rowTotal = channels.reduce((s, c) => s + cell(m, c), 0);
+      return `<tr><td>${A.esc(m)}</td>${channels.map(c => `<td class="num">${cell(m, c) ? A.won(cell(m, c)) : "—"}</td>`).join("")}<td class="num">${A.won(rowTotal)}</td></tr>`;
+    }).join("") : `<tr><td colspan="${channels.length + 2}" class="an-empty">결제 데이터가 없습니다.</td></tr>`;
+    table.querySelector("tfoot").innerHTML = methods.length
+      ? `<tr><td>합계</td>${channels.map(c => `<td class="num">${A.won(colTotal(c))}</td>`).join("")}<td class="num">${A.won(grand)}</td></tr>`
+      : "";
   }
 
   function totals(rows) {

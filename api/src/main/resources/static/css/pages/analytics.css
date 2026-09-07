@@ -88,3 +88,10 @@
 .an-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
 .an-section-head h4 { margin: 0; font-size: 13px; font-weight: 700; }
 .an-section-head a { color: var(--primary); font-size: 12px; text-decoration: none; }
+
+/* 결제 채널 세그먼트 (전체 / 온라인 / 매장) */
+.an-channel-seg { display: inline-flex; gap: 2px; margin: 0 0 14px; padding: 2px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-subtle); }
+.an-channel-seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.an-channel-seg button:hover { color: var(--text-primary); }
+.an-channel-seg button.is-on { background: #fff; color: var(--primary-hover); box-shadow: 0 1px 3px rgba(16,24,40,.1); }
+#an-channel-matrix td:first-child, #an-channel-matrix th:first-child { font-weight: 600; }

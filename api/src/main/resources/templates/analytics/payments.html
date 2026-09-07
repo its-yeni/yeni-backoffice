@@ -13,7 +13,20 @@
   <nav th:replace="~{analytics/_parts :: tabs('payments')}"></nav>
   <div th:replace="~{analytics/_parts :: filter(true)}"></div>
 
+  <div class="an-channel-seg" id="an-channel-seg" role="tablist" aria-label="결제 채널">
+    <button type="button" class="is-on" data-channel="">전체</button>
+    <button type="button" data-channel="WEB">온라인</button>
+    <button type="button" data-channel="POS">매장(POS)</button>
+  </div>
+
   <div class="an-kpis" id="an-kpis"></div>
+
+  <div class="an-panel" style="margin-bottom:16px">
+    <h4>채널 × 결제수단 (승인금액)</h4>
+    <div class="tbl-scroll" style="overflow-x:auto">
+      <table class="an-table" id="an-channel-matrix"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+    </div>
+  </div>
 
   <div class="an-panel" style="margin-bottom:16px">
     <div class="an-panel-head"><h4>일별 승인율 추이</h4>

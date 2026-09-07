@@ -116,6 +116,12 @@
       item.dataset.amtDone = "1";
       fetch(PAY + "/" + pay).then(function (r) { return r.json(); }).then(function (p) {
         if (p && p.approvedAmount != null) amtEl.textContent = Number(p.approvedAmount).toLocaleString("ko-KR") + "원";
+        var chEl = item.querySelector("[data-channel]");
+        if (chEl && p && p.channelType) {
+          var pos = p.channelType === "POS";
+          chEl.className = "channel-badge " + (pos ? "pos" : "web");
+          chEl.textContent = pos ? "매장" : "온라인";
+        }
       }).catch(function () {});
     });
   }
@@ -133,7 +139,7 @@
       + '<div class="worklist-row">'
       +   '<input type="checkbox" aria-label="선택"' + (m.retryable ? '' : ' disabled') + '>'
       +   '<span class="wl-kind ' + kindCls + '">' + esc(m.kind) + '</span>'
-      +   '<span class="wl-main"><strong>' + esc(t.orderNo) + '</strong><span>' + esc(t.tid || "") + '</span></span>'
+      +   '<span class="wl-main"><strong>' + esc(t.orderNo) + '</strong><span>' + esc(t.tid || "") + ' <span data-channel></span></span></span>'
       +   '<span class="wl-amt" data-amt>—</span>'
       +   '<span class="wl-age ' + agingClass(days) + '">' + esc(agingText(t.createdAt)) + '</span>'
       +   '<span class="status-dot ' + dotCls + '">' + esc(m.primaryDot) + '</span>'
