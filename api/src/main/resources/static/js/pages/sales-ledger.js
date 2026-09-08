@@ -2,13 +2,13 @@
  let data=[],pagination;const $=id=>document.getElementById(id),rows=$('ledger-rows'),drawer=$('ledger-detail'),backdrop=$('ledger-backdrop');
  function today(offset){const date=new Date();date.setDate(date.getDate()+offset);return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')}
  const initialParams=new URLSearchParams(location.search);
- $('ledger-start').value=initialParams.get('startDate')||(initialParams.get('period')==='today'?today(0):today(-7));
+ $('ledger-start').value=initialParams.get('startDate')||(initialParams.get('period')==='today'?today(0):today(-6));
  $('ledger-end').value=initialParams.get('endDate')||today(0);$('ledger-keyword').value=initialParams.get('keyword')||'';
  pagination=AdminPagination.mount($('ledger-pagination'),{total:0,size:20,onChange:load});$('ledger-search').onclick=resetAndLoad;$('ledger-type').onchange=resetAndLoad;$('ledger-settlement').onchange=resetAndLoad;$('ledger-detail-close').onclick=close;backdrop.onclick=close;
  if(initialParams.get('transactionType'))$('ledger-type').value=initialParams.get('transactionType');
  if(initialParams.get('settlementStatus'))$('ledger-settlement').value=initialParams.get('settlementStatus');
  const confirmSel=$('ledger-confirmed');if(confirmSel){if(initialParams.get('confirmedYn'))confirmSel.value=initialParams.get('confirmedYn');confirmSel.onchange=resetAndLoad;}
- const resetBtn=$('ledger-reset');if(resetBtn)resetBtn.onclick=()=>{$('ledger-keyword').value='';$('ledger-start').value=today(-7);$('ledger-end').value=today(0);$('ledger-type').value='';$('ledger-settlement').value='';if(confirmSel)confirmSel.value='';resetAndLoad();};
+ const resetBtn=$('ledger-reset');if(resetBtn)resetBtn.onclick=()=>{$('ledger-keyword').value='';$('ledger-start').value=today(-6);$('ledger-end').value=today(0);$('ledger-type').value='';$('ledger-settlement').value='';if(confirmSel)confirmSel.value='';resetAndLoad();};
  const settlementLabel=value=>({NOT_SETTLED:'정산 대기',SETTLEMENT_READY:'정산 준비',CALCULATED:'계산 완료',SETTLED:'정산 확정',PAID:'지급 완료',CARRIED_OVER:'다음 정산 차감',EXCLUDED:'정산 제외'})[value]||value;
 
  // 운영자가 한 행의 현재 위치를 바로 알 수 있게: 구매 확정 여부 → 정산 진행 단계 순으로 판단한다.

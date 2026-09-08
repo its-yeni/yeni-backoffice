@@ -5,12 +5,12 @@
 
   function ymd(d) { return d.toISOString().slice(0, 10); }
   $("int-end").value = ymd(new Date());
-  $("int-start").value = ymd(new Date(Date.now() - 7 * 864e5));
+  $("int-start").value = ymd(new Date(Date.now() - 6 * 864e5));
 
   pagination = AdminPagination.mount($("int-pagination"), { total: 0, size: 20, onChange: render });
   $("int-search-btn").onclick = load;
   $("int-keyword").addEventListener("keydown", e => { if (e.key === "Enter") load(); });
-  $("int-reset").onclick = () => { $("int-keyword").value = ""; $("int-end").value = ymd(new Date()); $("int-start").value = ymd(new Date(Date.now() - 7 * 864e5)); stage = ""; load(); };
+  $("int-reset").onclick = () => { $("int-keyword").value = ""; $("int-end").value = ymd(new Date()); $("int-start").value = ymd(new Date(Date.now() - 6 * 864e5)); stage = ""; load(); };
   $("int-detail-close").onclick = close; backdrop.onclick = close;
 
   const CHIP = { PAYMENT: "warn", FULFILL: "", CONFIRM: "", RECON: "warn", SETTLE: "", PAYOUT: "", DONE: "good" };

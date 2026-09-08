@@ -6,7 +6,7 @@
 
   const today = new Date();
   $("ps-end").value = today.toISOString().slice(0, 10);
-  $("ps-start").value = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+  $("ps-start").value = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
 
   pagination = AdminPagination.mount($("ps-pagination"), { total: 0, size: 20, onChange: render });
   $("ps-search").onclick = () => { pagination.reset(); load(); };

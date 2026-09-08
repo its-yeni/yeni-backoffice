@@ -9,7 +9,7 @@
   const iso = d => d.toISOString().slice(0, 10);
   const monthStart = iso(new Date(today.getFullYear(), today.getMonth(), 1));
   $("ac-j-end").value = iso(today);
-  $("ac-j-start").value = iso(new Date(today.getTime() - 7 * 864e5));
+  $("ac-j-start").value = iso(new Date(today.getTime() - 6 * 864e5));
   $("ac-t-asof").value = iso(today);
   $("ac-i-end").value = iso(today); $("ac-i-start").value = monthStart;
   $("ac-s-end").value = iso(today); $("ac-s-start").value = monthStart;

@@ -16,11 +16,12 @@
     const query = new URLSearchParams(location.search);
     const requestedKeyword = query.get('keyword');
     if (requestedKeyword && $("orderKeyword")) $("orderKeyword").value = requestedKeyword;
-    if (query.get('period') === 'today') {
+    if ($("filterDateFrom") && $("filterDateTo")) {
+      const ymd = d => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
       const now = new Date();
-      const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
-      $("filterDateFrom").value = today;
-      $("filterDateTo").value = today;
+      // 기본값은 최근 7일. 대시보드에서 '오늘 주문'으로 넘어오면 당일로 좁힌다.
+      $("filterDateTo").value = ymd(now);
+      $("filterDateFrom").value = query.get('period') === 'today' ? ymd(now) : ymd(new Date(now.getTime() - 6 * 864e5));
     }
     if (query.get('status')) {
       activeStatus = query.get('status');
@@ -149,7 +150,10 @@
   function bindListControls() {
     $("orderSearchBtn").onclick = applyFilters;
     $("orderRefreshBtn").onclick = () => {
-      $("filterDateFrom").value = ""; $("filterDateTo").value = ""; $("filterPaymentStatus").value = "";
+      const ymd = d => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+      const now = new Date();
+      $("filterDateTo").value = ymd(now); $("filterDateFrom").value = ymd(new Date(now.getTime() - 6 * 864e5));
+      $("filterPaymentStatus").value = "";
       if ($("filterChannel")) $("filterChannel").value = "";
       $("orderKeyword").value = ""; activeStatus = ""; applyFilters();
     };
@@ -160,10 +164,27 @@
     $("orderKeyword").addEventListener("keydown", event => { if (event.key === "Enter") applyFilters(); });
   }
 
+  // 상태 칩 카운트는 상태만 뺀 현재 필터(기간·채널·검색어)를 그대로 적용한다 —
+  // 목록 합계("총 N개")와 칩 숫자가 어긋나 보이지 않도록.
+  function ordersMatchingContext() {
+    const keyword = $("orderKeyword").value.trim().toLowerCase();
+    const from = $("filterDateFrom").value, to = $("filterDateTo").value;
+    const channel = $("filterChannel") ? $("filterChannel").value : "";
+    return allOrders.filter(order => {
+      if (channel && (order.channelType || "WEB") !== channel) return false;
+      if (keyword && !((order.orderNo || "").toLowerCase().includes(keyword) || (order.buyerName || "").toLowerCase().includes(keyword))) return false;
+      const day = (order.createdAt || "").slice(0, 10);
+      if (from && day < from) return false;
+      if (to && day > to) return false;
+      return true;
+    });
+  }
+
   function renderQuickFilters() {
+    const scoped = ordersMatchingContext();
     $("quickFilters").innerHTML = QUICK_FILTERS.map(chip => `
       <button type="button" class="quick-filter ${chip.key === activeStatus ? "active" : ""}" data-status="${chip.key}">
-        <span class="dot"></span>${escapeHtml(chip.label)} ${allOrders.filter(chip.match).length}
+        <span class="dot"></span>${escapeHtml(chip.label)} ${scoped.filter(chip.match).length}
       </button>`).join("");
     document.querySelectorAll(".quick-filter").forEach(btn => btn.onclick = () => {
       activeStatus = btn.dataset.status;
@@ -173,20 +194,8 @@
   }
 
   function applyFilters() {
-    const keyword = $("orderKeyword").value.trim().toLowerCase();
-    const from = $("filterDateFrom").value;
-    const to = $("filterDateTo").value;
-    const channel = $("filterChannel") ? $("filterChannel").value : "";
     const activeFilter = QUICK_FILTERS.find(f => f.key === activeStatus) || EXTRA_FILTERS.find(f => f.key === activeStatus) || QUICK_FILTERS[0];
-    filteredOrders = allOrders.filter(order => {
-      if (!activeFilter.match(order)) return false;
-      if (channel && (order.channelType || "WEB") !== channel) return false;
-      if (keyword && !((order.orderNo || "").toLowerCase().includes(keyword) || (order.buyerName || "").toLowerCase().includes(keyword))) return false;
-      const day = (order.createdAt || "").slice(0, 10);
-      if (from && day < from) return false;
-      if (to && day > to) return false;
-      return true;
-    });
+    filteredOrders = ordersMatchingContext().filter(order => activeFilter.match(order));
     pagination.setPage(1);
     renderRows();
     renderQuickFilters();
