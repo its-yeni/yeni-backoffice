@@ -51,9 +51,16 @@ public class ProductViewController {
 
     @GetMapping("/admin/commerce/receiving")
     public String receiving(Model model) {
-        model.addAttribute("title", "입고 관리");
+        model.addAttribute("title", "입고 검수");
         model.addAttribute("description", "SKU를 검색해 입고 수량을 등록합니다.");
         return "commerce/receiving";
+    }
+
+    @GetMapping("/admin/commerce/receiving/history")
+    public String receivingHistory(Model model) {
+        model.addAttribute("title", "입고 내역");
+        model.addAttribute("description", "등록된 입고 이력을 조회합니다.");
+        return "commerce/receiving-history";
     }
 
     @GetMapping("/admin/commerce/shipments")

@@ -323,14 +323,14 @@ body.ops-insight-open { overflow: hidden; }
 /* Reference-aligned operations dashboard.
    Sidebar width/collapse is left to the shared rule in layout.css so navigating
    between the dashboard and every other screen doesn't shift the nav. */
-.operations-dashboard-page{--content-gutter:18px;--topbar-height:42px;background:#f8f9fb}
-.operations-dashboard-page .workspace-tabs{display:none!important}
-.operations-dashboard-page .topbar{height:42px;min-height:42px;padding-top:5px;padding-bottom:5px}
+.operations-dashboard-page{--content-gutter:18px;background:#f8f9fb}
+/* 작업 탭은 대시보드에서도 표시한다(다른 화면과 일관되게) — 고정 높이 강제 안 함. */
+.operations-dashboard-page .topbar{min-height:44px;padding-top:5px;padding-bottom:5px}
 .operations-dashboard-page .global-commerce-context select{height:32px;min-width:165px;font-size:11px}
 .operations-dashboard-page .global-commerce-context label>span{font-size:10px}
 .operations-dashboard-page .profile-pill{font-size:11px}.operations-dashboard-page .avatar{width:26px;height:26px}
 .ops-top-status{display:flex;align-items:center;gap:5px;color:#7a8492;font-size:10px;white-space:nowrap}.ops-top-refresh{height:31px!important;padding:0 12px!important;font-size:10px!important}.ops-top-bell{position:relative;display:grid;width:30px;height:30px;place-items:center;border:0;background:transparent;color:#636d7a;font-size:16px}.ops-top-bell b{position:absolute;right:1px;top:-1px;display:grid;min-width:15px;height:15px;padding:0 3px;place-items:center;border-radius:8px;background:#4f46e5;color:#fff;font-size:8px}
-.operations-dashboard-page .operations-dashboard{min-height:calc(100vh - 42px);padding:14px 18px 28px;gap:12px;background:#fafbfc}
+.operations-dashboard-page .operations-dashboard{min-height:calc(100vh - var(--topbar-height));padding:14px 18px 28px;gap:12px;background:#fafbfc}
 .operations-dashboard-page .ops-titlebar{flex:none;min-height:45px}.operations-dashboard-page .ops-titlebar h1{margin:0;font-size:20px!important;letter-spacing:-.035em}.operations-dashboard-page .ops-titlebar p{margin:5px 0 0;font-size:10.5px!important;color:#7b8492}
 .operations-dashboard-page .ops-summary{grid-template-columns:1fr 1fr;gap:10px}
 .operations-dashboard-page .ops-summary-card{padding:10px 12px;border-radius:7px;box-shadow:0 1px 3px rgba(16,24,40,.04)}

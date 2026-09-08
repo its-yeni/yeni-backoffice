@@ -38,7 +38,7 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
                 "/admin/analytics/settlements", "/admin/analytics/inventory",
                 "/admin/commerce/products", "/admin/commerce/categories", "/admin/commerce/options",
                 "/admin/commerce/preview", "/admin/commerce/stores", "/admin/commerce/orders",
-                "/admin/commerce/suppliers", "/admin/commerce/purchase-orders", "/admin/commerce/receiving",
+                "/admin/commerce/suppliers", "/admin/commerce/purchase-orders", "/admin/commerce/receiving", "/admin/commerce/receiving/history",
                 "/admin/commerce/inventory", "/admin/commerce/stock-counts", "/admin/commerce/inventory/lots",
                 "/admin/commerce/inventory/replenishment", "/admin/commerce/inventory/insights",
                 "/admin/commerce/inventory/transfers", "/admin/commerce/shipments", "/admin/commerce/deliveries",
@@ -85,8 +85,9 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
 
         sub(shop,   "/admin/commerce/inventory", "발주서",    "/admin/commerce/purchase-orders",     1);
         sub(shop,   "/admin/commerce/inventory", "입고 검수", "/admin/commerce/receiving",           2);
-        sub(shop,   "/admin/commerce/inventory", "재고 실사", "/admin/commerce/stock-counts",        3);
-        sub(shop,   "/admin/commerce/inventory", "재고 이동", "/admin/commerce/inventory/transfers", 4);
+        sub(shop,   "/admin/commerce/inventory", "입고 내역", "/admin/commerce/receiving/history",   3);
+        sub(shop,   "/admin/commerce/inventory", "재고 실사", "/admin/commerce/stock-counts",        4);
+        sub(shop,   "/admin/commerce/inventory", "재고 이동", "/admin/commerce/inventory/transfers", 5);
 
         sub(shop,   "/admin/commerce/products",  "카테고리",  "/admin/commerce/categories",          1);
         sub(shop,   "/admin/commerce/products",  "옵션",      "/admin/commerce/options",             2);

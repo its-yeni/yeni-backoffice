@@ -8,7 +8,7 @@
 <body>
 <div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
 <section class="product-page commerce-page receiving-page">
-  <header class="page-header"><div><h3>입고 관리</h3><p>입고할 상품을 선택하고 입고 정보를 입력한 후 입고를 등록합니다.</p></div></header>
+  <header class="page-header"><div><h3>입고 검수</h3><p>입고할 상품을 선택하고 입고 정보를 입력한 후 입고를 등록합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/receiving/history">입고 내역 →</a></div></header>
 
   <aside class="receiving-guide">
     <strong>입고 진행</strong>
@@ -74,11 +74,6 @@
     <div><strong>초기 입고가 완료되었습니다.</strong><span>상품 판매 상태를 켜고 고객 화면 노출을 확인하세요.</span></div>
     <a class="btn btn-primary" id="receiving-next-product" href="/admin/commerce/products">다음: 판매 상태 설정 →</a>
   </aside>
-
-  <section class="receiving-history">
-    <div class="receiving-section-title"><strong>최근 입고 내역</strong><span>최근 200건까지 표시합니다.</span></div>
-    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>발생일시</th><th>상품</th><th>SKU</th><th class="number">입고 수량</th><th class="number">입고 후 재고</th><th>사유</th></tr></thead><tbody id="receiving-history-rows"></tbody></table><div class="data-table-empty" id="empty-receiving-history" hidden><strong>입고 이력이 없습니다.</strong><p>첫 입고를 등록해 보세요.</p></div></div>
-  </section>
 </section></main></div>
 <script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/receiving.js"></script>
 </body></html>

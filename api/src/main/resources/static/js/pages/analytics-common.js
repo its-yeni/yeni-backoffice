@@ -44,7 +44,7 @@ window.Analytics = (function () {
   async function initFilterBar() {
     const today = new Date();
     if ($("an-end") && !$("an-end").value) $("an-end").value = ymd(today);
-    if ($("an-start") && !$("an-start").value) $("an-start").value = ymd(new Date(today.getTime() - 29 * 864e5));
+    if ($("an-start") && !$("an-start").value) $("an-start").value = ymd(new Date(today.getTime() - 6 * 864e5));
     if ($("an-store")) {
       // 매장은 상단바 전역 선택기로 통일한다. 중복 필터는 숨긴다.
       const wrap = $("an-store").closest("label") || $("an-store");
@@ -65,7 +65,7 @@ window.Analytics = (function () {
     document.querySelectorAll(".an-quick-ranges button").forEach(b => b.classList.toggle("active", b === el));
   }
   function syncActiveFromDates() {
-    // 분석 화면 기본값은 "최근 30일" — 현재 날짜 범위와 일치하는 프리셋을 활성 표시.
+    // 분석 화면 기본값은 "최근 7일" — 현재 날짜 범위와 일치하는 프리셋을 활성 표시.
     const end = $("an-end")?.value, start = $("an-start")?.value;
     if (!end || !start) return;
     const today = ymd(new Date());
@@ -99,7 +99,7 @@ window.Analytics = (function () {
       });
       if ($("an-filter-reset")) $("an-filter-reset").onclick = () => {
         const today = new Date();
-        if ($("an-start")) $("an-start").value = ymd(new Date(today.getTime() - 29 * 864e5));
+        if ($("an-start")) $("an-start").value = ymd(new Date(today.getTime() - 6 * 864e5));
         if ($("an-end")) $("an-end").value = ymd(today);
         ["an-channel", "an-store", "an-method"].forEach(id => { if ($(id)) $(id).value = ""; });
         syncActiveFromDates();

@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>입고 내역 - Yeni Backoffice</title>
+<link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/commerce-admin.css"><link rel="stylesheet" href="/css/pages/commerce-list-system.css"></head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="product-page commerce-page">
+<header class="page-header"><div><h3>입고 내역</h3><p>등록된 입고 이력을 조회합니다. 입고 등록은 입고 검수 화면에서 합니다.</p></div>
+  <div class="page-header-actions"><a class="btn btn-primary" href="/admin/commerce/receiving">입고 등록 →</a></div></header>
+
+<div class="filter-bar rh-filter">
+  <label class="rh-search"><span class="sr-only">검색</span><input id="rh-keyword" type="search" placeholder="상품명 · SKU 검색"></label>
+  <div class="rh-daterange"><input id="rh-start" type="date"><span>~</span><input id="rh-end" type="date"></div>
+  <button class="btn btn-primary btn-sm" id="rh-search" type="button">조회</button>
+  <button class="btn btn-text" id="rh-reset" type="button">초기화</button>
+</div>
+
+<div class="summary-strip rh-summary">
+  <div><span>입고 건수</span><strong id="rh-count">0건</strong></div>
+  <div><span>총 입고 수량</span><strong id="rh-qty">0</strong></div>
+</div>
+
+<div class="data-table-wrap"><table class="data-table"><thead><tr><th>발생일시</th><th>상품</th><th>SKU</th><th class="number">입고 수량</th><th class="number">입고 후 재고</th><th>사유</th></tr></thead><tbody id="rh-rows"></tbody></table>
+<div class="data-table-empty" id="rh-empty" hidden><strong>입고 이력이 없습니다.</strong><p>입고 검수 화면에서 첫 입고를 등록해 보세요.</p></div>
+<div id="rh-pagination"></div></div>
+</section></main></div>
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/receiving-history.js"></script>
+</body></html>

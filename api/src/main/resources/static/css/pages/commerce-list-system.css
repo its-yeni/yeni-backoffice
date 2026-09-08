@@ -29,3 +29,10 @@
     .product-data-table .table-product-cell strong { font-size: 12px; line-height: 1.2; }
     .product-data-table .table-secondary { margin-top: 1px; line-height: 1.2; }
 }
+
+/* 입고 내역 필터 */
+.rh-filter .rh-search { flex: 1 1 240px; min-width: 200px; }
+.rh-filter .rh-search input { width: 100%; height: var(--control-height); }
+.rh-daterange { display: inline-flex; align-items: center; gap: 6px; }
+.rh-daterange input { width: 140px; }
+.rh-summary { margin-bottom: 14px; }

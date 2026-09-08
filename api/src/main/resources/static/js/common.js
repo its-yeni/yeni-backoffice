@@ -18,7 +18,7 @@ window.AdminWorkspace = (function () {
         "/admin/commerce/orders":"주문 관리", "/admin/commerce/stores":"매장 관리",
         "/admin/commerce/suppliers":"공급처 관리", "/admin/commerce/purchase-orders":"발주서",
         "/admin/commerce/stock-counts":"재고 실사",
-        "/admin/commerce/receiving":"입고 검수", "/admin/commerce/inventory":"재고 · 발주",
+        "/admin/commerce/receiving":"입고 검수", "/admin/commerce/receiving/history":"입고 내역", "/admin/commerce/inventory":"재고 · 발주",
         "/admin/commerce/inventory/transfers":"재고 이동", "/admin/commerce/shipments":"출고 관리",
         "/admin/commerce/deliveries":"배송 관리", "/admin/commerce/returns":"반품 관리",
         "/admin/commerce/inventory/lots":"LOT·유통기한", "/admin/commerce/inventory/replenishment":"발주 제안",
@@ -706,28 +706,8 @@ document.addEventListener("DOMContentLoaded",async function(){
         if(store&&SERVER_SCOPED.includes(location.pathname)&&!new URLSearchParams(location.search).has("storeId")){
             const url=new URL(location.href);url.searchParams.set("storeId",store.id);location.replace(url.toString());
         }
-        showStoreScopeBanner(store);
     }catch(ignore){}
 });
-/* 특정 매장을 고른 상태면 목록 화면 상단에 "이 매장만 보는 중" 배너를 띄운다.
-   데모를 돌다 무심코 매장이 좁혀져 목록이 텅 비어 보이는 걸 방지. */
-function showStoreScopeBanner(store){
-    document.getElementById("store-scope-banner")?.remove();
-    if(!store)return;
-    const header=document.querySelector("main .page-header");
-    if(!header||header.closest(".operations-dashboard-page"))return;
-    const bar=document.createElement("div");
-    bar.id="store-scope-banner";
-    bar.className="store-scope-banner";
-    bar.innerHTML=`<span><b>${escapeHtml(store.storeName)}</b> 매장 데이터만 표시 중입니다.</span>`
-        +`<button type="button" id="store-scope-clear">전체 매장 보기</button>`;
-    header.insertAdjacentElement("afterend",bar);
-    bar.querySelector("#store-scope-clear").onclick=function(){
-        localStorage.setItem("commerce-store-id","0");
-        localStorage.removeItem("commerce-store-code");
-        const url=new URL(location.href);url.searchParams.delete("storeId");location.href=url.toString();
-    };
-}
 function persistCommerceContext(brand,store){
     localStorage.setItem("commerce-brand-id",String(brand&&brand.id?brand.id:0));
     localStorage.setItem("commerce-store-id",String(store&&store.id?store.id:0));
@@ -1111,7 +1091,10 @@ window.AdminApi = (function () {
         "/commerce/shipments",
         "/commerce/deliveries",
         "/commerce/returns",
+        "/commerce/purchase-orders",
+        "/commerce/inventory-transactions",
         "/payment-operations/payments",
+        "/integrated-sales",
         "/sales-ledger",
         "/settlements",
         "/api/analytics/",
@@ -1154,12 +1137,16 @@ window.AdminApi = (function () {
     }
 
     function applyBrandScope(url, data) {
-        if (!activeBrandId() || activeStoreId() || !isOperationalScopedUrl(url)) return data;
-        let allowed = [];
-        try {
-            allowed = JSON.parse(localStorage.getItem("commerce-brand-store-ids") || "[]").map(Number);
-        } catch (ignore) {}
-        if (!allowed.length) return data;
+        if (!isOperationalScopedUrl(url)) return data;
+        const storeId = activeStoreId();
+        let allowed = null;
+        if (storeId) {
+            // 특정 매장 선택 시: 서버가 storeId 로 안 좁혀줘도 클라이언트에서 매장 행만 남긴다(일관성).
+            allowed = [Number(storeId)];
+        } else if (activeBrandId()) {
+            try { allowed = JSON.parse(localStorage.getItem("commerce-brand-store-ids") || "[]").map(Number); } catch (ignore) {}
+        }
+        if (!allowed || !allowed.length) return data;
         const filter = rows => rows.filter(row => !row
             || !Object.prototype.hasOwnProperty.call(row, "storeId")
             || (row.storeId != null && allowed.includes(Number(row.storeId))));

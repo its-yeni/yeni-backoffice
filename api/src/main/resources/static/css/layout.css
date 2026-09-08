@@ -31,7 +31,12 @@
 .nav a.active::before { display: none; content: none; }
 
 /* 업무 흐름 하위 단계 — 부모 항목 밑에 들여쓰기. 아이콘 자리(18px)+gap(9px) 만큼 왼쪽 여백. */
-.nav-item-wrap { display: grid; gap: 3px; }
+.nav-item-wrap { position: relative; display: grid; gap: 3px; }
+.nav-substeps-toggle { position: absolute; z-index: 1; top: 3px; right: 4px; display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--sidebar-text-dim); }
+.nav-substeps-toggle:hover { background: var(--sidebar-hover); color: var(--sidebar-text); }
+.nav-substeps-toggle span { transition: transform 120ms ease; }
+.nav-item-wrap.is-substeps-collapsed .nav-substeps { display: none; }
+.nav-item-wrap.is-substeps-collapsed .nav-substeps-toggle span { transform: rotate(-90deg); }
 .nav-substeps { display: grid; gap: 2px; margin: 1px 0 3px; padding-left: 27px; position: relative; }
 .nav-substeps::before { content: ""; position: absolute; left: 13px; top: 2px; bottom: 6px; width: 1px; background: var(--sidebar-border); }
 .nav-substeps a { height: 30px; padding: 0 10px; font-size: 12px; color: var(--sidebar-text-dim); }
@@ -39,7 +44,7 @@
 .nav-substeps a:hover { color: var(--sidebar-text); background: var(--sidebar-hover); }
 .nav-substeps a.active { color: var(--sidebar-active-text); background: var(--sidebar-active-bg); font-weight: 500; }
 .nav-item-wrap.is-section-active > a:not(.active) { color: var(--sidebar-text); }
-.sidebar-collapsed .nav-substeps, :root .sidebar .nav-group.is-collapsed .nav-substeps { display: none; }
+.sidebar-collapsed .nav-substeps, .sidebar-collapsed .nav-substeps-toggle, :root .sidebar .nav-group.is-collapsed .nav-substeps { display: none; }
 .nav-badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center;
   border-radius: 999px; background: #c2453a; color: #fff; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sidebar-collapsed .nav-badge { position: absolute; top: 3px; right: 3px; min-width: 15px; height: 15px; padding: 0 3px; font-size: 8px; }

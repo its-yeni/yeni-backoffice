@@ -62,6 +62,8 @@
   }
 
   async function loadHistory() {
+    // 입고 내역은 별도 화면(/admin/commerce/receiving/history)으로 분리됨.
+    if (!document.getElementById("receiving-history-rows")) return;
     const response = await fetch("/admin/api/commerce/inventory-transactions?type=RECEIPT");
     const data = await response.json();
     if (!response.ok) return AppToast.error(data.message || "입고 내역을 조회하지 못했습니다.");
@@ -249,8 +251,9 @@
     $("pending-submit").disabled = pending.size === 0;
   }
 
-  // ---------- 최근 입고 내역 ----------
+  // ---------- 최근 입고 내역 (별도 화면으로 분리) ----------
   function renderHistory() {
+    if (!document.getElementById("receiving-history-rows")) return;
     $("empty-receiving-history").hidden = history.length > 0;
     $("receiving-history-rows").innerHTML = history.map(row => `<tr>
       <td>${formatDate(row.createdAt)}</td>

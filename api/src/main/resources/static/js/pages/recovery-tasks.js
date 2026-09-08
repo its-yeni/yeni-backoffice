@@ -17,7 +17,7 @@
 
   const today = new Date();
   $("rt-end").value = today.toISOString().slice(0, 10);
-  $("rt-start").value = new Date(today.getTime() - 30 * 864e5).toISOString().slice(0, 10);
+  $("rt-start").value = new Date(today.getTime() - 7 * 864e5).toISOString().slice(0, 10);
 
   const params0 = new URLSearchParams(location.search);
   if (params0.get("keyword")) $("rt-keyword").value = params0.get("keyword");
