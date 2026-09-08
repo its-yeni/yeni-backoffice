@@ -1,0 +1,52 @@
+/* 통합 매출 조회 — 파이프라인 한눈에 */
+.integrated-sales-page { min-height: calc(100vh - var(--topbar-height)); padding: 18px var(--content-gutter) 40px; background: var(--page-canvas); }
+
+.int-stage-bar { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 16px; }
+.int-stage-bar button { height: 30px; padding: 0 12px; border: 1px solid var(--border-default); border-radius: 999px;
+  background: var(--bg-surface); color: var(--text-secondary); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.int-stage-bar button:hover { border-color: var(--primary); }
+.int-stage-bar button.is-on { border-color: var(--primary); background: var(--primary); color: #fff; }
+.int-stage-bar button b { margin-left: 5px; font-weight: 700; opacity: .8; }
+.int-stage-bar button.is-on b { opacity: 1; }
+
+.int-search { flex: 1 1 240px; min-width: 200px; }
+.int-search input { width: 100%; height: var(--control-height); }
+.int-daterange { display: inline-flex; align-items: center; gap: 6px; }
+.int-daterange input { width: 140px; }
+
+.int-summary { margin-bottom: 14px; }
+
+.int-table { min-width: 1130px; font-size: 12.5px; }
+.int-table th { white-space: nowrap; }
+.int-table td { vertical-align: top; padding: 10px 12px; }
+.int-table td small { color: var(--text-muted); font-size: 11px; }
+.int-prod { color: var(--text-primary); }
+.int-neg { color: var(--danger); }
+.int-done { color: var(--success); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.int-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 5px;
+  border: 1px solid var(--border-default); background: var(--bg-subtle); color: var(--text-secondary);
+  font-size: 11px; font-weight: 700; white-space: nowrap; }
+.int-chip.good { border-color: #a6e0c1; background: #ecfbf3; color: #067647; }
+.int-chip.warn { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.int-chip.bad { border-color: #fecaca; background: #fef2f2; color: var(--danger); }
+
+.status-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.status-dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #98a2b3; flex: none; }
+.status-dot.good::before { background: #22a06b; }
+.status-dot.warn::before { background: #e28a18; }
+.status-dot.bad::before { background: #d92d20; }
+
+.int-timeline { list-style: none; margin: 8px 0 0; padding: 0; }
+.int-timeline li { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 10px; padding: 8px 0; }
+.int-timeline li i { width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: #d0d5dd; }
+.int-timeline li.done i { background: #22a06b; }
+.int-timeline li.current i { background: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.int-timeline li.failed i { background: #d92d20; }
+.int-timeline li strong { font-size: 13px; }
+.int-timeline li span { display: block; color: var(--text-secondary); font-size: 12px; }
+.int-timeline li:not(:last-child)::after { content: ""; position: absolute; left: 7px; top: 20px; bottom: -4px; width: 1px; background: var(--border-default); }
+
+.int-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.int-links a { color: var(--primary); font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.int-links a:hover { text-decoration: underline; }

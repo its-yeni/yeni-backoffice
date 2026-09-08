@@ -43,11 +43,11 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
                 "/admin/commerce/inventory/replenishment", "/admin/commerce/inventory/insights",
                 "/admin/commerce/inventory/transfers", "/admin/commerce/shipments", "/admin/commerce/deliveries",
                 "/admin/commerce/returns", "/admin/commerce/inventory/transactions",
-                "/admin/payment-operations", "/admin/payment-operations/sales-ledger",
+                "/admin/payment-operations", "/admin/payment-operations/integrated", "/admin/payment-operations/sales-ledger",
                 "/admin/payment-operations/pending-sales", "/admin/payment-operations/recovery-tasks",
                 "/admin/payment-operations/sales-analytics", "/admin/payment-operations/settlements",
                 "/admin/payment-operations/settlements/reconciliation", "/admin/payment-operations/accounting",
-                "/admin/database-spec", "/admin/navigation", "/admin/audit-logs", "/admin/all-features");
+                "/admin/pos", "/admin/database-spec", "/admin/navigation", "/admin/audit-logs", "/admin/all-features");
         items.findAllNotDeleted().forEach(i -> {
             if (!alive.contains(i.getItemUrl())) i.softDelete();
         });
@@ -62,9 +62,10 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         feature(run,     "운영 대시보드",   "/admin/operations-dashboard",              "dashboard", 1);
         feature(run,     "전체 기능",       "/admin/all-features",                       "grid",      2);
 
-        feature(settle,  "결제 예외 처리",  "/admin/payment-operations",                "exception", 1);
-        feature(settle,  "정산 마감",       "/admin/payment-operations/settlements",     "settle",    2);
-        feature(settle,  "회계 · 분개장",   "/admin/payment-operations/accounting",      "ledger",    3);
+        feature(settle,  "통합 매출 조회",  "/admin/payment-operations/integrated",      "flow",      1);
+        feature(settle,  "결제 예외 처리",  "/admin/payment-operations",                "exception", 2);
+        feature(settle,  "정산 마감",       "/admin/payment-operations/settlements",     "settle",    3);
+        feature(settle,  "회계 · 분개장",   "/admin/payment-operations/accounting",      "ledger",    4);
 
         feature(shop,    "재고 · 발주",     "/admin/commerce/inventory",                 "box",       1);
         feature(shop,    "상품 관리",       "/admin/commerce/products",                  "tag",       2);
@@ -72,6 +73,7 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
 
         feature(base,    "매장 관리",       "/admin/commerce/stores",                    "store",     1);
         feature(base,    "공급처 관리",     "/admin/commerce/suppliers",                 "supplier",  2);
+        sub(base,        "/admin/commerce/stores", "POS 단말", "/admin/pos",             1);
 
         feature(insight, "운영 분석",       "/admin/analytics",                          "chart",     1);
         feature(insight, "감사 로그",       "/admin/audit-logs",                         "audit",     2, AdminRole.ADMIN);

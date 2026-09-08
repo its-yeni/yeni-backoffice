@@ -30,12 +30,17 @@
             <svg th:case="'chart'" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"></path></svg>
             <svg th:case="'audit'" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4"></path></svg>
             <svg th:case="'grid'" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+            <svg th:case="'flow'" viewBox="0 0 24 24"><path d="M4 5h6v6H4zM14 13h6v6h-6zM10 8h6M17 11v2M7 11v4a2 2 0 0 0 2 2h5"></path></svg>
             <svg th:case="'store'" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18M9 20v-6h6v6"></path></svg>
             <svg th:case="'supplier'" viewBox="0 0 24 24"><path d="M10 17h4V5H2v12h3M15 17h5v-5l-3-3h-2M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path></svg>
             <svg th:case="*" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle></svg>
           </span>
           <span class="nav-item-label" th:text="${item.itemName}">메뉴</span>
         </a>
+        <button type="button" class="nav-substeps-toggle" th:if="${not #lists.isEmpty(item.children)}"
+                th:attr="aria-label=${item.itemName + ' 하위 메뉴 접기'}" aria-expanded="true">
+          <span aria-hidden="true">⌄</span>
+        </button>
         <div class="nav-substeps" th:if="${not #lists.isEmpty(item.children)}">
           <a th:each="child : ${item.children}" th:href="@{${child.itemUrl}}"
              th:text="${child.itemName}" th:classappend="${child.active} ? ' active'">단계</a>
@@ -67,3 +72,15 @@
   }
 }());</script>
 <script>(function(){document.body.classList.toggle('sidebar-collapsed',localStorage.getItem('sidebar-collapsed')==='true');}());</script>
+<script>(function(){
+  var prefix='yeni-nav-section:';
+  document.querySelectorAll('.nav-item-wrap:has(.nav-substeps)').forEach(function(wrap){
+    var button=wrap.querySelector('.nav-substeps-toggle'),link=wrap.querySelector(':scope > a');
+    if(!button||!link)return;
+    var key=prefix+(link.getAttribute('href')||'');
+    var collapsed=localStorage.getItem(key)==='true'&&!wrap.classList.contains('is-section-active');
+    function apply(){wrap.classList.toggle('is-substeps-collapsed',collapsed);button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',(link.textContent.trim()||'메뉴')+' 하위 메뉴 '+(collapsed?'펼치기':'접기'));}
+    button.addEventListener('click',function(){collapsed=!collapsed;localStorage.setItem(key,String(collapsed));apply();});
+    apply();
+  });
+}());</script>

@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>통합 매출 조회 - Yeni Backoffice</title>
+<link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/pages/payment-transactions.css"><link rel="stylesheet" href="/css/pages/integrated-sales.css"></head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="content ops-list-page integrated-sales-page">
+<header class="page-header"><div><h1>통합 매출 조회</h1><p>주문 1건이 결제 → 배송 → 매출 원장 → 구매 확정 → PG 대사 → 정산 → 지급까지 어디쯤 와 있는지 한 줄로 봅니다.</p></div>
+  <div class="page-header-actions"><a class="btn btn-light" href="/admin/commerce/orders">주문 관리</a><a class="btn btn-light" href="/admin/payment-operations/settlements">정산 마감</a></div></header>
+
+<nav class="int-stage-bar" id="int-stage-bar" aria-label="파이프라인 단계"></nav>
+
+<div class="filter-bar int-filter">
+  <label class="int-search"><span class="sr-only">검색</span><input id="int-keyword" type="search" placeholder="주문번호 · 구매자 · 상품 검색"></label>
+  <div class="int-daterange"><input id="int-start" type="date"><span>~</span><input id="int-end" type="date"></div>
+  <button class="btn btn-primary btn-sm" id="int-search-btn" type="button">조회</button>
+  <button class="btn btn-text" id="int-reset" type="button">초기화</button>
+</div>
+
+<div class="summary-strip int-summary">
+  <div><span>조회 주문</span><strong id="int-count">0건</strong></div>
+  <div><span>총 매출</span><strong id="int-total">0원</strong></div>
+  <div><span>순매출(취소 반영)</span><strong id="int-net">0원</strong></div>
+</div>
+
+<div class="data-table-wrap int-table-wrap"><table class="data-table int-table"><thead><tr>
+  <th>주문 · 일시</th><th>매장 · 채널</th><th>상품 · 금액</th>
+  <th>결제</th><th>배송</th><th>매출 원장</th><th>구매 확정</th><th>PG 대사</th><th>정산</th><th class="actions">다음 단계</th>
+</tr></thead><tbody id="int-rows"></tbody></table>
+<div class="data-table-empty" id="int-empty" hidden><strong>조회된 주문이 없습니다.</strong><p>기간을 넓히거나 검색어를 지워 보세요.</p></div>
+<div id="int-pagination"></div></div>
+
+</section></main></div>
+
+<div class="transaction-drawer-backdrop" id="int-backdrop" hidden></div>
+<aside class="transaction-drawer" id="int-detail" aria-label="주문 흐름 상세"><header><div><small>통합 흐름</small><h2 id="int-detail-title">주문</h2></div><button id="int-detail-close" type="button" aria-label="닫기">×</button></header><div class="transaction-drawer-body" id="int-detail-body"></div></aside>
+
+<script src="/js/admin-pagination.js"></script><script src="/js/common.js"></script><script src="/js/pages/integrated-sales.js"></script>
+</body></html>

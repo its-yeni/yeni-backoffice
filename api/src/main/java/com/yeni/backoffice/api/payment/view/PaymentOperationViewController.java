@@ -16,6 +16,13 @@ public class PaymentOperationViewController {
         return "payment/operations";
     }
 
+    @GetMapping("/integrated")
+    public String integrated(Model model) {
+        model.addAttribute("title", "통합 매출 조회");
+        model.addAttribute("description", "주문 1건의 결제·배송·매출원장·구매확정·대사·정산·지급을 한 화면에서 추적합니다.");
+        return "payment/integrated-sales";
+    }
+
     @GetMapping("/sales-ledger")
     public String salesLedger(Model model) {
         model.addAttribute("title", "매출 원장");
