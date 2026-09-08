@@ -1,11 +1,117 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PG 정산 대사 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"></head>
-<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page recon-page">
-<header class="page-header"><div><h3>PG 정산 대사</h3><p>PG 수신 자료와 내부 매출 원장의 누락·금액 차이를 확인합니다.</p></div><a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리</a></header>
-<section class="recon-import-panel"><div><strong>PG 정산 파일 수신</strong><span>동일 영업일과 MID 자료를 가져오면 거래 단위로 자동 비교합니다.</span></div><form id="recon-upload"><label>영업일<input id="recon-date" type="date" required></label><label>PG사<input id="recon-pg" value="MOCK" required></label><label>MID<input id="recon-mid" value="INIpayTest" required></label><label class="file-field">정산 파일<input id="recon-file" type="file" accept=".csv,text/csv" required></label><button class="btn btn-primary">가져오기</button></form><div class="recon-sample-guide"><span>처음 확인한다면 현재 원장으로 샘플을 내려받아 바로 업로드해 보세요.</span><button type="button" class="btn btn-light" data-sample="MATCHED">정상 대사 샘플</button><button type="button" class="btn btn-light" data-sample="MISMATCH">불일치 확인 샘플</button></div><small>CSV 필수 열: tid, orderNo, type, amount, fee · 샘플은 선택한 영업일의 실제 데모 원장을 기준으로 생성됩니다.</small></section>
-<div class="recon-layout"><aside class="recon-history"><header><strong>파일 수신 이력</strong><span id="recon-batch-count">0건</span></header><div id="recon-batches"></div><div class="recon-history-empty" id="recon-history-empty">수신된 파일이 없습니다.</div></aside>
-<section class="recon-result"><header class="recon-result-header"><div><strong id="recon-selected-title">대사 결과</strong><span id="recon-selected-meta">수신 파일을 선택하세요.</span></div><div class="recon-rate"><span>일치율</span><strong id="recon-rate">0%</strong></div></header>
-<div class="ops-summary-strip recon-summary"><button class="active" data-status=""><div class="k-txt"><span>전체</span><strong id="recon-total">0건</strong></div><i class="k-ico">≡</i></button><button data-status="MATCHED"><div class="k-txt"><span>일치</span><strong id="recon-matched">0건</strong></div><i class="k-ico is-ok">✓</i></button><button data-status="INTERNAL_ONLY"><div class="k-txt"><span>내부만 존재</span><strong id="recon-internal-only">0건</strong></div><i class="k-ico is-warn">◑</i></button><button data-status="PG_ONLY"><div class="k-txt"><span>PG만 존재</span><strong id="recon-pg-only">0건</strong></div><i class="k-ico is-info">◐</i></button><button data-status="AMOUNT_MISMATCH"><div class="k-txt"><span>금액 불일치</span><strong id="recon-amount-mismatch">0건</strong></div><i class="k-ico is-danger">≠</i></button><div class="recon-summary-total"><div class="k-txt"><span>금액 불일치 합계</span><strong id="recon-mismatch-sum">0원</strong></div><i class="k-ico is-danger">₩</i></div></div>
-<div class="recon-action-guide" id="recon-action-guide" hidden></div><div class="data-table-wrap ops-table-wrap recon-table-wrap"><table class="data-table"><thead><tr><th>결과</th><th>TID</th><th>주문번호</th><th class="amount">내부 금액</th><th class="amount">PG 금액</th><th class="amount">차액</th><th>처리 상태</th><th>담당자</th><th>관리</th></tr></thead><tbody id="recon-rows"></tbody></table><div class="data-table-empty" id="recon-empty"><strong>표시할 대사 결과가 없습니다.</strong><p>파일을 선택하거나 결과 필터를 변경해 주세요.</p></div></div></section></div>
-</section></main></div><div class="recon-drawer-backdrop" id="recon-drawer-backdrop" hidden></div><aside class="recon-drawer" id="recon-drawer"><header><div><small>대사 예외 처리</small><h2 id="recon-drawer-title">불일치 상세</h2></div><button type="button" id="recon-drawer-close">×</button></header><div class="recon-drawer-body" id="recon-drawer-body"></div><footer><button class="btn btn-light" id="recon-next-row">다음 미처리 건</button><button class="btn btn-primary" id="recon-resolution-save">조치 저장</button></footer></aside><script src="/js/common.js"></script><script src="/js/pages/pg-reconciliation.js"></script></body></html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PG 정산 대사 - Yeni Backoffice</title>
+<link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/pages/pg-reconciliation.css"></head>
+<body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div>
+<section class="pgr-page">
+<header class="page-header">
+  <div><h3>PG 정산 대사</h3><p>PG사 정산 자료와 내부 매출 원장을 거래 단위로 맞춰, 정산 근거의 누락·금액 차이를 없앱니다.</p></div>
+  <div class="page-header-actions">
+    <button type="button" class="btn btn-primary" id="pgr-import-toggle">PG 파일 가져오기</button>
+    <a class="btn btn-light" href="/admin/payment-operations/settlements">정산 관리 →</a>
+  </div>
+</header>
+
+<p class="aggregation-basis">
+  대사 상태는 <b>일치</b>(내부·PG 금액 동일) / <b>내부만 존재</b>(PG 미승인 의심) /
+  <b>PG만 존재</b>(내부 유실 거래) / <b>금액 상이</b>(부분취소·수수료 차이 등)로 나뉩니다.
+  한 배치의 미처리 건이 0이 되면 그 영업일은 정산을 진행할 수 있습니다.
+  업로드 CSV 필수 열: <code>tid, orderNo, type, amount, fee</code>.
+</p>
+
+<section class="pgr-import" id="pgr-import" hidden>
+  <form id="pgr-upload">
+    <label>영업일<input id="pgr-date" type="date" required></label>
+    <label>PG사<input id="pgr-pg" value="MOCK" required></label>
+    <label>MID<input id="pgr-mid" value="INIpayTest" required></label>
+    <label class="pgr-file">정산 CSV<input id="pgr-file" type="file" accept=".csv,text/csv" required></label>
+    <button class="btn btn-primary" type="submit">가져와서 대사</button>
+  </form>
+  <div class="pgr-import-sample">
+    <span>테스트용 샘플 — 선택한 영업일의 실제 데모 원장으로 생성됩니다.</span>
+    <button type="button" class="btn btn-text" data-sample="MATCHED">정상 대사본</button>
+    <button type="button" class="btn btn-text" data-sample="MISMATCH">불일치 포함본</button>
+  </div>
+</section>
+
+<div class="pgr-layout">
+  <aside class="pgr-batches">
+    <header><strong>수신 배치</strong><span id="pgr-batch-count">0건</span></header>
+    <div id="pgr-batch-list"></div>
+    <div class="pgr-batches-empty" id="pgr-batches-empty">
+      <strong>수신된 PG 파일이 없습니다.</strong>
+      <p>상단 <b>PG 파일 가져오기</b>로 정산 CSV를 올리면 거래 단위 대사가 시작됩니다.</p>
+    </div>
+  </aside>
+
+  <section class="pgr-result" id="pgr-result" hidden>
+    <div class="pgr-status-card" id="pgr-status-card">
+      <div class="pgr-status-head">
+        <div>
+          <strong id="pgr-status-file">—</strong>
+          <span id="pgr-status-meta">—</span>
+        </div>
+        <span class="pgr-status-flag" id="pgr-status-flag"></span>
+      </div>
+      <div class="pgr-status-metrics">
+        <div class="pgr-metric pgr-metric-lead">
+          <span>미처리</span><strong id="pgr-m-unresolved">0건</strong>
+          <small id="pgr-m-unresolved-note">확인이 필요한 차이</small>
+        </div>
+        <div class="pgr-metric">
+          <span>일치율</span><strong id="pgr-m-rate">0%</strong>
+          <div class="pgr-rate-bar"><i id="pgr-rate-fill"></i></div>
+        </div>
+        <div class="pgr-metric">
+          <span>차액 합계</span><strong id="pgr-m-diff">0원</strong>
+          <small>금액 상이 건의 절대 차이</small>
+        </div>
+        <div class="pgr-metric">
+          <span>거래 수</span><strong id="pgr-m-total">0건</strong>
+          <small id="pgr-m-total-note">일치 0 · 예외 0</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="pgr-filter" id="pgr-filter" role="tablist">
+      <button type="button" class="is-on" data-filter="ACTION"><span>처리 필요</span><b id="pgr-f-action">0</b></button>
+      <button type="button" data-filter=""><span>전체</span><b id="pgr-f-all">0</b></button>
+      <button type="button" data-filter="MATCHED"><span>일치</span><b id="pgr-f-matched">0</b></button>
+      <button type="button" data-filter="INTERNAL_ONLY"><span>내부만</span><b id="pgr-f-internal">0</b></button>
+      <button type="button" data-filter="PG_ONLY"><span>PG만</span><b id="pgr-f-pg">0</b></button>
+      <button type="button" data-filter="AMOUNT_MISMATCH"><span>금액 상이</span><b id="pgr-f-amount">0</b></button>
+    </div>
+
+    <div class="data-table-wrap pgr-table-wrap">
+      <table class="data-table pgr-table">
+        <thead><tr>
+          <th>대사 결과</th><th>TID</th><th>주문번호</th>
+          <th class="number">내부 금액</th><th class="number">PG 금액</th><th class="number">차액</th>
+          <th>처리 상태</th><th>담당자</th><th></th>
+        </tr></thead>
+        <tbody id="pgr-rows"></tbody>
+      </table>
+      <div class="data-table-empty" id="pgr-empty" hidden>
+        <strong>표시할 대사 결과가 없습니다.</strong><p>필터를 바꾸거나 다른 배치를 선택해 보세요.</p>
+      </div>
+    </div>
+  </section>
+</div>
+</section></main></div>
+
+<div class="pgr-drawer-backdrop" id="pgr-drawer-backdrop" hidden></div>
+<aside class="pgr-drawer" id="pgr-drawer" aria-hidden="true">
+  <header>
+    <div><small id="pgr-drawer-kicker">대사 예외 처리</small><h2 id="pgr-drawer-title">불일치 상세</h2></div>
+    <button type="button" id="pgr-drawer-close" aria-label="닫기">×</button>
+  </header>
+  <div class="pgr-drawer-body" id="pgr-drawer-body"></div>
+  <footer>
+    <button class="btn btn-light" id="pgr-drawer-next" type="button">다음 미처리 건</button>
+    <button class="btn btn-primary" id="pgr-drawer-save" type="button">조치 저장</button>
+  </footer>
+</aside>
+
+<script src="/js/common.js"></script><script src="/js/pages/pg-reconciliation.js"></script>
+</body></html>
