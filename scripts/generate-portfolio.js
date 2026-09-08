@@ -86,7 +86,7 @@ function buildHtml() {
     <div class="quality"><div class="test-ring"><strong>35/35</strong><span>PLAYWRIGHT E2E PASSED</span></div><div class="checklist"><h3>자동 검증한 핵심 시나리오</h3><p>✓ 상품 옵션 편집 → 입고 화면 이동</p><p>✓ 공급처 → 발주 → 입고 → LOT 반영</p><p>✓ 주문 → 결제 → SALE → 출고 완료</p><p>✓ 배송 → 구매 확정 → 정산 대상 전환</p><p>✓ 반품 → 검수 → 환불 결과 연결</p><p>✓ 재고 실사와 매장 이동 정합성</p><p>✓ 브랜드·매장 범위 및 잘못된 조합 차단</p></div></div>
     <div class="learning"><article><h3>구현하며 개선한 부분</h3><p>고정 탭과 외부 스크롤 충돌, 옵션 화면 하단 잘림, 반복 클릭, 비동기 초기화 시점처럼 실제 화면 테스트에서 발견한 문제를 보완했습니다.</p></article><article><h3>운영 적용 전 남은 과제</h3><p>인증·권한, 실제 PG 서명 검증, 대량 데이터 성능, Testcontainers 기반 PostgreSQL 통합 테스트는 의도적으로 범위 밖에 두었습니다.</p></article></div>`));
 
-  pages.push(`<section class="page ending"><div><p>NEXT ITERATION</p><h2>운영 범위를<br>더 깊고 단단하게</h2><span>OperationalScope를 출고·배송·반품·결제·정산·분석 집계까지 확장하고,<br>대량 조회와 장애 복구 자동화를 다음 단계로 설계합니다.</span></div><aside><b>YENI BACKOFFICE</b><a href="https://github.com/Yeni924/yeni-backoffice">github.com/Yeni924/yeni-backoffice</a><a href="https://yeni-demo.fly.dev/">yeni-demo.fly.dev</a></aside></section>`);
+  pages.push(`<section class="page ending"><div><p>NEXT ITERATION</p><h2>운영 범위를<br>더 깊고 단단하게</h2><span>OperationalScope를 출고·배송·반품·결제·정산·분석 집계까지 확장하고,<br>대량 조회와 장애 복구 자동화를 다음 단계로 설계합니다.</span></div><aside><b>YENI BACKOFFICE</b><a href="https://github.com/its-yeni/yeni-backoffice">github.com/its-yeni/yeni-backoffice</a><a href="https://yeni-demo.fly.dev/">yeni-demo.fly.dev</a></aside></section>`);
 
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>Yeni Backoffice Portfolio</title><style>${styles()}</style></head><body>${pages.join('')}</body></html>`;
 }
