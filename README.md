@@ -10,6 +10,8 @@
 > 실제 PG 운영망에는 연결하지 않고 `MockPaymentGateway`로 승인·실패·결과불명·망취소를 재현합니다.
 > 데모는 무료 호스팅이라 유휴 상태에서 첫 접속이 느릴 수 있습니다.
 
+![운영 대시보드](docs/portfolio/screenshots/dashboard.png)
+
 ---
 
 ## 왜 만들었나
@@ -57,6 +59,8 @@ PG 승인 요청 중 timeout·응답 유실이 나면 실제 승인 여부를 �
 중복 생성되지 않도록 unique 제약으로 막고, 복구 작업은 조건부 claim으로 중복 실행을 방지합니다.
 → [구현 노트 §6](docs/implementation-notes.md)
 
+![복구 작업](docs/portfolio/screenshots/recovery-tasks.png)
+
 ### 2. 중복 요청과 동시 부분취소
 
 승인·취소는 중복 클릭·네트워크 재시도로 반복될 수 있고, 승인금액 10,000원에 8,000원 부분취소
@@ -77,6 +81,10 @@ PG 승인 요청 중 timeout·응답 유실이 나면 실제 승인 여부를 �
 - 회계 — 원장과 지급 완료 정산 명세를 소스로 복식부기 분개를 전기하는 프로젝션. `source_type + source_id` unique로 멱등, 스케줄러가 매일 자동 전기
 
 → [구현 노트 §8·§9·§16](docs/implementation-notes.md)
+
+| PG 대사 | 회계 · 분개장 |
+|---|---|
+| ![PG 대사](docs/portfolio/screenshots/pg-reconciliation.png) | ![회계 분개장](docs/portfolio/screenshots/accounting.png) |
 
 ## 화면
 
