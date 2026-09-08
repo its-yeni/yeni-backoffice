@@ -80,8 +80,32 @@ public class SettlementStatement extends BaseTimeEntity {
     @Column(nullable = false, length = 30)
     private SettlementStatus settlementStatus;
 
+    /** 승인 대기 단계 — NONE / CONFIRM_REQUESTED / PAYOUT_REQUESTED (maker-checker). */
+    @Builder.Default
+    @Column(length = 20)
+    private String approvalStage = "NONE";
+
+    /** 확정/지급을 요청한 담당자. */
+    @Column(length = 40)
+    private String requestedBy;
+
+    private LocalDateTime requestedAt;
+
+    public void requestApproval(String stage, String actor, LocalDateTime at) {
+        this.approvalStage = stage;
+        this.requestedBy = actor;
+        this.requestedAt = at;
+    }
+
+    private void clearApproval() {
+        this.approvalStage = "NONE";
+        this.requestedBy = null;
+        this.requestedAt = null;
+    }
+
     public void confirm() {
         this.settlementStatus = SettlementStatus.CONFIRMED;
+        clearApproval();
     }
 
     public void markPaid(String payoutReference, String payoutAccountMasked, LocalDateTime paidAt) {
@@ -89,6 +113,7 @@ public class SettlementStatement extends BaseTimeEntity {
         this.payoutReference = payoutReference;
         this.payoutAccountMasked = payoutAccountMasked;
         this.paidAt = paidAt;
+        clearApproval();
     }
 
     public void applyAdjustment(

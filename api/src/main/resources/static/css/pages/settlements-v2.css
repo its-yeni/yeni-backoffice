@@ -97,3 +97,27 @@
 .settlement-calculation > div.total { background: var(--bg-subtle); border-top: 1px solid var(--border-default); }
 .settlement-calculation > div.total strong { font-size: 14px; color: var(--primary-hover); }
 .settlement-page .payflow-strip { margin-top: 0; }
+
+/* 정산 트랙 선택 (온라인 PG 정산 / POS 매입 대사) */
+.settlement-track { display: flex; gap: 8px; margin: 0 0 16px; }
+.settlement-track button { flex: 1 1 0; display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  padding: 11px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-container);
+  background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; text-align: left; }
+.settlement-track button b { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+.settlement-track button small { font-size: 11.5px; color: var(--text-muted); }
+.settlement-track button:hover { border-color: var(--primary); }
+.settlement-track button.is-on { border-color: var(--primary); background: var(--primary-soft); }
+.settlement-track button.is-on b { color: var(--primary-hover); }
+.pos-acq-note { margin: 10px 2px 0; color: var(--text-muted); font-size: 11.5px; line-height: 1.6; }
+#pos-acq-kpis { margin-bottom: 14px; }
+@media (max-width: 640px) { .settlement-track { flex-direction: column; } }
+.track-hidden { display: none !important; }
+
+/* maker-checker — 승인 대기 배너 + 승인 버튼 */
+.mc-pending { display:flex; flex-direction:column; gap:2px; margin:12px 0; padding:12px 14px;
+  border:1px solid #fde68a; border-radius:10px; background:#fffbeb; }
+.mc-pending strong { color:#92610a; font-size:13px; }
+.mc-pending span { color:#7c5e1e; font-size:12px; }
+.mc-pending small { color:#a1834a; font-size:11px; }
+.st-badge.await { border-color:#fde68a; background:#fffbeb; color:#92610a; }
+#settlement-next.btn-approve { background:var(--success, #157347); border-color:var(--success, #157347); }

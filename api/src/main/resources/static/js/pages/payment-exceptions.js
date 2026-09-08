@@ -36,6 +36,22 @@
       kind: "알림톡", tone: "idle", retryable: false, action: "처리 완료", primaryDot: "재발송 대기",
       what: "알림톡 발송이 실패했습니다. 재발송 후 결과를 반영합니다.",
       blocks: "고객 알림이 전달되지 않았습니다."
+    },
+    /* POS(단말) 전용 예외 — 단말 통신·매입 흐름에서 발생. */
+    POS_SALE_SYNC_FAILED: {
+      kind: "단말 통신 오류", tone: "bad", retryable: true, action: "매출 재전송", primaryDot: "단말 매출 전송 실패",
+      what: "단말에서 승인은 났지만 매출 데이터 전송이 실패했습니다. 재전송 후 원장에 반영합니다.",
+      blocks: "매장 매출이 서버 원장에 잡히지 않았습니다."
+    },
+    POS_ACQUIRING_MISSING: {
+      kind: "매입 누락", tone: "warn", retryable: false, action: "매입 확인 완료", primaryDot: "매입 마감까지 미매입",
+      what: "단말 승인 후 VAN 매입 마감 시각까지 매입되지 않았습니다. 재매입 또는 취소를 확인합니다.",
+      blocks: "카드사 입금 대상에서 빠집니다."
+    },
+    POS_APPROVE_ACQUIRE_MISMATCH: {
+      kind: "승인–매입 불일치", tone: "bad", retryable: false, action: "불일치 정리 완료", primaryDot: "금액·건수 불일치",
+      what: "단말 승인 내역과 VAN 매입 파일의 금액 또는 건수가 다릅니다. 원인 확인 후 정리합니다.",
+      blocks: "정산 금액이 확정되지 않습니다."
     }
   };
   function typeMeta(t) { return TYPE[t] || { kind: t || "복구", tone: "idle", retryable: false, action: "처리 완료", primaryDot: "확인 필요", what: "", blocks: "" }; }

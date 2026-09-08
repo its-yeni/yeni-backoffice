@@ -544,7 +544,10 @@ public final class PaymentDtos {
             LocalDate scheduledPayoutDate,
             LocalDateTime paidAt,
             String payoutReference,
-            String payoutAccountMasked
+            String payoutAccountMasked,
+            String approvalStage,
+            String requestedBy,
+            LocalDateTime requestedAt
     ) {
         public SettlementStatementResponse(
                 Long id, LocalDate settlementDate, String pgCompany, String mid,
@@ -553,7 +556,7 @@ public final class PaymentDtos {
                 BigDecimal saleAmount, BigDecimal cancelAmount) {
             this(id, settlementDate, pgCompany, mid, grossAmount, feeAmount, vatAmount,
                     netAmount, settlementStatus, saleAmount, cancelAmount, null,
-                    BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null);
+                    BigDecimal.ZERO, BigDecimal.ZERO, null, null, null, null, "NONE", null, null);
         }
 
         public static SettlementStatementResponse from(SettlementStatement statement) {
@@ -589,7 +592,10 @@ public final class PaymentDtos {
                     statement.getScheduledPayoutDate(),
                     statement.getPaidAt(),
                     statement.getPayoutReference(),
-                    statement.getPayoutAccountMasked()
+                    statement.getPayoutAccountMasked(),
+                    statement.getApprovalStage() == null ? "NONE" : statement.getApprovalStage(),
+                    statement.getRequestedBy(),
+                    statement.getRequestedAt()
             );
         }
     }

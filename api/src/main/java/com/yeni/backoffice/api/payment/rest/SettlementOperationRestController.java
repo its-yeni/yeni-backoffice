@@ -62,10 +62,26 @@ public class SettlementOperationRestController {
         return ResponseEntity.ok(settlementOperationService.getStatement(statementId));
     }
 
+    @PostMapping("/{statementId}/confirm-request")
+    @Operation(summary = "정산 확정 요청", description = "maker-checker 1단계 — DRAFT 명세를 확정 대기로 전환합니다.")
+    public ResponseEntity<SettlementStatementResponse> confirmRequest(
+            @PathVariable Long statementId,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        return ResponseEntity.ok(settlementOperationService.requestConfirm(statementId, body == null ? null : body.get("actor")));
+    }
+
     @PostMapping("/{statementId}/confirm")
-    @Operation(summary = "정산 확정", description = "DRAFT 상태의 정산 명세를 CONFIRMED 상태로 변경합니다.")
+    @Operation(summary = "정산 확정 승인", description = "maker-checker 2단계 — 확정 대기 명세를 CONFIRMED 로 승인합니다.")
     public ResponseEntity<SettlementStatementResponse> confirm(@PathVariable Long statementId) {
         return ResponseEntity.ok(settlementOperationService.confirmStatement(statementId));
+    }
+
+    @PostMapping("/{statementId}/payout-request")
+    @Operation(summary = "정산 지급 요청", description = "maker-checker 1단계 — CONFIRMED 명세를 지급 대기로 전환합니다.")
+    public ResponseEntity<SettlementStatementResponse> payoutRequest(
+            @PathVariable Long statementId,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        return ResponseEntity.ok(settlementOperationService.requestPayout(statementId, body == null ? null : body.get("actor")));
     }
 
     @PostMapping("/{statementId}/adjust")

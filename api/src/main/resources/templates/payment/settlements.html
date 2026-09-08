@@ -1,7 +1,21 @@
 <!DOCTYPE html><html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>정산 관리 - Yeni Backoffice</title><link rel="stylesheet" href="/css/common.css"><link rel="stylesheet" href="/css/layout.css"><link rel="stylesheet" href="/css/components.css"><link rel="stylesheet" href="/css/pages/payment-transactions.css"><link rel="stylesheet" href="/css/pages/operations-list-v2.css"><link rel="stylesheet" href="/css/pages/payment-list-system.css"><link rel="stylesheet" href="/css/pages/settlements-v2.css"></head><body><div class="layout"><div th:replace="~{fragments/sidebar}"></div><main class="main"><div th:replace="~{fragments/topbar :: header}"></div><section class="content ops-list-page settlement-page">
 <header class="page-header"><div><h1>정산 마감</h1><p>확정된 매출을 대사한 뒤 정산을 확정하고 지급합니다.</p></div><div class="page-header-actions"><a class="btn btn-light" href="/admin/payment-operations/settlements/reconciliation">PG 파일 대사</a><button class="btn btn-primary" id="settlement-run">오늘 정산 초안 생성</button></div></header>
 
+<div class="settlement-track" id="settlement-track" role="tablist" aria-label="정산 트랙">
+  <button type="button" class="is-on" data-track="ONLINE"><b>온라인 PG 정산</b><small>PG 정산 파일 ↔ 승인·취소 원장</small></button>
+  <button type="button" data-track="POS"><b>POS(VAN) 매입 대사</b><small>단말 승인 ↔ VAN 매입 (승인 = 매입)</small></button>
+</div>
+
 <nav class="step-nav" id="settlement-steps" aria-label="정산 마감 단계"></nav>
+
+<div id="pos-acquiring" hidden>
+  <div class="summary-strip" id="pos-acq-kpis" aria-label="POS 매입 요약"></div>
+  <div class="data-table-wrap"><table class="data-table">
+    <thead><tr><th>영업일</th><th class="amount">단말 승인</th><th class="amount">VAN 매입</th><th class="amount">차이</th><th>매입 상태</th></tr></thead>
+    <tbody id="pos-acq-rows"></tbody>
+  </table><div class="data-table-empty" id="pos-acq-empty" hidden><strong>조회 기간에 POS 결제가 없습니다.</strong><p>기간을 넓히거나 매장 POS 결제를 생성해 보세요.</p></div></div>
+  <p class="pos-acq-note">데모: VAN 매입 파일은 시뮬레이션이며 승인 합계와 동일하게 맞춰집니다. 실제로는 미매입·금액불일치 건이 매입 마감 시각 기준으로 큐에 쌓입니다.</p>
+</div>
 
 <div class="settlement-kpis">
   <div class="kpi-card"><div><span>정산 명세</span><small id="settlement-count-sub">조회 기간 기준</small></div><strong id="settlement-count">0건</strong></div>

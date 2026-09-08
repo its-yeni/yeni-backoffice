@@ -254,12 +254,45 @@ public class SettlementOperationService {
 
     private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 
+    /** maker-checker 1단계: 확정 요청. DRAFT → 확정 대기. */
+    @Transactional
+    public SettlementStatementResponse requestConfirm(Long statementId, String actor) {
+        SettlementStatement statement = settlementStatementRepository.findById(statementId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SETTLEMENT_NOT_FOUND));
+        if (!SettlementStatus.DRAFT.equals(statement.getSettlementStatus())) {
+            throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "작성 중인 정산명세만 확정 요청할 수 있습니다.");
+        }
+        statement.requestApproval("CONFIRM_REQUESTED", actorOrDefault(actor), LocalDateTime.now());
+        saveSettlementLog(statementId, "CONFIRM_REQUEST", "SUCCESS", "정산 확정 요청 · 요청자 " + statement.getRequestedBy());
+        return statementResponse(statement);
+    }
+
+    /** maker-checker 1단계: 지급 요청. CONFIRMED → 지급 대기. */
+    @Transactional
+    public SettlementStatementResponse requestPayout(Long statementId, String actor) {
+        SettlementStatement statement = settlementStatementRepository.findById(statementId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SETTLEMENT_NOT_FOUND));
+        if (!SettlementStatus.CONFIRMED.equals(statement.getSettlementStatus())) {
+            throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "확정된 정산명세만 지급 요청할 수 있습니다.");
+        }
+        statement.requestApproval("PAYOUT_REQUESTED", actorOrDefault(actor), LocalDateTime.now());
+        saveSettlementLog(statementId, "PAYOUT_REQUEST", "SUCCESS", "정산 지급 요청 · 요청자 " + statement.getRequestedBy());
+        return statementResponse(statement);
+    }
+
+    private String actorOrDefault(String actor) {
+        return StringUtils.hasText(actor) ? actor.trim() : "정산 담당";
+    }
+
     @Transactional
     public SettlementStatementResponse confirmStatement(Long statementId) {
         SettlementStatement statement = settlementStatementRepository.findById(statementId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SETTLEMENT_NOT_FOUND));
         if (!SettlementStatus.DRAFT.equals(statement.getSettlementStatus())) {
             throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "작성 중인 정산명세만 확정할 수 있습니다.");
+        }
+        if (!"CONFIRM_REQUESTED".equals(statement.getApprovalStage())) {
+            throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "먼저 정산 확정 요청이 필요합니다. (요청 → 승인 2단계)");
         }
         List<SettlementDetail> details = settlementDetailRepository.findBySettlementStatementIdOrderByIdAsc(statementId);
         List<SettlementFeeDetail> fees = settlementFeeDetailRepository.findBySettlementStatementIdOrderByIdAsc(statementId);
@@ -316,6 +349,9 @@ public class SettlementOperationService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SETTLEMENT_NOT_FOUND));
         if (!SettlementStatus.CONFIRMED.equals(statement.getSettlementStatus())) {
             throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "확정된 정산명세만 지급 처리할 수 있습니다.");
+        }
+        if (!"PAYOUT_REQUESTED".equals(statement.getApprovalStage())) {
+            throw new ConflictException(ErrorCode.SETTLEMENT_INVALID_STATUS, "먼저 정산 지급 요청이 필요합니다. (요청 → 승인 2단계)");
         }
         settlementDetailRepository.findBySettlementStatementIdOrderByIdAsc(statementId)
                 .forEach(detail -> salesRepository.findById(detail.getSalesId()).ifPresent(SalesTransaction::markPaid));

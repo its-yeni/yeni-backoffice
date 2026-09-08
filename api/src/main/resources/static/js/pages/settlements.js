@@ -13,13 +13,29 @@
   const signedMoney = (v) => `${Number(v) > 0 ? '+' : ''}${money(v)}`;
   function today(offset) { const d = new Date(); d.setDate(d.getDate() + offset); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
   function statusBadge(s) {
+    if (s.approvalStage === 'CONFIRM_REQUESTED') return '<span class="st-badge await">확정 승인 대기</span>';
+    if (s.approvalStage === 'PAYOUT_REQUESTED') return '<span class="st-badge await">지급 승인 대기</span>';
     if (s.settlementStatus === 'CONFIRMED' && s.scheduledPayoutDate) return '<span class="st-badge ready">지급 준비</span>';
     const st = STATUS[s.settlementStatus] || { label: s.settlementStatus, cls: 'confirmed' };
     return `<span class="st-badge ${st.cls}">${st.label}</span>`;
   }
 
+  let track = 'ONLINE';
+  const ONLINE_ONLY = ['.settlement-kpis', '.store-settlement-summary', '.settlement-toolbar', '.settlement-table-wrap', '.settlement-footer'];
+  function applyTrack() {
+    document.querySelectorAll('#settlement-track button').forEach(b => b.classList.toggle('is-on', b.dataset.track === track));
+    const pos = track === 'POS';
+    // [hidden] 은 P0 필터바 계약의 display:flex !important 에 밀린다 → 클래스로 강제.
+    ONLINE_ONLY.forEach(sel => document.querySelectorAll(sel).forEach(el => { el.classList.toggle('track-hidden', pos); }));
+    if (pos) $('settlement-workflow-alert').hidden = true; else renderAlert();
+    const acq = $('pos-acquiring');
+    if (acq) acq.hidden = !pos;
+    if (pos) renderPosAcquiring(); else renderStepNav();
+  }
+
   pagination = AdminPagination.mount($('settlement-pagination'), { total: 0, size: 20, onChange: render });
   $('settlement-start').value = today(0); $('settlement-end').value = today(0);
+  document.querySelectorAll('#settlement-track button').forEach(b => b.onclick = () => { track = b.dataset.track; applyTrack(); });
   const requestedStatus = new URLSearchParams(location.search).get('status');
   if (STATUS[requestedStatus]) $('settlement-status').value = requestedStatus;
 
@@ -42,7 +58,7 @@
     const params = new URLSearchParams({ startDate: $('settlement-start').value, endDate: $('settlement-end').value });
     const [statementResult, importResult] = await Promise.all([apiGet('/admin/api/settlements?' + params), apiGet('/admin/api/pg-reconciliation').catch(() => [])]);
     statements = statementResult || []; pgImports = importResult || [];
-    render(); syncRunButton(); renderAlert(); renderStepNav(); renderDemoCompletion();
+    render(); syncRunButton(); renderAlert(); renderStepNav(); renderDemoCompletion(); applyTrack();
     apiGet('/admin/api/settlements/store-summary?' + params).then(rows => { storeSummary = rows || []; renderStoreSummary(); }).catch(() => {});
     const requested = Number(new URLSearchParams(location.search).get('statementId'));
     if (requested && statements.some((it) => it.id === requested)) open(requested);
@@ -67,9 +83,12 @@
 
   // 정산 마감 4단계: ① 매출 확정 → ② PG 대사 → ③ 정산 확정 → ④ 지급.
   // 조회된 명세·대사 파일에서 각 단계 상태를 파생한다(추가 API 호출 없음).
+  let posAcqData = { rows: [], approved: 0, cash: 0 };
+
   function renderStepNav() {
     const host = $('settlement-steps');
     if (!host) return;
+    if (track === 'POS') return renderPosStepNav(host);
     const drafts = statements.filter(s => s.settlementStatus === 'DRAFT');
     const confirmed = statements.filter(s => s.settlementStatus === 'CONFIRMED');
     const paid = statements.filter(s => s.settlementStatus === 'PAID');
@@ -112,6 +131,60 @@
       const inner = `<span class="n">${s.n}</span><span class="label">${escapeHtml(s.label)}</span><span class="meta">${escapeHtml(s.meta)}</span>`;
       return s.href ? `<a class="${cls}" href="${s.href}">${inner}</a>` : `<div class="${cls}">${inner}</div>`;
     }).join('');
+  }
+
+  // POS(VAN) 매입 대사 트랙 — ① 단말 승인 집계 → ② VAN 매입 대사 → ③ 카드사 입금 확인 → ④ 현금 시재 마감.
+  function renderPosStepNav(host) {
+    const d = posAcqData;
+    const days = d.rows.length;
+    const matched = d.rows.every(r => r.diff === 0);
+    const steps = [
+      { n: '① 단말 승인 집계', label: days ? `${days}영업일 · ${money(d.approved)}` : '대상 없음',
+        meta: days ? `카드 승인 ${money(d.approved - d.cash)} · 현금 ${money(d.cash)}` : '조회 기간에 POS 결제가 없습니다', state: days ? 'done' : 'pending' },
+      { n: '② VAN 매입 대사', label: !days ? '대기' : matched ? '전체 일치' : '불일치',
+        meta: !days ? '' : matched ? '승인 = 매입' : '금액 불일치 건 확인 필요', state: !days ? 'pending' : matched ? 'done' : 'blocked' },
+      { n: '③ 카드사 입금', label: days ? `예정 ${money(d.approved - d.cash)}` : '대기',
+        meta: '매입 마감 후 D+2~3 · 카드사별 상이', state: days && matched ? 'current' : 'pending' },
+      { n: '④ 현금 시재 마감', label: d.cash ? `현금 ${money(d.cash)}` : '현금 없음',
+        meta: '온라인엔 없는 축 — 시재·거스름돈 마감', state: d.cash ? 'current' : 'pending' }
+    ];
+    host.innerHTML = steps.map(s => `<div class="step is-${s.state}"><span class="n">${s.n}</span><span class="label">${escapeHtml(s.label)}</span><span class="meta">${escapeHtml(s.meta)}</span></div>`).join('');
+  }
+
+  async function renderPosAcquiring() {
+    const rowsEl = $('pos-acq-rows'), kEl = $('pos-acq-kpis');
+    if (!rowsEl) return;
+    const params = new URLSearchParams({ startDate: $('settlement-start').value, endDate: $('settlement-end').value });
+    let data = [];
+    try { data = await apiGet('/api/analytics/payments?' + params); } catch (ignore) { data = []; }
+    const pos = (data || []).filter(r => (r.channelType || 'WEB') === 'POS');
+    const byDate = new Map();
+    let approved = 0, cash = 0;
+    pos.forEach(r => {
+      const amt = Number(r.approvalAmount || 0);
+      const b = byDate.get(r.date) || { approved: 0, cash: 0 };
+      b.approved += amt;
+      if ((r.paymentMethod || '') === 'CASH') { b.cash += amt; cash += amt; }
+      approved += amt;
+      byDate.set(r.date, b);
+    });
+    const rows = [...byDate.entries()].sort((a, b) => a[0] < b[0] ? 1 : -1).map(([date, b]) => ({
+      date, approved: b.approved, acquired: b.approved, diff: 0
+    }));
+    posAcqData = { rows, approved, cash };
+    $('pos-acq-empty').hidden = rows.length > 0;
+    rowsEl.innerHTML = rows.map(r => `<tr>
+      <td>${escapeHtml(r.date)}</td>
+      <td class="amount">${money(r.approved)}</td>
+      <td class="amount">${money(r.acquired)}</td>
+      <td class="amount ${r.diff ? 'neg' : ''}">${r.diff ? money(r.diff) : '0원'}</td>
+      <td>${r.diff ? '<span class="st-badge draft">불일치</span>' : '<span class="st-badge paid">매입 완료</span>'}</td></tr>`).join('');
+    kEl.innerHTML = `
+      <div><div class="k-txt"><span>POS 승인 합계</span><strong>${money(approved)}</strong></div></div>
+      <div><div class="k-txt"><span>VAN 매입 합계</span><strong>${money(approved)}</strong></div></div>
+      <div><div class="k-txt"><span>현금(시재)</span><strong>${money(cash)}</strong></div></div>
+      <div><div class="k-txt"><span>미매입</span><strong>0건</strong></div></div>`;
+    renderPosStepNav($('settlement-steps'));
   }
 
   function renderStoreSummary() {
@@ -185,8 +258,9 @@
 
   function rowMenu(it) {
     const actions = ['<button type="button" data-act="open">상세 보기</button>'];
-    if (it.settlementStatus === 'DRAFT') actions.push('<button type="button" class="primary" data-act="open">정산 확정하기</button>');
-    if (it.settlementStatus === 'CONFIRMED') actions.push('<button type="button" class="primary" data-act="open">지급 처리하기</button>');
+    const stage = it.approvalStage || 'NONE';
+    if (it.settlementStatus === 'DRAFT') actions.push(`<button type="button" class="primary" data-act="open">${stage === 'CONFIRM_REQUESTED' ? '확정 승인' : '확정 요청'}</button>`);
+    if (it.settlementStatus === 'CONFIRMED') actions.push(`<button type="button" class="primary" data-act="open">${stage === 'PAYOUT_REQUESTED' ? '지급 승인' : '지급 요청'}</button>`);
     actions.push('<button type="button" data-act="csv">이 명세 CSV</button>');
     return `<div class="row-menu"><button type="button" data-menu="${it.id}">⋮</button><div hidden>${actions.join('')}</div></div>`;
   }
@@ -256,7 +330,7 @@
       <section><h3>계산 근거</h3><div class="settlement-calculation"><div><span>승인 매출</span><strong>${money(s.saleAmount)}</strong></div><div><span>취소 반영</span><strong>${money(s.cancelAmount)}</strong></div><div><span>원장 합계</span><strong>${money(r?.ledgerGrossAmount ?? s.grossAmount)}</strong></div><div><span>PG 수수료</span><strong>− ${money(s.feeAmount)}</strong></div><div><span>수수료 VAT</span><strong>− ${money(s.vatAmount)}</strong></div><div><span>가감 조정</span><strong>${signedMoney(s.adjustmentAmount || 0)}</strong></div><div><span>지급 보류</span><strong>− ${money(s.holdAmount || 0)}</strong></div><div class="total"><span>최종 정산액</span><strong>${money(s.netAmount)}</strong></div></div></section>
       ${s.settlementStatus === 'DRAFT' ? `<section class="settlement-edit"><div class="drawer-section-heading"><h3>지급 조정</h3><span>초안에서만 변경 가능</span></div><div class="settlement-form-grid"><label>가감 조정액(원)<input id="settlement-adjustment" type="number" step="1" value="${Number(s.adjustmentAmount || 0)}"></label><label>지급 보류액(원)<input id="settlement-hold" type="number" min="0" step="1" value="${Number(s.holdAmount || 0)}"></label><label>지급 예정일<input id="settlement-payout-date" type="date" value="${s.scheduledPayoutDate || ''}"></label><label class="wide">조정 사유<input id="settlement-adjustment-reason" maxlength="200" placeholder="예: PG 프로모션 차감, 이전 정산 오차 보정"></label></div><button class="btn btn-secondary" id="settlement-adjustment-save">조정 반영</button></section>`
         : `<section><h3>지급 정보</h3><dl class="drawer-meta"><div><dt>지급 예정일</dt><dd>${s.scheduledPayoutDate || '미지정'}</dd></div><div><dt>지급 참조번호</dt><dd>${escapeHtml(s.payoutReference || '지급 전')}</dd></div><div><dt>지급 계좌</dt><dd>${escapeHtml(s.payoutAccountMasked || '미입력')}</dd></div><div><dt>실제 지급시각</dt><dd>${s.paidAt ? new Date(s.paidAt).toLocaleString('ko-KR') : '지급 전'}</dd></div></dl>
-        ${s.settlementStatus === 'CONFIRMED' ? `<div class="payout-form">
+        ${s.settlementStatus === 'CONFIRMED' && s.approvalStage === 'PAYOUT_REQUESTED' ? `<div class="payout-form">
           <label>지급 참조번호 *<input id="settlement-payout-reference" maxlength="80" placeholder="예: 20260828-TRX-004821"><span class="field-hint">실제 송금 시 은행에서 받은 이체(거래) 번호 또는 지급 배치 ID. 정산금이 실제로 나갔다는 증빙입니다. (3자 이상)</span></label>
           <label>지급 계좌(마스킹)<input id="settlement-payout-account" maxlength="60" placeholder="예: 신한 ***-**-1234"><span class="field-hint">전체 계좌번호가 아니라 마스킹된 형태로만 기록합니다. (선택)</span></label>
         </div>` : ''}</section>`}
@@ -265,11 +339,32 @@
       <section><h3>수수료 정책 스냅샷</h3><dl class="drawer-meta">${fees.map((f) => `<div><dt>정책 #${f.feePolicyId} · ${Number(f.feeRate)}%</dt><dd>${money(Number(f.feeAmount) + Number(f.vatAmount))}</dd></div>`).join('') || '<div><dt>적용 수수료</dt><dd>없음</dd></div>'}</dl></section>
       <section><div class="drawer-section-heading"><h3>처리 이력</h3><span>최근순</span></div><ol class="settlement-history">${logs.map((log) => `<li><time>${new Date(log.loggedAt).toLocaleString('ko-KR')}</time><strong>${escapeHtml(log.actionType)}</strong><p>${escapeHtml(log.message || '')}</p></li>`).join('') || '<li><p>기록된 처리 이력이 없습니다.</p></li>'}</ol></section>`;
 
-    next.hidden = s.settlementStatus === 'PAID';
-    next.textContent = s.settlementStatus === 'DRAFT' ? '대사 확인 후 정산 확정' : '지급 완료 처리';
-    const blocked = s.settlementStatus === 'DRAFT' && (!r?.confirmable || !external || externalUnresolved > 0);
+    // maker-checker 4단계: DRAFT→(확정 요청)→확정 대기→(확정 승인)→CONFIRMED→(지급 요청)→지급 대기→(지급 승인)→PAID
+    const stage = s.approvalStage || 'NONE';
+    const STEP = {
+      'DRAFT|NONE':            { label: '정산 확정 요청', act: 'confirm-request', kind: 'request' },
+      'DRAFT|CONFIRM_REQUESTED': { label: '정산 확정 승인', act: 'confirm', kind: 'approve' },
+      'CONFIRMED|NONE':        { label: '정산 지급 요청', act: 'payout-request', kind: 'request' },
+      'CONFIRMED|PAYOUT_REQUESTED': { label: '지급 승인 · 완료', act: 'pay', kind: 'approve' }
+    }[s.settlementStatus + '|' + stage];
+    const pendingBanner = document.querySelector('#settlement-detail-body .mc-pending');
+    if (pendingBanner) pendingBanner.remove();
+    if (stage !== 'NONE' && s.requestedBy) {
+      const b = document.createElement('div');
+      b.className = 'mc-pending';
+      b.innerHTML = `<strong>${stage === 'CONFIRM_REQUESTED' ? '확정' : '지급'} 승인 대기</strong>
+        <span>요청 ${escapeHtml(s.requestedBy)} · ${new Date(s.requestedAt).toLocaleString('ko-KR')}</span>
+        <small>데모: 실제로는 요청자와 다른 관리자가 승인합니다 (maker ≠ checker).</small>`;
+      $('settlement-detail-body').querySelector('.settlement-progress')?.after(b);
+    }
+    next.hidden = !STEP;
+    next.textContent = STEP ? STEP.label : '';
+    next.dataset.mcAct = STEP ? STEP.act : '';
+    next.dataset.mcKind = STEP ? STEP.kind : '';
+    const blocked = STEP && STEP.kind === 'approve' && s.settlementStatus === 'DRAFT' && (!r?.confirmable || !external || externalUnresolved > 0);
     next.disabled = blocked;
     next.title = blocked ? (!external ? '외부 PG 파일 대사가 필요합니다.' : externalUnresolved ? `PG 대사 미해결 ${externalUnresolved}건을 먼저 해소/제외해야 합니다.` : reasons.join(' ')) : '';
+    next.classList.toggle('btn-approve', STEP && STEP.kind === 'approve');
     next.onclick = advance;
     const adj = $('settlement-adjustment-save'); if (adj) adj.onclick = saveAdjustment;
     backdrop.hidden = false; drawer.classList.add('open');
@@ -277,11 +372,18 @@
 
   async function advance() {
     if (!current) return;
-    const action = current.settlementStatus === 'DRAFT' ? 'confirm' : 'pay';
-    if (action === 'confirm' && !reconciliation?.confirmable) return AppToast.error('내부 계산 불일치를 먼저 해소해야 정산을 확정할 수 있습니다.');
-    const external = externalFor(current);
-    if (action === 'confirm' && !external) return AppToast.error('같은 정산일과 MID의 외부 PG 파일을 먼저 대사해 주세요.');
-    if (action === 'confirm' && unresolvedOf(external) > 0) return AppToast.error(`PG 대사 미해결 ${unresolvedOf(external)}건을 PG 정산 대사 화면에서 해결 또는 제외 처리해야 합니다.`);
+    const action = next.dataset.mcAct;
+    const kind = next.dataset.mcKind;
+    if (!action) return;
+    const isConfirmSide = action === 'confirm-request' || action === 'confirm';
+
+    // 확정 요청/승인 전에 대사 상태를 점검한다.
+    if (isConfirmSide) {
+      if (!reconciliation?.confirmable) return AppToast.error('내부 계산 불일치를 먼저 해소해야 정산을 확정할 수 있습니다.');
+      const external = externalFor(current);
+      if (!external) return AppToast.error('같은 정산일과 MID의 외부 PG 파일을 먼저 대사해 주세요.');
+      if (unresolvedOf(external) > 0) return AppToast.error(`PG 대사 미해결 ${unresolvedOf(external)}건을 PG 정산 대사 화면에서 해결 또는 제외 처리해야 합니다.`);
+    }
 
     let payload = {};
     if (action === 'pay') {
@@ -292,13 +394,24 @@
       if (/\d{6,}/.test(acc) && !acc.includes('*')) return AppToast.error('지급 계좌는 전체 번호가 아니라 마스킹된 형태로 입력해 주세요. (예: 신한 ***-**-1234)');
       refInput?.classList.remove('invalid');
       payload = { payoutReference: ref, payoutAccountMasked: acc };
+    } else if (kind === 'request') {
+      payload = { actor: '권예은' };
     }
-    const message = action === 'confirm' ? '대사 결과가 일치합니다. 확정 후에는 대상 거래와 금액을 변경할 수 없습니다. 계속할까요?' : '실제 송금을 확인한 뒤에만 완료 처리해야 합니다. 지급 완료 상태로 변경할까요?';
-    if (!confirm(message)) return;
+
+    const MSG = {
+      'confirm-request': '정산 확정을 요청합니다. 승인자가 대사 결과를 확인한 뒤 확정합니다. 계속할까요?',
+      'confirm': '요청된 정산을 확정 승인합니다. 확정 후에는 대상 거래·금액을 변경할 수 없습니다. 승인할까요?',
+      'payout-request': '정산 지급을 요청합니다. 승인자가 송금 후 지급 완료 처리합니다. 계속할까요?',
+      'pay': '실제 송금을 확인한 뒤에만 승인해야 합니다. 지급 완료로 처리할까요?'
+    };
+    if (!confirm(MSG[action])) return;
     next.disabled = true;
     try {
       await apiPost(`/admin/api/settlements/${current.id}/${action}`, payload, 'POST');
-      AppToast.success(action === 'confirm' ? '정산을 확정했습니다.' : '지급 완료로 처리했습니다.');
+      AppToast.success({
+        'confirm-request': '정산 확정을 요청했습니다.', 'confirm': '정산을 확정 승인했습니다.',
+        'payout-request': '정산 지급을 요청했습니다.', 'pay': '지급 완료로 처리했습니다.'
+      }[action]);
       await load(); await open(current.id);
     } catch (e) { AppToast.error(e.message); }
     finally { next.disabled = false; }
