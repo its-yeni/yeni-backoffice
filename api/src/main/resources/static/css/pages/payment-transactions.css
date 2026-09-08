@@ -58,3 +58,6 @@
     .transaction-metrics strong { margin-top: 2px; font-size: 16px; }
     .settlement-formula { min-height: 34px; margin: 8px 0; }
 }
+
+.drawer-kv th { width: 34% !important; }
+.drawer-kv td { width: auto !important; }

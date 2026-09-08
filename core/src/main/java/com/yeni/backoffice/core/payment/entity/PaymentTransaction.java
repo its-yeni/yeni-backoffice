@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -80,6 +81,54 @@ public class PaymentTransaction extends BaseTimeEntity {
     @Builder.Default
     @Column(length = 10)
     private String channelType = "WEB";
+
+    /** 카드사 승인번호 (카드사 발급, 8자리). */
+    @Column(length = 20)
+    private String approvalNo;
+
+    /** 발급 카드사 (신한/삼성/현대/국민/롯데/BC/우리/하나 등). */
+    @Column(length = 20)
+    private String issuerName;
+
+    /** 카드번호 마스킹 뒤 4자리. */
+    @Column(length = 4)
+    private String cardLast4;
+
+    /** 할부 개월 (0 = 일시불). */
+    @Builder.Default
+    @Column
+    private Integer installmentMonths = 0;
+
+    /** 매입 상태 — APPROVED(승인만) / ACQUIRED(매입 완료) / UNSETTLED(미매입). */
+    @Column(length = 20)
+    private String acquiringStatus;
+
+    /** 정산 예정일 (매입 마감 기준 카드사별 D+n). */
+    @Column
+    private LocalDate settlementDueDate;
+
+    private static final String[] ISSUERS = {"신한카드", "삼성카드", "현대카드", "KB국민카드", "롯데카드", "BC카드", "우리카드", "하나카드"};
+
+    /** 데모용: TID·승인시각에서 카드 상세를 결정적으로 채운다(실제로는 PG 승인 응답에서 옴). */
+    public void enrichCardDetail() {
+        if (!"CARD".equalsIgnoreCase(this.paymentMethod)) {
+            this.acquiringStatus = "N/A";
+            return;
+        }
+        int seed = this.tid == null ? this.orderNo.hashCode() : this.tid.hashCode();
+        int h = Math.abs(seed);
+        this.approvalNo = String.format("%08d", h % 100000000);
+        this.issuerName = ISSUERS[h % ISSUERS.length];
+        this.cardLast4 = String.format("%04d", (h / 7) % 10000);
+        // 5만원 이상 결제의 일부만 할부(2/3개월)
+        this.installmentMonths = (this.approvedAmount != null && this.approvedAmount.longValue() >= 50000 && h % 4 == 0)
+                ? (h % 2 == 0 ? 3 : 2) : 0;
+        LocalDateTime at = this.approvedAt == null ? LocalDateTime.now() : this.approvedAt;
+        boolean acquired = at.isBefore(LocalDateTime.now().minusDays(1));
+        this.acquiringStatus = this.paymentStatus == PaymentStatus.APPROVE_UNKNOWN ? "UNSETTLED"
+                : acquired ? "ACQUIRED" : "APPROVED";
+        this.settlementDueDate = at.toLocalDate().plusDays(2);
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

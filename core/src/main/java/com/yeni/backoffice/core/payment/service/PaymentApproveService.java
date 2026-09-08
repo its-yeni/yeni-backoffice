@@ -175,6 +175,7 @@ public class PaymentApproveService {
                 .paymentStatus(PaymentStatus.APPROVED)
                 .approvedAt(result.approvedAt())
                 .build();
+        payment.enrichCardDetail();
         try {
             paymentRepository.save(payment);
             orderRepository.findByOrderNo(payment.getOrderNo()).ifPresent(o -> o.assignChannel(payment.getChannelType()));
@@ -315,6 +316,7 @@ public class PaymentApproveService {
                     .paymentStatus(PaymentStatus.APPROVED)
                     .approvedAt(approvalResult.approvedAt())
                     .build();
+            payment.enrichCardDetail();
             paymentRepository.save(payment);
             orderRepository.findByOrderNo(payment.getOrderNo()).ifPresent(o -> o.assignChannel("WEB"));
             session.markApproved(approvalResult.tid());
@@ -360,6 +362,7 @@ public class PaymentApproveService {
                 .approvedAt(LocalDateTime.now())
                 .failureReason(result.resultMessage())
                 .build();
+        payment.enrichCardDetail();
         PaymentTransaction saved = paymentRepository.save(payment);
         orderRepository.findByOrderNo(saved.getOrderNo()).ifPresent(o -> o.assignChannel(saved.getChannelType()));
         return saved;

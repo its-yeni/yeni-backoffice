@@ -92,6 +92,7 @@
     const settlementLink = settlementDetails.length ? `/admin/payment-operations/settlements?statementId=${settlementDetails[0].settlementStatementId}` : "/admin/payment-operations/settlements";
     $("payment-detail-title").textContent = payment.orderNo;
     $("payment-detail-body").innerHTML = `<section class="drawer-summary"><span class="transaction-status ${statusClass(payment.paymentStatus)}">${statusLabel(payment.paymentStatus)}</span><strong>${money(payment.approvedAmount)}</strong><p>결제 ID #${payment.id} · ${escapeHtml(payment.tid || "TID 미확정")}</p></section>
+      ${paymentMethodSection(payment)}
       <section><div class="drawer-section-heading"><h3>처리 흐름</h3><small>한 거래의 후속 처리를 단계별로 추적합니다.</small></div><ol class="trace-list operational-trace">${step("done","1. 주문 생성",payment.orderNo,null)}${step(unknown?"current":failed?"failed":"done","2. PG 승인",statusLabel(payment.paymentStatus),null)}${step(sales.length?"done":"waiting","3. 매출 원장",sales.length?`${sales.length}건 반영됨`:failed?"승인 실패로 미생성":"반영 대기",ledgerLink)}${step(settlementDetails.length?"done":"waiting","4. 정산",settlementDetails.length?"정산 명세 포함":"정산 배치 대기",settlementLink)}</ol></section>
       <section><h3>운영 처리 현황</h3><table class="drawer-operation-table"><tbody><tr><th>PG 로그</th><td>${trace.pgLogs.length}건</td><th>복구 작업</th><td>${trace.recoveryTasks.length}건</td></tr><tr><th>외부 전송</th><td>${trace.externalSends.length}건</td><th>알림톡</th><td>${trace.alimtalkQueues.length}건</td></tr></tbody></table></section>
       <div class="drawer-actions">${unknown?'<button class="btn btn-primary" id="retry-payment">PG 결과 다시 조회</button>':""}<a class="btn btn-light" href="${ledgerLink || `/admin/payment-operations/sales-ledger?keyword=${encodeURIComponent(payment.orderNo)}`}">매출 원장 확인</a><a class="btn btn-light" href="${settlementLink}">정산 관리 확인</a></div>`;
@@ -102,6 +103,25 @@
     }
     if (unknown) $("retry-payment").onclick = async () => { await apiPost(`/admin/api/payment-operations/payments/${payment.id}/retry-query`, {}, "POST"); await load(); await open(payment.id); };
     backdrop.hidden = false; drawer.classList.add("open");
+  }
+
+  const ACQ_LABEL = { APPROVED: "승인 (매입 전)", ACQUIRED: "매입 완료", UNSETTLED: "미매입", "N/A": "해당 없음" };
+  function paymentMethodSection(p) {
+    const cash = (p.paymentMethod || "") === "CASH";
+    const channel = p.channelType === "POS" ? "매장 POS" : "온라인";
+    const rows = [];
+    rows.push(["결제 채널", channel + (cash ? " · 현금" : "")]);
+    if (cash) {
+      rows.push(["결제수단", "현금"]);
+    } else {
+      rows.push(["결제수단", `${escapeHtml(p.issuerName || "카드")} ${p.cardLast4 ? "•••• " + escapeHtml(p.cardLast4) : ""}`.trim()]);
+      rows.push(["할부", Number(p.installmentMonths) ? `${p.installmentMonths}개월` : "일시불"]);
+      rows.push(["승인번호", p.approvalNo ? escapeHtml(p.approvalNo) : "-"]);
+      rows.push(["매입 상태", ACQ_LABEL[p.acquiringStatus] || p.acquiringStatus || "-"]);
+    }
+    rows.push(["정산 예정일", p.settlementDueDate ? escapeHtml(p.settlementDueDate) : "-"]);
+    return `<section><h3>결제 수단</h3><table class="drawer-operation-table drawer-kv"><tbody>${
+      rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join("")}</tbody></table></section>`;
   }
 
   function close() { drawer.classList.remove("open"); backdrop.hidden = true; }

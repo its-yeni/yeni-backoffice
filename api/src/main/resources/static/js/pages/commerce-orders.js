@@ -131,6 +131,15 @@
     const pos = channel === "POS";
     return `<span class="channel-badge ${pos ? "pos" : "web"}">${pos ? "매장" : "온라인"}</span>`;
   }
+  function channelText(channel) { return channel === "POS" ? "매장 POS" : "온라인"; }
+  function paymentMethodText(payment) {
+    if (!payment) return "-";
+    if ((payment.paymentMethod || "") === "CASH") return "현금";
+    const parts = [payment.issuerName || "카드"];
+    if (payment.cardLast4) parts.push("•••• " + payment.cardLast4);
+    if (Number(payment.installmentMonths)) parts.push(payment.installmentMonths + "개월");
+    return escapeHtml(parts.join(" "));
+  }
   function badge2({ label, tone }) {
     return `<span class="order-status-text ${tone}"><i></i>${escapeHtml(label)}</span>`;
   }
@@ -291,6 +300,10 @@
           <div><span>연락처</span><strong>${escapeHtml(order.buyerPhone || "-")}</strong></div>
           <div><span>결제상태</span><strong>${badge(order.paymentStatus)}</strong></div>
           <div><span>주문상태</span><strong>${badge2(fulfillmentStatus(order))}</strong></div>
+          <div><span>결제 채널</span><strong>${channelText(order.channelType)}${trace && trace.payment && (trace.payment.paymentMethod === "CASH") ? " · 현금" : ""}</strong></div>
+          <div><span>결제수단</span><strong>${paymentMethodText(trace && trace.payment)}</strong></div>
+          <div><span>승인번호</span><strong>${trace && trace.payment && trace.payment.approvalNo ? escapeHtml(trace.payment.approvalNo) : "-"}</strong></div>
+          <div><span>정산 예정일</span><strong>${trace && trace.payment && trace.payment.settlementDueDate ? escapeHtml(trace.payment.settlementDueDate) : "-"}</strong></div>
           <div><span>결제ID</span><strong>${escapeHtml(order.tid || "-")}</strong></div>
           <div><span>주문금액</span><strong>${money(order.payableAmount)}</strong></div>
         </div>

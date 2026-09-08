@@ -124,7 +124,13 @@ public final class PaymentDtos {
             @Schema(description = "승인 시각") LocalDateTime approvedAt,
             Long storeId,
             @Schema(description = "결제수단 CARD/CASH 등") String paymentMethod,
-            @Schema(description = "결제 채널 WEB/POS") String channelType
+            @Schema(description = "결제 채널 WEB/POS") String channelType,
+            @Schema(description = "카드사 승인번호") String approvalNo,
+            @Schema(description = "발급 카드사") String issuerName,
+            @Schema(description = "카드번호 뒤 4자리") String cardLast4,
+            @Schema(description = "할부 개월 (0=일시불)") Integer installmentMonths,
+            @Schema(description = "매입 상태 APPROVED/ACQUIRED/UNSETTLED/N/A") String acquiringStatus,
+            @Schema(description = "정산 예정일") java.time.LocalDate settlementDueDate
     ) {
         public static PaymentResponse from(PaymentTransaction payment) {
             return new PaymentResponse(
@@ -140,7 +146,13 @@ public final class PaymentDtos {
                     payment.getApprovedAt(),
                     payment.getStoreId(),
                     payment.getPaymentMethod(),
-                    payment.getChannelType() == null ? "WEB" : payment.getChannelType()
+                    payment.getChannelType() == null ? "WEB" : payment.getChannelType(),
+                    payment.getApprovalNo(),
+                    payment.getIssuerName(),
+                    payment.getCardLast4(),
+                    payment.getInstallmentMonths(),
+                    payment.getAcquiringStatus(),
+                    payment.getSettlementDueDate()
             );
         }
     }
