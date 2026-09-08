@@ -68,6 +68,7 @@ public final class SalesAnalyticsDtos {
             java.time.LocalDateTime occurredAt,
             Long paymentId,
             String tid,
+            String storeName,
             String categoryNames,
             String productSummary,
             int itemCount,

@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ['inventory-keyword', 'inventory-store-filter', 'inventory-health-filter'].forEach(id => $(id).addEventListener(id === 'inventory-keyword' ? 'input' : 'change', () => { pagination.setPage(1); render(); }));
   $('inventory-group-toggle').addEventListener('change', () => { expanded.clear(); pagination.setPage(1); render(); });
   $('inventory-filter-reset').onclick = () => { $('inventory-keyword').value = ''; $('inventory-store-filter').value = ''; $('inventory-health-filter').value = ''; pagination.setPage(1); render(); };
-  $('inventory-policy-toggle').onclick = () => { $('inventory-policy').hidden = !$('inventory-policy').hidden; $('inventory-policy-toggle').textContent = $('inventory-policy').hidden ? '❓ 운영 기준 보기' : '❓ 운영 기준 닫기'; };
+  // 운영 기준 문구는 공통 "도움말" 토글로 이관됨(common.js initializePageHelp). 버튼이 남아 있으면만 바인딩.
+  if ($('inventory-policy-toggle') && $('inventory-policy')) $('inventory-policy-toggle').onclick = () => { $('inventory-policy').hidden = !$('inventory-policy').hidden; $('inventory-policy-toggle').textContent = $('inventory-policy').hidden ? '운영 기준 보기' : '운영 기준 닫기'; };
   load();
 });

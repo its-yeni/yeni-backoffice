@@ -6,7 +6,7 @@
 
   const today = new Date();
   $("ps-end").value = today.toISOString().slice(0, 10);
-  $("ps-start").value = today.toISOString().slice(0, 10);
+  $("ps-start").value = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
 
   pagination = AdminPagination.mount($("ps-pagination"), { total: 0, size: 20, onChange: render });
   $("ps-search").onclick = () => { pagination.reset(); load(); };
@@ -16,6 +16,14 @@
 
   function fmtDate(v) { return v ? new Date(v).toLocaleString("ko-KR", { year: "2-digit", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"; }
   function deliveryTone(s) { return s === "배송 완료" ? "is-success" : s === "배송 중" ? "is-warning" : s === "일부 반송" ? "is-danger" : ""; }
+
+  // 배송이 완료돼야 구매 확정이 가능하다. 그 전 단계면 진행할 화면으로 보내준다.
+  function nextStep(item) {
+    if (item.confirmable) return `<button class="btn btn-primary btn-sm" data-confirm="${escapeHtml(item.orderNo)}">구매 확정</button>`;
+    const q = encodeURIComponent(item.orderNo);
+    if (item.deliveryStatus === "배송 중") return `<a class="text-link" href="/admin/commerce/deliveries?orderNo=${q}">배송 완료 처리 →</a>`;
+    return `<a class="text-link" href="/admin/commerce/shipments?keyword=${q}">출고 처리 →</a>`;
+  }
 
   function filtered() {
     const d = $("ps-delivery").value;
@@ -28,14 +36,12 @@
     rowsEl.innerHTML = pagination.slice(list).map(item => `<tr>
       <td>${fmtDate(item.occurredAt)}</td>
       <td><a class="text-link" href="/admin/payment-operations/sales-ledger?keyword=${encodeURIComponent(item.orderNo)}"><strong>${escapeHtml(item.orderNo)}</strong></a></td>
+      <td>${escapeHtml(item.storeName || "-")}</td>
       <td><small>${escapeHtml(item.categoryNames || "미분류")}</small></td>
       <td>${escapeHtml(item.productSummary || "-")}${item.itemCount > 1 ? ` <small>(${item.itemCount}건)</small>` : ""}</td>
-      <td>${item.paymentId ? "#" + item.paymentId : "-"}</td>
       <td class="amount"><strong>${money(Math.abs(Number(item.saleAmount || 0)))}</strong></td>
       <td><span class="status-indicator ${deliveryTone(item.deliveryStatus)}">${escapeHtml(item.deliveryStatus)}</span></td>
-      <td class="actions">${item.confirmable
-        ? `<button class="btn btn-light btn-sm" data-confirm="${escapeHtml(item.orderNo)}">확정 처리</button>`
-        : `<span class="inline-message" title="배송이 완료돼야 확정할 수 있습니다.">확정 불가</span>`}</td></tr>`).join("");
+      <td class="actions">${nextStep(item)}</td></tr>`).join("");
     $("ps-empty").hidden = list.length > 0;
     rowsEl.querySelectorAll("[data-confirm]").forEach(btn => btn.onclick = () => confirmOne(btn.dataset.confirm, btn));
   }

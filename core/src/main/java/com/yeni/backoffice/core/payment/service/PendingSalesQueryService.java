@@ -57,10 +57,15 @@ public class PendingSalesQueryService {
                 .findBySalesTransactionIdInOrderByIdAsc(headers.stream().map(SalesTransaction::getId).toList())
                 .stream().collect(Collectors.groupingBy(SalesTransactionLine::getSalesTransactionId));
         Map<String, List<CommerceDelivery>> deliveriesByOrder = deliveriesByOrder(headers);
+        Map<String, String> storeNameByOrder = orderRepository.findByOrderNoIn(
+                        headers.stream().map(SalesTransaction::getOrderNo).distinct().toList()).stream()
+                .collect(Collectors.toMap(CommerceOrder::getOrderNo,
+                        o -> o.getStoreName() == null ? "-" : o.getStoreName(), (a, b) -> a));
 
         List<PendingSalesRow> rows = headers.stream().map(header -> toRow(header,
                 linesByHeader.getOrDefault(header.getId(), List.of()),
-                deliveriesByOrder.getOrDefault(header.getOrderNo(), List.of()))).toList();
+                deliveriesByOrder.getOrDefault(header.getOrderNo(), List.of()),
+                storeNameByOrder.getOrDefault(header.getOrderNo(), "-"))).toList();
         BigDecimal total = rows.stream().map(PendingSalesRow::saleAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         return new PendingSalesResponse(start, end, total, rows.size(), rows);
     }
@@ -78,7 +83,7 @@ public class PendingSalesQueryService {
     }
 
     private PendingSalesRow toRow(SalesTransaction header, List<SalesTransactionLine> lines,
-                                  List<CommerceDelivery> deliveries) {
+                                  List<CommerceDelivery> deliveries, String storeName) {
         List<String> categories = lines.stream().map(SalesTransactionLine::getCategoryName).distinct().toList();
         List<String> names = lines.stream().map(SalesTransactionLine::getProductName).filter(Objects::nonNull).distinct().toList();
         String productSummary = names.isEmpty() ? "-" : names.size() == 1 ? names.get(0) : names.get(0) + " 외 " + (names.size() - 1) + "건";
@@ -86,7 +91,7 @@ public class PendingSalesQueryService {
                 && deliveries.stream().allMatch(value -> value.getStatus() == DeliveryStatus.DELIVERED || value.getStatus() == DeliveryStatus.RETURNED)
                 && deliveries.stream().anyMatch(value -> value.getStatus() == DeliveryStatus.DELIVERED);
         return new PendingSalesRow(header.getId(), header.getOrderNo(), header.getOccurredAt(), header.getPaymentId(),
-                header.getTid(), categories.isEmpty() ? "미분류" : String.join(", ", categories), productSummary,
+                header.getTid(), storeName, categories.isEmpty() ? "미분류" : String.join(", ", categories), productSummary,
                 lines.size(), header.getSaleAmount(), header.getSettlementStatus().name(), deliverySummary(deliveries), confirmable);
     }
 

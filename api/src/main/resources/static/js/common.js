@@ -464,6 +464,19 @@ window.AdminHtmxNavigation = (function () {
         return placeholder;
     }
 
+    // 페이지 밖(body)으로 포털된 모달·드로어는 화면 전환 전에 닫는다.
+    // 그렇지 않으면 다음 캐시 화면 위에 이전 페이지 팝업과 스크롤 잠금이 남는다.
+    function closeTransientPageUi() {
+        document.body.classList.remove("modal-open", "design-note-open");
+        document.querySelectorAll("[data-htmx-page-extra]").forEach(element => {
+            element.classList.remove("open");
+            if (element.matches(".modal-backdrop, .implementation-backdrop, dialog, form.implementation-panel")) {
+                if (element.tagName === "DIALOG" && element.open) element.close();
+                else element.hidden = true;
+            }
+        });
+    }
+
     function restoreCachedView(path, url) {
         const cached = viewCache.get(path);
         if (!cached) return false;
@@ -490,6 +503,8 @@ window.AdminHtmxNavigation = (function () {
         if (!link || !supportedPath(link.href)) return;
         const destination = new URL(link.href, location.origin);
         if (destination.pathname === location.pathname) return;
+
+        closeTransientPageUi();
 
         if (link.closest("#workspaceTabs") && viewCache.has(destination.pathname)) {
             event.preventDefault();
@@ -537,6 +552,7 @@ window.AdminHtmxNavigation = (function () {
         document.addEventListener("click", handleNavigationClick, true);
         document.body.addEventListener("htmx:beforeSwap", event => {
             if (!event.detail.xhr?.responseText) return;
+            closeTransientPageUi();
             responseDocument = new DOMParser().parseFromString(event.detail.xhr.responseText, "text/html");
             installStyles(pageAssets(responseDocument).styles);
         });
@@ -690,8 +706,28 @@ document.addEventListener("DOMContentLoaded",async function(){
         if(store&&SERVER_SCOPED.includes(location.pathname)&&!new URLSearchParams(location.search).has("storeId")){
             const url=new URL(location.href);url.searchParams.set("storeId",store.id);location.replace(url.toString());
         }
+        showStoreScopeBanner(store);
     }catch(ignore){}
 });
+/* 특정 매장을 고른 상태면 목록 화면 상단에 "이 매장만 보는 중" 배너를 띄운다.
+   데모를 돌다 무심코 매장이 좁혀져 목록이 텅 비어 보이는 걸 방지. */
+function showStoreScopeBanner(store){
+    document.getElementById("store-scope-banner")?.remove();
+    if(!store)return;
+    const header=document.querySelector("main .page-header");
+    if(!header||header.closest(".operations-dashboard-page"))return;
+    const bar=document.createElement("div");
+    bar.id="store-scope-banner";
+    bar.className="store-scope-banner";
+    bar.innerHTML=`<span><b>${escapeHtml(store.storeName)}</b> 매장 데이터만 표시 중입니다.</span>`
+        +`<button type="button" id="store-scope-clear">전체 매장 보기</button>`;
+    header.insertAdjacentElement("afterend",bar);
+    bar.querySelector("#store-scope-clear").onclick=function(){
+        localStorage.setItem("commerce-store-id","0");
+        localStorage.removeItem("commerce-store-code");
+        const url=new URL(location.href);url.searchParams.delete("storeId");location.href=url.toString();
+    };
+}
 function persistCommerceContext(brand,store){
     localStorage.setItem("commerce-brand-id",String(brand&&brand.id?brand.id:0));
     localStorage.setItem("commerce-store-id",String(store&&store.id?store.id:0));
@@ -719,7 +755,39 @@ document.addEventListener("DOMContentLoaded", function() {
     initializeDatePresets();
     initializeDataViewport();
     initializeAggregationBasis();
+    initializePageHelp();
 });
+
+/* 안내성 문구(집계 기준 · 구매 확정 규칙 · 분개 규칙 등)를 리스트 위에서 걷어내
+   페이지 헤더의 "도움말" 토글(기본 접힘) 안으로 모은다. 모든 화면 동일. */
+function initializePageHelp() {
+    const SEL = ".aggregation-basis, .ps-rule-note, .ledger-legend, .ac-rules, .inventory-policy, .ps-scope-note";
+    const main = document.querySelector("main");
+    if (!main) return;
+    const sources = Array.from(main.querySelectorAll(SEL)).filter(el => !el.closest(".page-help"));
+    if (!sources.length) return;
+    const header = main.querySelector(".page-header");
+    if (!header) return;
+
+    let box = document.getElementById("page-help");
+    if (!box) {
+        box = document.createElement("details");
+        box.id = "page-help";
+        box.className = "page-help";
+        box.innerHTML = '<summary><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg>도움말</summary><div class="page-help-body"></div>';
+        header.insertAdjacentElement("afterend", box);
+    }
+    const body = box.querySelector(".page-help-body");
+    sources.forEach(el => {
+        const item = document.createElement("div");
+        item.className = "page-help-item";
+        item.innerHTML = el.innerHTML;
+        body.appendChild(item);
+        el.remove();
+    });
+    // 접힌 도움말로 옮겼으니, 별도 "운영 기준 보기" 토글 버튼은 숨긴다.
+    document.querySelectorAll("#inventory-policy-toggle, [data-policy-toggle]").forEach(b => b.remove());
+}
 
 function initializeSkipLink() {
     const main = document.querySelector("main > section");
@@ -821,8 +889,8 @@ function initializeDatePresets() {
         const range = start.parentElement;
         range.classList.add("filter-period-owner");
         range.insertAdjacentElement("beforebegin", host);
-        // 목록 화면 날짜 필터 기본값은 "오늘"으로 통일 — 아직 비어 있을 때만 채운다.
-        if (!start.value && !end.value) apply(buttons[0][0], 0, true);
+        // 목록 화면 날짜 필터 기본값은 "최근 7일" — 아직 비어 있을 때만 채운다.
+        if (!start.value && !end.value) apply(buttons[1][0], 6, true);
         else {
             const now = format(new Date());
             const match = buttons.find(([, days]) => {

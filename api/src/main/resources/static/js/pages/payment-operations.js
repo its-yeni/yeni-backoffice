@@ -126,7 +126,7 @@
 
   function close() { drawer.classList.remove("open"); backdrop.hidden = true; }
   // 목록 화면 날짜 필터 기본값은 "오늘"으로 통일(common.js initializeDatePresets 와 동일 규칙).
-  function setDefaultDates() { const today = localDate(new Date()); $("payment-start").value = today; $("payment-end").value = today; }
+  function setDefaultDates() { const now = new Date(); $("payment-start").value = localDate(new Date(now.getTime() - 7 * 864e5)); $("payment-end").value = localDate(now); }
   function localDate(date) { const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().slice(0, 10); }
   function resetFilters() { $("payment-keyword").value = ""; $("payment-status").value = ""; activeTab = ""; setDefaultDates(); syncTabs(); resetAndRender(); }
   async function load() {
