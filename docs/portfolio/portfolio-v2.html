@@ -171,22 +171,22 @@
   <div class="head"><span>01 · OVERVIEW</span><b>YENI BACKOFFICE</b></div>
   <h2 class="title">실무에서 겪은 운영 문제를 Java / Spring으로 다시 설계했습니다
     <small>개인 프로젝트 · 설계 · 구현 · 테스트 · 배포 단독 수행</small></h2>
-  <p class="lead">티쿤글로벌에서 100여 개 해외 쇼핑몰의 주문·결제·배송·정산을, KG이니시스에서 POS/KIOSK 운영
+  <p class="lead">크로스보더 커머스사에서 100여 개 해외 쇼핑몰의 주문·결제·배송·정산을, 결제·POS 솔루션사에서 POS/KIOSK 운영
     백오피스와 매출·SAP 연동·마스터 데이터를 담당했습니다. 이 프로젝트에서는 해당 경험을 바탕으로 결제 결과불명 처리,
     중복 요청과 동시성, 외부 연동 실패 복구, 매출원장과 정산 연결처럼 당시 담당 범위를 넘어 더 깊게 다뤄보고 싶었던
     문제를 Java/Spring으로 다시 설계하고 검증했습니다.</p>
 
   <table class="map">
     <tr><th>실무에서 담당한 것</th><th>이 프로젝트에서 다룬 것</th></tr>
-    <tr><td class="k">티쿤 — PG 완료 요청을 신뢰하지 않고 재조회로 주문번호·금액·통화·상태 대조</td>
+    <tr><td class="k">크로스보더 커머스사 — PG 완료 요청을 신뢰하지 않고 재조회로 주문번호·금액·통화·상태 대조</td>
         <td><code>APPROVE_UNKNOWN</code> / <code>CANCEL_UNKNOWN</code> 상태와 RecoveryTask로 확장. 결과 확정 전에는 매출원장·정산·후속 처리를 생성하지 않도록 구성</td></tr>
-    <tr><td class="k">티쿤 — Stripe·Paymentwall 전체/부분취소 API 분리 개발</td>
+    <tr><td class="k">크로스보더 커머스사 — Stripe·Paymentwall 전체/부분취소 API 분리 개발</td>
         <td>중복 요청은 idempotency key + DB unique 제약, 동시 부분취소는 결제 row 잠금 후 최신 잔액 재검증</td></tr>
-    <tr><td class="k">KG — POS 매출·반품·취소를 영수증 단위로 SAP 전송, 응답값 기준 성공/실패 처리</td>
+    <tr><td class="k">결제·POS 솔루션사 — POS 매출·반품·취소를 영수증 단위로 SAP 전송, 응답값 기준 성공/실패 처리</td>
         <td>매출원장을 기준 데이터로 분리하고 정산·회계 데이터를 후속 단계로 연결</td></tr>
-    <tr><td class="k">KG — 알림톡 대량발송 Agent 개발 (DB Polling, 최대 10스레드, 실패 재처리)</td>
+    <tr><td class="k">결제·POS 솔루션사 — 알림톡 대량발송 Agent 개발 (DB Polling, 최대 10스레드, 실패 재처리)</td>
         <td>알림톡·외부전송을 Queue + Worker 방식으로 분리해 한 건의 외부 처리 실패가 핵심 업무 흐름을 막지 않도록 구성</td></tr>
-    <tr><td class="k">KG — MS-SQL → MySQL/MariaDB 전환, 실데이터 이관 후 조회 성능 점검·개선 및 스키마 생성 보조도구 제작</td>
+    <tr><td class="k">결제·POS 솔루션사 — MS-SQL → MySQL/MariaDB 전환, 실데이터 이관 후 조회 성능 점검·개선 및 스키마 생성 보조도구 제작</td>
         <td>H2 → PostgreSQL + Flyway 이관 과정에서 DBMS별 타입·쿼리·배포 환경 차이를 직접 확인하고 수정</td></tr>
   </table>
 
@@ -253,7 +253,7 @@
   <div class="issue">
     <p>PG 승인 요청 중 timeout이나 응답 유실이 발생하면 실제 승인 여부를 즉시 확정할 수 없습니다. 실패로 단정하면
       승인된 결제를 취소할 수 있고, 성공으로 처리하면 미결제 주문이 처리될 수 있어 승인/실패 이외의 '확정 대기' 상태가 필요했습니다.</p>
-    <div class="real"><b>실무 연결</b> — 티쿤글로벌에서 Stripe·Paymentwall 연동 시 결제 완료 요청을 그대로 신뢰하지 않고
+    <div class="real"><b>실무 연결</b> — 크로스보더 커머스사에서 Stripe·Paymentwall 연동 시 결제 완료 요청을 그대로 신뢰하지 않고
       PG API를 재조회해 주문번호·금액·통화·상태를 검증했습니다. 이 프로젝트에서는 해당 경험을 UNKNOWN 상태와 복구 작업으로 확장했습니다.</div>
 
     <svg class="seq" viewBox="0 0 1000 336" role="img" aria-label="결과불명 결제 복구 시퀀스">
@@ -301,7 +301,7 @@
   <div class="issue">
     <p>승인·취소 요청은 중복 클릭이나 네트워크 재시도로 반복될 수 있습니다. 또 승인금액 10,000원에 8,000원 부분취소
       2건이 동시에 들어오면 각 요청이 이전 취소금액을 기준으로 판단해 승인금액을 초과할 수 있습니다.</p>
-    <div class="real"><b>실무 연결</b> — 티쿤글로벌에서 전체취소·부분취소 API를 분리 개발했고, 여러 쇼핑몰이 공용으로
+    <div class="real"><b>실무 연결</b> — 크로스보더 커머스사에서 전체취소·부분취소 API를 분리 개발했고, 여러 쇼핑몰이 공용으로
       사용하는 PG API 서버를 운영하며 중복 요청에 대한 방어 필요성을 경험했습니다.</div>
 
     <div class="sub2">
@@ -343,7 +343,7 @@
       <li>정산은 <code>payment_transaction</code>이 아니라 미정산 SALE/CANCEL 원장을 기준으로 집계</li>
       <li>회계 분개는 원장·정산 데이터를 읽어 생성하는 별도 후속 데이터로 구성</li>
     </ul>
-    <div class="real"><b>실무 연결</b> — KG이니시스에서 POS 매출·반품·취소를 영수증 단위로 SAP에 전송하고 응답 결과를
+    <div class="real"><b>실무 연결</b> — 결제·POS 솔루션사에서 POS 매출·반품·취소를 영수증 단위로 SAP에 전송하고 응답 결과를
       관리했던 경험을 바탕으로, 이 프로젝트에서는 내부 매출원장과 정산까지 연결했습니다.</div>
     <img class="shot" src="screenshots/accounting.png" alt="회계 분개장">
     <p class="cap"><b>회계·분개장</b> — 매출원장과 정산 결과를 기준으로 분개를 생성하고, 차변·대변 합계와 중복 전기 여부를
@@ -359,7 +359,7 @@
   <div class="issue">
     <p>결제 트랜잭션 안에서 외부 API나 알림톡을 직접 호출하면 외부 시스템의 지연이나 장애가 결제 저장까지 지연시키거나
       실패시킬 수 있습니다.</p>
-    <div class="real"><b>실무 연결</b> — KG이니시스에서 DB Polling 방식의 알림톡 Agent를 개발하고 최대 10개 스레드
+    <div class="real"><b>실무 연결</b> — 결제·POS 솔루션사에서 DB Polling 방식의 알림톡 Agent를 개발하고 최대 10개 스레드
       병렬 처리와 실패 건 재처리를 적용했습니다. 테스트 기준 5만 건을 약 19분에 처리했고 평균 CPU 사용률은 10~20% 수준이었습니다.</div>
     <h4>해결</h4>
     <ul>
@@ -381,7 +381,7 @@ WHERE id = ? AND status IN ('READY','FAILED')      -- 조건부 claim, 성공한
   <div class="head"><span>07 · ISSUE ⑤ PostgreSQL 이관</span><b>YENI BACKOFFICE</b></div>
   <h2 class="title">H2에서 잘 되던 것이 실제 PostgreSQL에서 달라졌습니다</h2>
   <div class="issue">
-    <div class="real"><b>실무 연결</b> — KG이니시스에서 MS-SQL → MySQL/MariaDB 전환 시 DBMS별 함수·문법과 데이터
+    <div class="real"><b>실무 연결</b> — 결제·POS 솔루션사에서 MS-SQL → MySQL/MariaDB 전환 시 DBMS별 함수·문법과 데이터
       적재 방식 차이에 대응했고, 실데이터 이관 후 다수 조회 화면의 성능을 점검·수정했습니다. 반복적인 테이블 생성 작업을
       줄이기 위해 데이터타입·PK·FK를 변환해 MySQL용 CREATE TABLE 문을 생성하는 C# 보조도구도 만들어 사용했습니다.</div>
     <h4>배경 · baseline</h4>

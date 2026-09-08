@@ -2,7 +2,7 @@ projects:
   - 'no': '01'
     key: ddangyo-admin
     period: 2025.09 ~ 2025.11
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 배달 서비스 전용 POS·관리자 페이지 개발
     desc: 배달 플랫폼사 전용 POS와 관리자 페이지를 새로 만든 2개월짜리 프로젝트
     role: 관리자 화면 개발 / API 연동
@@ -28,7 +28,7 @@ projects:
   - 'no': '02'
     key: migration
     period: 2024.12 ~ 2025.03
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: MS-SQL에서 MySQL/MariaDB로 DB 마이그레이션
     desc: 운영 중인 MS-SQL 시스템을 MySQL/MariaDB로 옮기며 스키마와 쿼리를 하나씩 검증한 3개월짜리 작업
     role: DB 마이그레이션 / 서버 개발
@@ -53,7 +53,7 @@ projects:
   - 'no': '03'
     key: kiosk-promotion
     period: 2024.09 ~ 2024.10
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 커피 프랜차이즈 KIOSK 프로모션 연동
     desc: 프로모션 등록 화면·API를 만들고 외부 POS 상품 데이터를 KIOSK에 반영한 한 달짜리 프로젝트
     role: 서버 / Web 개발
@@ -71,7 +71,7 @@ projects:
   - 'no': '04'
     key: fissler
     period: 2024.01 ~ 2024.03
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 프리미엄 조리도구 브랜드 영업관리 시스템 재구축
     desc: POS 매출 데이터를 SAP로 전송하고 매장별 통계까지 조회할 수 있게 서버 쪽을 새로 짠 프로젝트
     role: 영업관리 서버 개발
@@ -96,7 +96,7 @@ projects:
   - 'no': '05'
     key: aurora
     period: 2023.11 ~ 2023.12
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 완구·캐릭터 라이선스 브랜드 온·오프라인 회원 통합
     desc: 자사몰이 새로 생기면서, 원래 사내에 있던 회원·포인트 데이터를 자사몰에서 쓸 수 있게 열어준 프로젝트
     role: API 개발 / 연동 개발
@@ -117,7 +117,7 @@ projects:
   - 'no': '06'
     key: alimtalk
     period: 2023.02 ~ 2023.03
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 알림톡 Agent 콘솔 프로그램 개발
     desc: 대량 알림톡 발송 시 순차 처리가 병목이 되는 문제를, DB Polling과 병렬 처리로 풀어낸 프로그램
     role: Agent 프로그램 개발
@@ -138,7 +138,7 @@ projects:
   - 'no': '07'
     key: kfc-kiosk-admin
     period: 2022.09 ~ 2024.12
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 글로벌 QSR 브랜드 관리자 페이지 개발·운영
     desc: 자사 KIOSK와 외부 POS를 잇는 관리자 페이지를 2년 넘게 개발·운영한 프로젝트
     role: 서버/Web 개발 및 운영
@@ -162,7 +162,7 @@ projects:
   - 'no': '08'
     key: package-kiosk-admin
     period: 2022.09 ~ 2025.12
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: 멀티브랜드 프랜차이즈 KIOSK 관리자 페이지 개발·운영
     desc: 특정 브랜드 전용이 아니라 여러 가맹점이 같이 쓰는 통합 KIOSK 관리자 사이트를 상시 운영한 프로젝트
     role: 서버/Web 개발 및 운영
@@ -189,7 +189,7 @@ projects:
   - 'no': '09'
     key: pg
     period: 2021.12 ~ 2022.03
-    company: TQON Global
+    company: 크로스보더 커머스사
     title: Payment Gateway Bridge 기반 글로벌 PG 연동 서버 개발
     desc: 쇼핑몰 안에 뒤섞여 있던 PG 연동 로직을 별도 서버로 뽑아내고, 결제 검증·취소 흐름을 공통화한 프로젝트
     role: Payment API 서버 개발
@@ -215,7 +215,7 @@ projects:
   - 'no': '10'
     key: pos-sales-admin
     period: 2022.09 ~ 2025.12
-    company: KG이니시스
+    company: 결제·POS 솔루션사
     title: POS/KIOSK 버전 배포 및 오류 모니터링 시스템 개발·운영
     desc: POS/KIOSK(exe 실행파일)의 오류 로그를 모아서 보여주고, 매장별·일자별 배포 스케줄을 관리하는 시스템
     role: 서버/Web 개발 및 운영
@@ -232,7 +232,7 @@ projects:
   - 'no': '11'
     key: tqoon-commerce-operation
     period: 2019.04 ~ 2022.09
-    company: TQON Global
+    company: 크로스보더 커머스사
     title: 다국가 이커머스 플랫폼 운영 개발
     desc: 100여 개 다국가 쇼핑몰의 주문·결제·배송·정산 기능을 유지보수한 3년 5개월
     role: 웹 개발 / 운영 개발
