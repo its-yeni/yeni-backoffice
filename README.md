@@ -92,12 +92,36 @@ PG 승인 요청 중 timeout·응답 유실이 나면 실제 승인 여부를 �
 
 | 영역 | 화면 |
 |---|---|
-| 운영 | 대시보드, 통합 매출 조회, 운영 분석 |
+| 운영 | 대시보드, 통합 매출 조회, 운영 분석, 데이터 분석(Power BI) |
 | 결제·정산 | 결제 예외 처리, PG 대사, 매출 원장, 정산 관리, 회계·분개장 |
 | 커머스 | 주문, 상품/옵션/카테고리, 발주→입고 검수, 재고 원장, 재고 실사 |
 | 기준정보 | 매장, 공급처, POS 단말 |
 
 전체 화면 목록과 URL은 데모의 `/admin/all-features`에서 볼 수 있습니다.
+
+## Power BI 연동
+
+운영 대시보드가 "지금 처리할 운영 이슈"라면, `데이터 분석`(`/admin/data-analysis`)은 기간·상품·
+카테고리 단위 집계를 Power BI로 분석하는 리포트 영역입니다. Power BI가 운영 DB에 직접 붙지 않도록
+**조회 전용 BI API**(`/api/bi/**`)를 두고, 집계는 애플리케이션이 아니라 SQL(`GROUP BY`/`SUM`)에서
+끝냅니다. 운영 API(`/admin/api/**`)와는 컨트롤러·서비스·쿼리 계층이 분리돼 있습니다.
+
+| Endpoint | 내용 | query |
+|---|---|---|
+| `GET /api/bi/sales/daily` | 일자별 순매출·주문 건수·객단가 | `from` `to` `category` `channel` |
+| `GET /api/bi/sales/products` | 상품별 매출·수량·취소 | `from` `to` `category` `channel` |
+| `GET /api/bi/sales/stores` | 판매채널(온라인/매장)별 매출 | `from` `to` `category` |
+| `GET /api/bi/inventory/status` | 상품 단위 가용·안전재고, LOT 유효기간 | `category` |
+| `GET /api/bi/payment/status` | 결제 상태별 건수·금액, 결과불명(APPROVE_UNKNOWN 등) 수 | `from` `to` `channel` |
+
+- 매출은 `sales_transaction_line`(SALE/CANCEL 원장의 상품 단위 분해)을 기준으로 집계합니다. CANCEL 라인 금액이 음수라 `SUM(line_amount)`이 곧 순매출입니다.
+- 페이지네이션 없이 집계 결과를 반환하되, 조회 기간은 최대 366일로 제한합니다(`BiFilter`).
+
+**Power BI Desktop에서 연결** — 가져오기 → 웹 → URL에 엔드포인트 입력
+(예: `https://yeni-demo.fly.dev/api/bi/sales/daily?from=2026-01-01&to=2026-12-31`) →
+반환된 JSON을 테이블로 변환. 5개 쿼리를 각각 불러와 리포트(Retail Sales & Inventory Analysis)를 구성합니다.
+리포트를 publish-to-web으로 게시한 뒤 `BI_REPORT_EMBED_URL` 환경변수에 embed URL을 넣으면
+`데이터 분석` 화면에 iframe으로 표시됩니다(미설정 시 placeholder).
 
 ## 테스트로 확인한 것
 
@@ -107,6 +131,7 @@ PG 승인 요청 중 timeout·응답 유실이 나면 실제 승인 여부를 �
 - 발주→입고, 재고 실사 조정이 재고·LOT·트랜잭션에 반영
 - 같은 정산일·MID 중복 배치 방어, 동일 소스 재전기 시 분개 중복 없음
 - 표준 `ErrorResponse` (`requestId` / `fieldErrors`)
+- BI API — flat 배열·숫자 금액·실제 결제상태 enum 반환, 조회기간 366일 제한, 채널 차원은 실제 데이터 기준
 - Playwright — 상품·입고·출고·반품·정산까지 이어지는 운영 워크플로
 
 ## 실행

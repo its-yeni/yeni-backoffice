@@ -30,6 +30,7 @@ window.AdminWorkspace = (function () {
         "/admin/payment-operations/settlements/reconciliation":"PG 대사", "/admin/payment-operations/pg-reconciliation":"PG 대사",
         "/admin/analytics":"운영 분석", "/admin/analytics/orders":"주문 분석", "/admin/analytics/payments":"결제 분석",
         "/admin/analytics/settlements":"정산 분석", "/admin/analytics/inventory":"재고 분석",
+        "/admin/data-analysis":"데이터 분석",
         "/admin/database-spec":"DB 명세", "/admin/audit-logs":"감사 로그", "/admin/navigation":"메뉴 관리"
     };
 

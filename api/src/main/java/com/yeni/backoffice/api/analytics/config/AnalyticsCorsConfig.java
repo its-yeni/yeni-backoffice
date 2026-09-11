@@ -15,11 +15,13 @@ public class AnalyticsCorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        registry.addMapping("/api/analytics/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(false)
-                .maxAge(3600);
+        for (String path : new String[] {"/api/analytics/**", "/api/bi/**"}) {
+            registry.addMapping(path)
+                    .allowedOriginPatterns("*")
+                    .allowedMethods("GET", "OPTIONS")
+                    .allowedHeaders("*")
+                    .allowCredentials(false)
+                    .maxAge(3600);
+        }
     }
 }

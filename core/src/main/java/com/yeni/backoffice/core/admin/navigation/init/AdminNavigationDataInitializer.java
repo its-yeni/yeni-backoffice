@@ -47,7 +47,8 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
                 "/admin/payment-operations/pending-sales", "/admin/payment-operations/recovery-tasks",
                 "/admin/payment-operations/sales-analytics", "/admin/payment-operations/settlements",
                 "/admin/payment-operations/settlements/reconciliation", "/admin/payment-operations/accounting",
-                "/admin/pos", "/admin/database-spec", "/admin/navigation", "/admin/audit-logs", "/admin/all-features");
+                "/admin/pos", "/admin/database-spec", "/admin/navigation", "/admin/audit-logs",
+                "/admin/data-analysis", "/admin/all-features");
         items.findAllNotDeleted().forEach(i -> {
             if (!alive.contains(i.getItemUrl())) i.softDelete();
         });
@@ -76,7 +77,8 @@ public class AdminNavigationDataInitializer implements CommandLineRunner {
         sub(base,        "/admin/commerce/stores", "POS 단말", "/admin/pos",             1);
 
         feature(insight, "운영 분석",       "/admin/analytics",                          "chart",     1);
-        feature(insight, "감사 로그",       "/admin/audit-logs",                         "audit",     2, AdminRole.ADMIN);
+        feature(insight, "데이터 분석",     "/admin/data-analysis",                      "chart",     2);
+        feature(insight, "감사 로그",       "/admin/audit-logs",                         "audit",     3, AdminRole.ADMIN);
 
         // ── 업무 흐름 하위 단계 (사이드바에서 부모 항목 밑에 펼쳐짐) ──
         sub(settle, "/admin/payment-operations/settlements", "미확정 매출", "/admin/payment-operations/pending-sales",              1);

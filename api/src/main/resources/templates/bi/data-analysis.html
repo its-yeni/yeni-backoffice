@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>데이터 분석 - Yeni Backoffice</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <style>
+    .bi-page { padding: 18px var(--content-gutter) 44px; background: var(--page-canvas); }
+    .bi-arch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 22px;
+      font-size: 12.5px; color: var(--text-secondary); }
+    .bi-arch span { display: inline-flex; align-items: center; height: 26px; padding: 0 12px;
+      border: 1px solid var(--border-default); border-radius: var(--radius-control); background: var(--bg-surface);
+      font-weight: 600; color: var(--text-primary); }
+    .bi-arch i { color: var(--text-muted); font-style: normal; }
+
+    .bi-report { border: 1px solid var(--border-default); border-radius: var(--radius-container);
+      background: var(--bg-surface); overflow: hidden; margin-bottom: 26px; }
+    .bi-report-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border-default); }
+    .bi-report-head strong { font-size: 13px; }
+    .bi-report-head span { color: var(--text-muted); font-size: 11.5px; }
+    .bi-report-frame { width: 100%; aspect-ratio: 16 / 9; max-height: 70vh; border: 0; display: block; background: var(--bg-subtle); }
+    .bi-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; min-height: 300px; background: repeating-linear-gradient(135deg,
+        var(--bg-subtle), var(--bg-subtle) 12px, var(--bg-surface) 12px, var(--bg-surface) 24px);
+      color: var(--text-secondary); text-align: center; padding: 24px; }
+    .bi-placeholder strong { font-size: 14px; color: var(--text-primary); }
+    .bi-placeholder p { margin: 0; font-size: 12px; max-width: 420px; }
+
+    .bi-design { border-top: 1px solid var(--border-default); padding-top: 22px; }
+    .bi-design > h2 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em;
+      color: var(--text-secondary); text-transform: uppercase; }
+    .bi-design > p { margin: 0 0 16px; font-size: 13px; line-height: 1.7; color: var(--text-primary); max-width: 760px; }
+    .bi-design-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .bi-design-grid article { border: 1px solid var(--border-default); border-radius: var(--radius-container);
+      background: var(--bg-surface); padding: 14px 16px; }
+    .bi-design-grid h3 { margin: 0 0 6px; font-size: 13px; }
+    .bi-design-grid p { margin: 0; font-size: 12px; line-height: 1.65; color: var(--text-secondary); }
+
+    .bi-api { margin-top: 22px; }
+    .bi-api h2 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em;
+      color: var(--text-secondary); text-transform: uppercase; }
+    .bi-api table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .bi-api th, .bi-api td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-default);
+      vertical-align: top; }
+    .bi-api th { color: var(--text-secondary); font-weight: 600; }
+    .bi-api code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11.5px; color: var(--text-primary); }
+    .bi-api td span { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{fragments/sidebar}"></div>
+  <main class="main">
+    <div th:replace="~{fragments/topbar :: header}"></div>
+    <section class="bi-page">
+      <header class="page-header">
+        <div>
+          <h1>Power BI Retail Analytics</h1>
+          <p>운영 시스템에 축적된 주문·매출·재고 데이터를 BI 분석용 데이터셋으로 구성하고 Power BI를 통해 시각화했습니다.</p>
+        </div>
+      </header>
+
+      <div class="bi-arch">
+        <span>PostgreSQL</span><i>→</i>
+        <span>Spring Boot BI API</span><i>→</i>
+        <span>Power BI</span>
+      </div>
+
+      <div class="bi-report">
+        <div class="bi-report-head">
+          <strong>Power BI Report</strong>
+          <span>Retail Sales &amp; Inventory Analysis · 1-page report</span>
+        </div>
+        <iframe th:if="${biHasEmbed}" class="bi-report-frame" th:src="${biEmbedUrl}"
+                title="Power BI Retail Analytics" allowfullscreen></iframe>
+        <div th:unless="${biHasEmbed}" class="bi-placeholder">
+          <strong>Power BI Report</strong>
+          <p>실제 Power BI 리포트가 연결될 영역입니다. <code>BI_REPORT_EMBED_URL</code> 설정 시 이 자리에 리포트가 임베드됩니다.</p>
+        </div>
+      </div>
+
+      <section class="bi-design">
+        <h2>분석 설계</h2>
+        <p>운영 화면에서는 개별 주문·결제·재고 건을 처리하는 데 집중하고, BI에서는 기간·상품·카테고리 단위의
+          집계 데이터를 별도로 제공하도록 구성했습니다. 운영 DB를 BI 도구에 직접 연결하지 않고 조회 전용 API를
+          두어 분석 데이터 제공 영역을 분리했습니다.</p>
+        <div class="bi-design-grid">
+          <article>
+            <h3>매출 분석</h3>
+            <p>주문·취소 데이터를 기준으로 순매출과 객단가 분석</p>
+          </article>
+          <article>
+            <h3>재고 분석</h3>
+            <p>가용재고·안전재고·LOT 유효기간 데이터를 기반으로 부족재고 확인</p>
+          </article>
+          <article>
+            <h3>결제 분석</h3>
+            <p>승인·취소·결과불명 등 결제 상태별 운영 현황 확인</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="bi-api">
+        <h2>제공 API — /api/bi</h2>
+        <table>
+          <thead><tr><th>Endpoint</th><th>내용</th><th>조건</th></tr></thead>
+          <tbody>
+            <tr><td><code>GET /api/bi/sales/daily</code></td><td><span>일자별 순매출·주문 건수·객단가</span></td><td><span>from, to, category, channel</span></td></tr>
+            <tr><td><code>GET /api/bi/sales/products</code></td><td><span>상품별 매출·수량·취소</span></td><td><span>from, to, category, channel</span></td></tr>
+            <tr><td><code>GET /api/bi/sales/stores</code></td><td><span>판매채널(온라인/매장)별 매출</span></td><td><span>from, to, category</span></td></tr>
+            <tr><td><code>GET /api/bi/inventory/status</code></td><td><span>상품 단위 가용·안전재고, LOT 유효기간</span></td><td><span>category</span></td></tr>
+            <tr><td><code>GET /api/bi/payment/status</code></td><td><span>결제 상태별 건수·금액, 결과불명 수</span></td><td><span>from, to, channel</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+    </section>
+  </main>
+</div>
+<script src="/js/common.js"></script>
+</body>
+</html>
